@@ -7,6 +7,5 @@ interface LocationRepository {
     suspend fun getCurrentLocation(): LocationResult
     fun startLocationUpdates(intervalMs: Long): Flow<LocationResult>
     suspend fun stopLocationUpdates()
-    suspend fun hasLocationPermission(): Boolean
     suspend fun isLocationEnabled(): Boolean
 }

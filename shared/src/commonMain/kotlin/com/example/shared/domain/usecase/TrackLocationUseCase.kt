@@ -8,10 +8,11 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 
 class TrackLocationUseCase(
-    private val locationRepository: LocationRepository
+    private val locationRepository: LocationRepository,
+    private val checkLocationPermission: CheckLocationPermissionUseCase
 ) {
     suspend fun execute(intervalMs: Long = 5000): Flow<InPlayEvent.LocationUpdated> {
-        if (!locationRepository.hasLocationPermission()) {
+        if (!checkLocationPermission()) {
             throw LocationPermissionException("Location permission is required")
         }
         
@@ -35,6 +36,6 @@ class TrackLocationUseCase(
     }
 }
 
-sealed class LocationException(message: String) : Exception(message)
+open class LocationException(message: String) : Exception(message)
 class LocationPermissionException(message: String) : LocationException(message)
 class LocationDisabledException(message: String) : LocationException(message)

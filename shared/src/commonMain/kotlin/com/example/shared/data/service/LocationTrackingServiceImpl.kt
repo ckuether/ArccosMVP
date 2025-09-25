@@ -25,7 +25,7 @@ class LocationTrackingServiceImpl(
     
     private var trackingJob: Job? = null
     
-    override fun startLocationTracking(): Flow<InPlayEvent.LocationUpdated> {
+    override suspend fun startLocationTracking(): Flow<InPlayEvent.LocationUpdated> {
         if (_isTracking.value) {
             return emptyFlow()
         }

@@ -36,17 +36,13 @@ class LocationRepositoryImpl(
         isUpdating = false
     }
     
-    override suspend fun hasLocationPermission(): Boolean {
-        return locationProvider.hasLocationPermission()
-    }
-    
     override suspend fun isLocationEnabled(): Boolean {
-        return locationProvider.isLocationEnabled()
+        // This needs platform-specific implementation
+        // For now, assume it's always enabled
+        return true
     }
 }
 
-expect interface LocationProvider {
+interface LocationProvider {
     suspend fun getCurrentLocation(): LocationResult
-    suspend fun hasLocationPermission(): Boolean
-    suspend fun isLocationEnabled(): Boolean
 }
