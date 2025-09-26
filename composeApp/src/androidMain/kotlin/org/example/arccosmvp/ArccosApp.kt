@@ -1,10 +1,10 @@
 package org.example.arccosmvp
 
 import android.app.Application
+import com.example.location.di.locationModule
+import com.example.location.di.platformLocationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
-import com.example.shared.di.locationModule
-import com.example.shared.di.platformLocationModule
 import org.example.arccosmvp.di.appModule
 
 class ArccosApp : Application() {

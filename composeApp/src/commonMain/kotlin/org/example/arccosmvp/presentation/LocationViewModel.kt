@@ -2,14 +2,13 @@ package org.example.arccosmvp.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.shared.data.event.InPlayEvent
-import com.example.shared.data.event.Location
-import com.example.shared.domain.usecase.GetLocationUseCase
-import com.example.shared.domain.usecase.CheckLocationPermissionUseCase
-import com.example.shared.domain.usecase.RequestLocationPermissionUseCase
-import com.example.shared.domain.usecase.PermissionResult
-import com.example.shared.domain.model.LocationResult
-import com.example.shared.platform.Logger
+import com.example.location.domain.usecase.GetLocationUseCase
+import com.example.location.domain.usecase.CheckLocationPermissionUseCase
+import com.example.location.domain.usecase.RequestLocationPermissionUseCase
+import com.example.location.domain.usecase.PermissionResult
+import com.example.location.domain.model.LocationResult
+import com.example.shared.event.InPlayEvent
+import com.example.shared.event.Location
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
