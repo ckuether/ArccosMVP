@@ -30,6 +30,11 @@ fun LocationTrackingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
+    // Check permission status on first composition
+    LaunchedEffect(Unit) {
+        viewModel.checkPermissionStatus()
+    }
+    
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.primaryContainer)
@@ -45,6 +50,46 @@ fun LocationTrackingScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
+        // Permission Section
+        if (uiState.hasPermission == false) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Location Permission Required",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Text(
+                        text = "This app needs location permission to track your location.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    Button(
+                        onClick = {
+                            viewModel.requestLocationPermission() },
+                        enabled = !uiState.isRequestingPermission,
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(
+                            if (uiState.isRequestingPermission) "Requesting..." 
+                            else "Grant Permission"
+                        )
+                    }
+                }
+            }
+        }
+        
         // Control Buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -52,7 +97,7 @@ fun LocationTrackingScreen(
         ) {
             Button(
                 onClick = { viewModel.startLocationTracking() },
-                enabled = !uiState.isTracking,
+                enabled = !uiState.isTracking && uiState.hasPermission == true,
                 modifier = Modifier.weight(1f)
             ) {
                 Text(if (uiState.isTracking) "Tracking..." else "Start Tracking")
@@ -83,6 +128,14 @@ fun LocationTrackingScreen(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
+                Text(
+                    text = "Permission: ${when (uiState.hasPermission) {
+                        true -> "Granted"
+                        false -> "Denied" 
+                        null -> "Checking..."
+                    }}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
                 Text(
                     text = "Status: ${if (uiState.isTracking) "Tracking" else "Stopped"}",
                     style = MaterialTheme.typography.bodyMedium

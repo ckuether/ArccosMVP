@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.shared.data.event.InPlayEvent
 import com.example.shared.data.event.Location
 import com.example.shared.domain.usecase.GetLocationUseCase
+import com.example.shared.domain.usecase.CheckLocationPermissionUseCase
+import com.example.shared.domain.usecase.RequestLocationPermissionUseCase
+import com.example.shared.domain.usecase.PermissionResult
 import com.example.shared.domain.model.LocationResult
+import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,14 +17,77 @@ import kotlinx.coroutines.launch
 import org.example.arccosmvp.platform.getCurrentTimeMillis
 
 class LocationViewModel(
-    private val getLocationUseCase: GetLocationUseCase
+    private val getLocationUseCase: GetLocationUseCase,
+    private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
+    private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(LocationUiState())
     val uiState: StateFlow<LocationUiState> = _uiState.asStateFlow()
     
+    fun requestLocationPermission() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRequestingPermission = true, errorMessage = null)
+            
+            try {
+                val result = requestLocationPermissionUseCase()
+                
+                when (result) {
+                    is PermissionResult.Granted -> {
+                        _uiState.value = _uiState.value.copy(
+                            hasPermission = true,
+                            isRequestingPermission = false,
+                            errorMessage = null
+                        )
+                    }
+                    is PermissionResult.Denied -> {
+                        _uiState.value = _uiState.value.copy(
+                            hasPermission = false,
+                            isRequestingPermission = false,
+                            errorMessage = "Location permission denied. Please try again."
+                        )
+                    }
+                    is PermissionResult.PermanentlyDenied -> {
+                        _uiState.value = _uiState.value.copy(
+                            hasPermission = false,
+                            isRequestingPermission = false,
+                            errorMessage = "Location permission permanently denied. Please enable it in settings."
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isRequestingPermission = false,
+                    errorMessage = e.message ?: "Error requesting permission"
+                )
+            }
+        }
+    }
+    
+    fun checkPermissionStatus() {
+        viewModelScope.launch {
+            try {
+                val hasPermission = checkLocationPermissionUseCase()
+                _uiState.value = _uiState.value.copy(hasPermission = hasPermission)
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = e.message ?: "Error checking permission"
+                )
+            }
+        }
+    }
+
     fun startLocationTracking() {
         viewModelScope.launch {
+            // Check permission first
+            if (!checkLocationPermissionUseCase()) {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "Location permission required. Please grant permission first.",
+                    isTracking = false
+                )
+                return@launch
+            }
+            
             _uiState.value = _uiState.value.copy(isTracking = true, errorMessage = null)
             
             try {
@@ -49,7 +116,8 @@ class LocationViewModel(
                         is LocationResult.PermissionDenied -> {
                             _uiState.value = _uiState.value.copy(
                                 errorMessage = "Location permission required",
-                                isTracking = false
+                                isTracking = false,
+                                hasPermission = false
                             )
                         }
                         is LocationResult.LocationDisabled -> {
@@ -86,6 +154,8 @@ class LocationViewModel(
 
 data class LocationUiState(
     val isTracking: Boolean = false,
+    val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
+    val isRequestingPermission: Boolean = false,
     val locations: List<LocationItem> = emptyList(),
     val errorMessage: String? = null
 )

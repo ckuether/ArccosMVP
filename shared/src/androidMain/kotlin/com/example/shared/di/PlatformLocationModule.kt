@@ -4,7 +4,9 @@ import android.content.Context
 import com.example.shared.data.repository.AndroidLocationProvider
 import com.example.shared.data.repository.LocationProvider
 import com.example.shared.data.usecase.AndroidCheckLocationPermissionUseCase
+import com.example.shared.data.usecase.AndroidRequestLocationPermissionUseCase
 import com.example.shared.domain.usecase.CheckLocationPermissionUseCase
+import com.example.shared.domain.usecase.RequestLocationPermissionUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,5 +16,6 @@ import org.koin.dsl.module
 actual val platformLocationModule = module {
     single<LocationProvider> { AndroidLocationProvider(androidContext()) }
     single<CheckLocationPermissionUseCase> { AndroidCheckLocationPermissionUseCase(androidContext()) }
+    single<RequestLocationPermissionUseCase> { AndroidRequestLocationPermissionUseCase(androidContext(), get()) }
     single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 }
