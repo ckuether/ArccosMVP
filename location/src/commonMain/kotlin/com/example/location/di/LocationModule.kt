@@ -26,7 +26,7 @@ val locationModule = module {
     
     // Services
     single<LocationTrackingService> {
-        LocationTrackingServiceImpl(get(), get<CoroutineScope>())
+        LocationTrackingServiceImpl(get(), get(), get<CoroutineScope>())
     }
 }
 

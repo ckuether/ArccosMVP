@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.arccosmvp.presentation.LocationItem
-import org.example.arccosmvp.presentation.LocationViewModel
+import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -29,7 +29,7 @@ fun App() {
 
 @Composable
 fun LocationTrackingScreen(
-    viewModel: LocationViewModel = koinViewModel()
+    viewModel: LocationTrackingViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
@@ -148,7 +148,7 @@ fun LocationTrackingScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
-                uiState.errorMessage?.let { error ->
+                uiState.error?.let { error ->
                     Text(
                         text = "Error: $error",
                         style = MaterialTheme.typography.bodyMedium,
@@ -237,7 +237,7 @@ private fun formatTimestamp(timestamp: Long): String {
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     )
     
-    val month = months[localDateTime.monthNumber - 1]
+    val month = months[localDateTime.month.ordinal - 1]
     val day = localDateTime.day
     val hour = localDateTime.hour
     val minute = localDateTime.minute

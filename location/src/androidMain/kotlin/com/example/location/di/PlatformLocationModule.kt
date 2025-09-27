@@ -6,6 +6,8 @@ import com.example.location.data.usecase.AndroidCheckLocationPermissionUseCase
 import com.example.location.data.usecase.AndroidRequestLocationPermissionUseCase
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
+import com.example.location.platform.AndroidBackgroundLocationService
+import com.example.location.platform.BackgroundLocationService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,5 +23,6 @@ actual val platformLocationModule = module {
             get()
         )
     }
+    single<BackgroundLocationService> { AndroidBackgroundLocationService(androidContext(), get()) }
     single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.IO) }
 }

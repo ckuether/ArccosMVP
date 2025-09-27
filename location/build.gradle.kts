@@ -12,6 +12,7 @@ kotlin {
     androidLibrary {
         namespace = "com.example.location"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
 
         withHostTestBuilder {
         }

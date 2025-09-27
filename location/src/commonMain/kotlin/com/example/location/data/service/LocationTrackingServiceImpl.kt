@@ -2,6 +2,7 @@ package com.example.location.data.service
 
 import com.example.location.domain.service.LocationTrackingService
 import com.example.location.domain.usecase.TrackLocationUseCase
+import com.example.location.platform.BackgroundLocationService
 import com.example.shared.event.InPlayEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.onStart
 
 class LocationTrackingServiceImpl(
     private val trackLocationUseCase: TrackLocationUseCase,
+    private val backgroundLocationService: BackgroundLocationService,
     private val coroutineScope: CoroutineScope
 ) : LocationTrackingService {
     
@@ -30,7 +32,7 @@ class LocationTrackingServiceImpl(
         }
         
         return try {
-            trackLocationUseCase.execute(intervalMs = 5000L)
+            backgroundLocationService.startBackgroundLocationTracking(intervalMs = 5000L)
                 .onStart { 
                     _isTracking.value = true 
                 }
@@ -50,7 +52,7 @@ class LocationTrackingServiceImpl(
     override suspend fun stopLocationTracking() {
         trackingJob?.cancel()
         trackingJob = null
-        trackLocationUseCase.stop()
+        backgroundLocationService.stopBackgroundLocationTracking()
         _isTracking.value = false
     }
 }
