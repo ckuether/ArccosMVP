@@ -10,6 +10,8 @@ import com.example.location.domain.usecase.PermissionResult
 import com.example.shared.event.InPlayEvent
 import com.example.shared.event.Location
 import com.example.shared.platform.Logger
+import com.example.shared.data.dao.InPlayEventDao
+import com.example.shared.data.entity.toEntity
 import org.example.arccosmvp.platform.getCurrentTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +26,7 @@ class LocationTrackingViewModel(
     private val locationTrackingService: LocationTrackingService,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
+    private val inPlayEventDao: InPlayEventDao,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -64,6 +67,17 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
                 trackingJob = locationTrackingService.startLocationTracking()
                     .onEach { locationEvent ->
+                        logger.debug(TAG, "Received location event: ${locationEvent.location.lat}, ${locationEvent.location.long}")
+                        
+                        // Try to save to database with error handling
+                        try {
+                            inPlayEventDao.insertEvent(locationEvent.toEntity())
+                            logger.debug(TAG, "Location event saved to database successfully")
+                        } catch (e: Exception) {
+                            logger.error(TAG, "Failed to save location event to database", e)
+                            // Continue with UI update even if database save fails
+                        }
+                        
                         val locationItem = LocationItem(
                             location = locationEvent.location,
                             timestamp = getCurrentTimeMillis()
