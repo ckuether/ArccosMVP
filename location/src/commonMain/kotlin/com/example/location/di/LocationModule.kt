@@ -18,7 +18,7 @@ val locationModule = module {
     single<Logger> { createLogger() }
     
     // Repository
-    single<LocationRepository> { LocationRepositoryImpl(get()) }
+    single<LocationRepository> { LocationRepositoryImpl(get(), get()) }
     
     // Use Cases
     factoryOf(::TrackLocationUseCase)
