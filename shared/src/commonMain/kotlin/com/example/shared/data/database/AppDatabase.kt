@@ -1,8 +1,10 @@
 package com.example.shared.data.database
 
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.data.dao.LocationDao
@@ -19,22 +21,26 @@ import kotlinx.coroutines.IO
     version = DatabaseConstants.DATABASE_VERSION,
     exportSchema = true
 )
+@ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun inPlayEventDao(): InPlayEventDao
 }
 
-// Platform-specific database builder - implemented in platform modules
-expect object DatabaseBuilder {
-    fun build(): AppDatabase
+// Database constructor for Room
+@Suppress("NO_ACTUAL_FOR_EXPECT")
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
+    override fun initialize(): AppDatabase
 }
 
-// Common database configuration
-fun buildDatabase(databasePath: String): AppDatabase {
-    return Room.databaseBuilder<AppDatabase>(
-        name = databasePath
-    )
+fun getRoomDatabase(
+    builder: RoomDatabase.Builder<AppDatabase>
+): AppDatabase {
+    return builder
+        .fallbackToDestructiveMigrationOnDowngrade(true)
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
         .build()
 }
+
+fun getInPlayEventDao(appDatabase: AppDatabase) = appDatabase.inPlayEventDao()
