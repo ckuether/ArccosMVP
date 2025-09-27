@@ -10,10 +10,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.example.arccosmvp.presentation.LocationItem
 import org.example.arccosmvp.presentation.LocationViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import org.example.arccosmvp.platform.getCurrentTimeMillis
+import kotlin.time.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.ExperimentalTime
 
 @Composable
 @Preview
@@ -192,7 +196,7 @@ fun LocationTrackingScreen(
 }
 
 @Composable
-fun LocationItemCard(locationItem: org.example.arccosmvp.presentation.LocationItem) {
+fun LocationItemCard(locationItem: LocationItem) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -213,6 +217,7 @@ fun LocationItemCard(locationItem: org.example.arccosmvp.presentation.LocationIt
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
+                //TODO: Format Time as Oct, 25 at 22:10:15
                 text = "Time: ${formatTimestamp(locationItem.timestamp)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -222,16 +227,21 @@ fun LocationItemCard(locationItem: org.example.arccosmvp.presentation.LocationIt
     }
 }
 
+@OptIn(ExperimentalTime::class)
 private fun formatTimestamp(timestamp: Long): String {
-    // Simple formatting using basic calculation for cross-platform compatibility
-    val seconds = timestamp / 1000
-    val currentTime = getCurrentTimeMillis() / 1000
-    val diff = currentTime - seconds
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
     
-    return when {
-        diff < 60 -> "Just now"
-        diff < 3600 -> "${diff / 60} min ago"
-        diff < 86400 -> "${diff / 3600} hr ago"
-        else -> "${diff / 86400} days ago"
-    }
+    val months = arrayOf(
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    )
+    
+    val month = months[localDateTime.monthNumber - 1]
+    val day = localDateTime.day
+    val hour = localDateTime.hour
+    val minute = localDateTime.minute
+    val second = localDateTime.second
+    
+    return "$month, $day at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}"
 }
