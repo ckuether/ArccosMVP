@@ -32,6 +32,7 @@ fun LocationTrackingScreen(
     viewModel: LocationTrackingViewModel = koinViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
     // Check permission status on first composition
     LaunchedEffect(Unit) {
@@ -144,7 +145,7 @@ fun LocationTrackingScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "Total locations: ${uiState.locations.size}",
+                    text = "Total locations: ${locationEvents.size}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -165,7 +166,7 @@ fun LocationTrackingScreen(
         }
         
         // Location List
-        if (uiState.locations.isNotEmpty()) {
+        if (locationEvents.isNotEmpty()) {
             Text(
                 text = "Location History",
                 style = MaterialTheme.typography.titleMedium,
@@ -176,7 +177,7 @@ fun LocationTrackingScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(uiState.locations.reversed()) { locationItem ->
+                items(locationEvents) { locationItem ->
                     LocationItemCard(locationItem)
                 }
             }

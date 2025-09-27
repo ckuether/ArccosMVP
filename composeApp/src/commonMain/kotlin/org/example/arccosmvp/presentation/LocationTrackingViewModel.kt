@@ -12,6 +12,8 @@ import com.example.shared.event.Location
 import com.example.shared.platform.Logger
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.data.entity.toEntity
+import com.example.shared.data.entity.toInPlayEvent
+import kotlinx.coroutines.flow.map
 import org.example.arccosmvp.platform.getCurrentTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,26 @@ class LocationTrackingViewModel(
     val uiState: StateFlow<LocationTrackingUiState> = _uiState.asStateFlow()
     
     val isTracking = locationTrackingService.isTracking
+    
+    // Flow of location events from database
+    val locationEvents = inPlayEventDao.getEventsByType("LocationUpdated")
+        .map { entities ->
+            entities.mapNotNull { entity ->
+                try {
+                    // Convert entity back to InPlayEvent and then to LocationItem
+                    val event = entity.toInPlayEvent() as? InPlayEvent.LocationUpdated
+                    event?.let { 
+                        LocationItem(
+                            location = it.location,
+                            timestamp = it.timestamp
+                        )
+                    }
+                } catch (e: Exception) {
+                    logger.error(TAG, "Failed to convert entity to LocationItem", e)
+                    null
+                }
+            }
+        }
     
     private var trackingJob: Job? = null
     
@@ -78,16 +100,10 @@ class LocationTrackingViewModel(
                             // Continue with UI update even if database save fails
                         }
                         
-                        val locationItem = LocationItem(
-                            location = locationEvent.location,
-                            timestamp = getCurrentTimeMillis()
-                        )
-                        
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             isTracking = true,
                             lastLocationEvent = locationEvent,
-                            locations = _uiState.value.locations + locationItem,
                             error = null
                         )
                     }
@@ -189,7 +205,19 @@ class LocationTrackingViewModel(
     }
     
     fun clearLocations() {
-        _uiState.value = _uiState.value.copy(locations = emptyList())
+        viewModelScope.launch {
+            try {
+                // Delete all location events from database
+                inPlayEventDao.getEventsByType("LocationUpdated").collect { events ->
+                    events.forEach { event ->
+                        inPlayEventDao.deleteEvent(event)
+                    }
+                    logger.info(TAG, "All location events cleared from database")
+                }
+            } catch (e: Exception) {
+                logger.error(TAG, "Failed to clear location events", e)
+            }
+        }
     }
     
     fun clearError() {
@@ -206,7 +234,6 @@ data class LocationTrackingUiState(
     val isLoading: Boolean = false,
     val isTracking: Boolean = false,
     val lastLocationEvent: InPlayEvent.LocationUpdated? = null,
-    val locations: List<LocationItem> = emptyList(),
     val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
     val isRequestingPermission: Boolean = false,
     val error: String? = null
