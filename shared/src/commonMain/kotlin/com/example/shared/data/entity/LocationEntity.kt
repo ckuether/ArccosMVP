@@ -2,7 +2,7 @@ package com.example.shared.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.shared.event.Location
+import com.example.shared.data.event.Location
 
 @Entity(tableName = "locations")
 data class LocationEntity(

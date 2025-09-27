@@ -67,7 +67,7 @@ actual fun MapView(
         modifier = modifier,
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
-            mapType = MapType.NORMAL,
+            mapType = MapType.TERRAIN,
             isMyLocationEnabled = true
         ),
         uiSettings = MapUiSettings(

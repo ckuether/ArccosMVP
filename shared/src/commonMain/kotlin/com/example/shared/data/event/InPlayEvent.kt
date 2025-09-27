@@ -1,4 +1,4 @@
-package com.example.shared.event
+package com.example.shared.data.event
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName

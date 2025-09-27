@@ -5,7 +5,7 @@ import android.content.Context
 import android.location.LocationManager
 import androidx.annotation.RequiresPermission
 import com.example.location.domain.model.LocationResult
-import com.example.shared.event.Location
+import com.example.shared.data.event.Location
 
 class AndroidLocationProvider(
     private val context: Context

@@ -1,6 +1,6 @@
 package com.example.location.platform
 
-import com.example.shared.event.InPlayEvent
+import com.example.shared.data.event.InPlayEvent
 import kotlinx.coroutines.flow.Flow
 
 interface BackgroundLocationService {

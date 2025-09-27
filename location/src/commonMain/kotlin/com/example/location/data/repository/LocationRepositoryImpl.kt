@@ -4,7 +4,7 @@ import com.example.location.domain.repository.LocationRepository
 import com.example.location.domain.model.LocationResult
 import com.example.shared.data.dao.LocationDao
 import com.example.shared.data.entity.toEntity
-import com.example.shared.event.Location
+import com.example.shared.data.event.Location
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

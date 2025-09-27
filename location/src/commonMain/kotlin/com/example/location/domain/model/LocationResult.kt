@@ -1,6 +1,6 @@
 package com.example.location.domain.model
 
-import com.example.shared.event.Location
+import com.example.shared.data.event.Location
 
 
 sealed class LocationResult {

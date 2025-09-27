@@ -7,8 +7,8 @@ import com.example.location.domain.usecase.LocationException
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.domain.usecase.PermissionResult
-import com.example.shared.event.InPlayEvent
-import com.example.shared.event.Location
+import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.event.Location
 import com.example.shared.platform.Logger
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.data.entity.toEntity

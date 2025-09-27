@@ -2,9 +2,8 @@ package com.example.shared.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.shared.event.InPlayEvent
+import com.example.shared.data.event.InPlayEvent
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 import kotlin.uuid.ExperimentalUuidApi
 
 @Entity(tableName = "in_play_events")
