@@ -2,15 +2,17 @@ package org.example.arccosmvp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import org.example.arccosmvp.presentation.LocationItem
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.example.arccosmvp.platform.MapView
 import org.example.arccosmvp.platform.toMapLocation
@@ -41,27 +43,60 @@ fun LocationTrackingScreen(
         viewModel.checkPermissionStatus()
     }
     
-    Column(
-        modifier = Modifier
-            .background(MaterialTheme.colorScheme.primaryContainer)
-            .safeContentPadding()
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        // Header
-        Text(
-            text = "Location Tracker",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
+    Box(modifier = Modifier.fillMaxSize().safeContentPadding()) {
+        // Full-screen Map
+        MapView(
+            modifier = Modifier.fillMaxSize(),
+            locations = locationEvents.map { locationItem ->
+                locationItem.location.toMapLocation(
+                    title = "Location at ${formatTimestamp(locationItem.timestamp)}"
+                )
+            },
+            centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation()
         )
         
-        // Permission Section
+        // Top overlay - App title and status
+        Card(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Location Tracker",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = "${if (uiState.isTracking) "Tracking" else "Stopped"} • ${locationEvents.size} locations",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                uiState.error?.let { error ->
+                    Text(
+                        text = "Error: $error",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+        }
+        
+        // Permission overlay (when needed)
         if (uiState.hasPermission == false) {
             Card(
                 modifier = Modifier
+                    .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(16.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
@@ -82,10 +117,8 @@ fun LocationTrackingScreen(
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                     Button(
-                        onClick = {
-                            viewModel.requestLocationPermission() },
-                        enabled = !uiState.isRequestingPermission,
-                        modifier = Modifier.padding(top = 8.dp)
+                        onClick = { viewModel.requestLocationPermission() },
+                        enabled = !uiState.isRequestingPermission
                     ) {
                         Text(
                             if (uiState.isRequestingPermission) "Requesting..." 
@@ -96,165 +129,86 @@ fun LocationTrackingScreen(
             }
         }
         
-        // Control Buttons
+        // Bottom floating action buttons
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Button(
+            FloatingActionButton(
                 onClick = { viewModel.startLocationTracking() },
-                enabled = !uiState.isTracking && uiState.hasPermission == true,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                containerColor = if (uiState.isTracking) 
+                    MaterialTheme.colorScheme.surfaceVariant 
+                else MaterialTheme.colorScheme.primary
             ) {
-                Text(if (uiState.isTracking) "Tracking..." else "Start Tracking")
-            }
-            
-            Button(
-                onClick = { viewModel.stopLocationTracking() },
-                enabled = uiState.isTracking,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Stop")
-            }
-            
-            OutlinedButton(
-                onClick = { viewModel.clearLocations() },
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Clear")
-            }
-        }
-        
-        // Status
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "Permission: ${when (uiState.hasPermission) {
-                        true -> "Granted"
-                        false -> "Denied" 
-                        null -> "Checking..."
-                    }}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Status: ${if (uiState.isTracking) "Tracking" else "Stopped"}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "Total locations: ${locationEvents.size}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                uiState.error?.let { error ->
-                    Text(
-                        text = "Error: $error",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = if (uiState.isTracking) Icons.Default.LocationOn else Icons.Default.PlayArrow,
+                        contentDescription = null
                     )
-                    TextButton(
-                        onClick = { viewModel.clearError() }
-                    ) {
-                        Text("Dismiss")
-                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (uiState.isTracking) "Tracking" else "Start",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
-        }
-        
-        // Map View
-        if (locationEvents.isNotEmpty()) {
-            Text(
-                text = "Location Map",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
             
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-                    .padding(bottom = 16.dp)
+            FloatingActionButton(
+                onClick = { viewModel.stopLocationTracking() },
+                modifier = Modifier.weight(1f),
+                containerColor = MaterialTheme.colorScheme.secondary
             ) {
-                MapView(
-                    modifier = Modifier.fillMaxSize(),
-                    locations = locationEvents.map { locationItem ->
-                        locationItem.location.toMapLocation(
-                            title = "Location at ${formatTimestamp(locationItem.timestamp)}"
-                        )
-                    },
-                    centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation()
-                )
-            }
-        }
-        
-        // Location List
-        if (locationEvents.isNotEmpty()) {
-            Text(
-                text = "Location History",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(locationEvents) { locationItem ->
-                    LocationItemCard(locationItem)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Stop",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+            
+            FloatingActionButton(
+                onClick = { 
+                    viewModel.clearLocations()
+                    viewModel.clearError()
+                },
+                modifier = Modifier.weight(1f),
+                containerColor = MaterialTheme.colorScheme.tertiary
             ) {
-                Text(
-                    text = "No locations tracked yet.\nTap 'Start Tracking' to begin.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Clear",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             }
         }
     }
 }
 
-@Composable
-fun LocationItemCard(locationItem: LocationItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Text(
-                text = "Coordinates",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "Lat: ${locationItem.location.lat}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Lng: ${locationItem.location.long}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                //TODO: Format Time as Oct, 25 at 22:10:15
-                text = "Time: ${formatTimestamp(locationItem.timestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalTime::class)
 private fun formatTimestamp(timestamp: Long): String {

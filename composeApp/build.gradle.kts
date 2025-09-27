@@ -30,9 +30,9 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             
             // Google Maps
-            implementation("com.google.maps.android:maps-compose:4.4.1")
-            implementation("com.google.android.gms:play-services-maps:18.2.0")
-            implementation("com.google.android.gms:play-services-location:21.0.1")
+            implementation(libs.maps.compose)
+            implementation(libs.play.services.maps)
+            implementation(libs.play.services.location)
         }
         commonMain.dependencies {
             implementation(projects.shared)
@@ -46,6 +46,7 @@ kotlin {
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
+            implementation(compose.materialIconsExtended)
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
