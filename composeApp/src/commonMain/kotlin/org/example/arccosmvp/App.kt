@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.arccosmvp.presentation.LocationItem
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
+import org.example.arccosmvp.platform.MapView
+import org.example.arccosmvp.platform.toMapLocation
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -162,6 +164,32 @@ fun LocationTrackingScreen(
                         Text("Dismiss")
                     }
                 }
+            }
+        }
+        
+        // Map View
+        if (locationEvents.isNotEmpty()) {
+            Text(
+                text = "Location Map",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+                    .padding(bottom = 16.dp)
+            ) {
+                MapView(
+                    modifier = Modifier.fillMaxSize(),
+                    locations = locationEvents.map { locationItem ->
+                        locationItem.location.toMapLocation(
+                            title = "Location at ${formatTimestamp(locationItem.timestamp)}"
+                        )
+                    },
+                    centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation()
+                )
             }
         }
         

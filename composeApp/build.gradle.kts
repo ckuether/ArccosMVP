@@ -28,6 +28,11 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            
+            // Google Maps
+            implementation("com.google.maps.android:maps-compose:4.4.1")
+            implementation("com.google.android.gms:play-services-maps:18.2.0")
+            implementation("com.google.android.gms:play-services-location:21.0.1")
         }
         commonMain.dependencies {
             implementation(projects.shared)
@@ -68,6 +73,10 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        
+        // Inject Google Maps API key from gradle.properties
+        val mapsApiKey = project.findProperty("GOOGLE_MAPS_API_KEY") as String? ?: ""
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = mapsApiKey
     }
     packaging {
         resources {

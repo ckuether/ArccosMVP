@@ -5,6 +5,7 @@
 xcuserdata
 !src/**/build/
 local.properties
+# Note: gradle.properties contains API keys - be careful with commits
 .idea
 .DS_Store
 captures

@@ -1,0 +1,97 @@
+package org.example.arccosmvp.platform
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
+
+@Composable
+actual fun MapView(
+    modifier: Modifier,
+    locations: List<MapLocation>,
+    centerLocation: MapLocation?,
+    onMapClick: ((MapLocation) -> Unit)?
+) {
+    val cameraPositionState = rememberCameraPositionState()
+    
+    // Default to Denver, CO if no center location provided
+    val defaultLocation = LatLng(39.7392, -104.9903)
+    
+    LaunchedEffect(centerLocation, locations) {
+        when {
+            centerLocation != null -> {
+                val latLng = LatLng(centerLocation.latitude, centerLocation.longitude)
+                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+            }
+            locations.isNotEmpty() -> {
+                // Fit all locations in view
+                val bounds = LatLngBounds.builder().apply {
+                    locations.forEach { location ->
+                        include(LatLng(location.latitude, location.longitude))
+                    }
+                }.build()
+                
+                try {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngBounds(bounds, 100)
+                    )
+                } catch (e: Exception) {
+                    // Fallback to first location if bounds calculation fails
+                    val firstLocation = locations.first()
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(
+                            LatLng(firstLocation.latitude, firstLocation.longitude), 
+                            15f
+                        )
+                    )
+                }
+            }
+            else -> {
+                // Default location
+                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
+            }
+        }
+    }
+    
+    GoogleMap(
+        modifier = modifier,
+        cameraPositionState = cameraPositionState,
+        properties = MapProperties(
+            mapType = MapType.NORMAL,
+            isMyLocationEnabled = true
+        ),
+        uiSettings = MapUiSettings(
+            zoomControlsEnabled = true,
+            compassEnabled = true,
+            myLocationButtonEnabled = true
+        ),
+        onMapClick = { latLng ->
+            onMapClick?.invoke(
+                MapLocation(
+                    latitude = latLng.latitude,
+                    longitude = latLng.longitude
+                )
+            )
+        }
+    ) {
+        // Add markers for each location
+        locations.forEach { location ->
+            Marker(
+                state = MarkerState(
+                    position = LatLng(location.latitude, location.longitude)
+                ),
+                title = location.title ?: "Location"
+            )
+        }
+    }
+}
