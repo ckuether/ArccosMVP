@@ -19,6 +19,7 @@ actual fun MapView(
     modifier: Modifier,
     locations: List<MapLocation>,
     centerLocation: MapLocation?,
+    initialBounds: Pair<MapLocation, MapLocation>?,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     UIKitView(
@@ -53,6 +54,32 @@ actual fun MapView(
             
             // Set map region
             when {
+                initialBounds != null -> {
+                    // Use initial bounds (highest priority)
+                    val startLat = initialBounds.first.latitude
+                    val startLng = initialBounds.first.longitude
+                    val endLat = initialBounds.second.latitude
+                    val endLng = initialBounds.second.longitude
+                    
+                    val minLat = minOf(startLat, endLat)
+                    val maxLat = maxOf(startLat, endLat)
+                    val minLng = minOf(startLng, endLng)
+                    val maxLng = maxOf(startLng, endLng)
+                    
+                    val centerLat = (minLat + maxLat) / 2
+                    val centerLng = (minLng + maxLng) / 2
+                    val latDelta = maxOf((maxLat - minLat) * 1.5, 0.01) // Add padding
+                    val lngDelta = maxOf((maxLng - minLng) * 1.5, 0.01)
+                    
+                    val region = MKCoordinateRegion(
+                        center = CLLocationCoordinate2DMake(centerLat, centerLng),
+                        span = platform.MapKit.MKCoordinateSpan(
+                            latitudeDelta = latDelta,
+                            longitudeDelta = lngDelta
+                        )
+                    )
+                    mapView.setRegion(region, animated = true)
+                }
                 centerLocation != null -> {
                     val coordinate = CLLocationCoordinate2DMake(
                         centerLocation.latitude,

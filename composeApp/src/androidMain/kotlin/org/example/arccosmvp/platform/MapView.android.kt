@@ -20,6 +20,7 @@ actual fun MapView(
     modifier: Modifier,
     locations: List<MapLocation>,
     centerLocation: MapLocation?,
+    initialBounds: Pair<MapLocation, MapLocation>?,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
@@ -27,8 +28,28 @@ actual fun MapView(
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
     
-    LaunchedEffect(centerLocation, locations) {
+    LaunchedEffect(centerLocation, locations, initialBounds) {
         when {
+            initialBounds != null -> {
+                // Use initial bounds (highest priority)
+                val bounds = LatLngBounds.builder().apply {
+                    include(LatLng(initialBounds.first.latitude, initialBounds.first.longitude))
+                    include(LatLng(initialBounds.second.latitude, initialBounds.second.longitude))
+                }.build()
+                
+                try {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
+                    )
+                } catch (e: Exception) {
+                    // Fallback to center between the two points
+                    val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
+                    val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), 15f)
+                    )
+                }
+            }
             centerLocation != null -> {
                 val latLng = LatLng(centerLocation.latitude, centerLocation.longitude)
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
@@ -67,7 +88,7 @@ actual fun MapView(
         modifier = modifier,
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
-            mapType = MapType.TERRAIN,
+            mapType = MapType.HYBRID,
             isMyLocationEnabled = true
         ),
         uiSettings = MapUiSettings(

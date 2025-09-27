@@ -15,6 +15,7 @@ expect fun MapView(
     modifier: Modifier = Modifier,
     locations: List<MapLocation> = emptyList(),
     centerLocation: MapLocation? = null,
+    initialBounds: Pair<MapLocation, MapLocation>? = null,
     onMapClick: ((MapLocation) -> Unit)? = null
 )
 

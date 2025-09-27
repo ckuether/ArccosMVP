@@ -16,6 +16,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.example.arccosmvp.platform.MapView
 import org.example.arccosmvp.platform.toMapLocation
+import org.example.arccosmvp.platform.MapLocation
+import org.example.arccosmvp.data.HoleRepository
+import org.koin.compose.koinInject
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -33,14 +36,26 @@ fun App() {
 
 @Composable
 fun LocationTrackingScreen(
-    viewModel: LocationTrackingViewModel = koinViewModel()
+    viewModel: LocationTrackingViewModel = koinViewModel(),
+    holeRepository: HoleRepository = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
-    // Check permission status on first composition
+    // Load hole 1 for initial map bounds
+    var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
+    
+    // Load hole data on first composition
     LaunchedEffect(Unit) {
         viewModel.checkPermissionStatus()
+        
+        // Load hole 1 data for initial map bounds
+        holeRepository.getHoleById(1)?.let { hole ->
+            initialBounds = Pair(
+                hole.startLocation.toMapLocation("Hole 1 Start"),
+                hole.endLocation.toMapLocation("Hole 1 End")
+            )
+        }
     }
     
     Box(modifier = Modifier.fillMaxSize().safeContentPadding()) {
@@ -52,7 +67,8 @@ fun LocationTrackingScreen(
                     title = "Location at ${formatTimestamp(locationItem.timestamp)}"
                 )
             },
-            centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation()
+            centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
+            initialBounds = initialBounds
         )
         
         // Top overlay - App title and status
@@ -60,7 +76,7 @@ fun LocationTrackingScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp).padding(end = 32.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
             )
