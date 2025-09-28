@@ -56,36 +56,28 @@ object AndroidDrawableHelper {
      * Creates a golf ball bitmap using your PNG asset and VectorDrawable approach
      */
     private fun getBitmapFromGolfBallDrawable(context: Context): Bitmap? {
-        // Get the actual golf ball drawable from your PNG asset
-        val drawable = ContextCompat.getDrawable(context, R.drawable.golf_ball) ?: return null
-
-        // Calculate size for map marker (12dp - scaled down 4x from 48dp)
-        val density = context.resources.displayMetrics.density
-        val sizePx = (18 * density).toInt()
-
-        // Create bitmap following your suggested VectorDrawable pattern
-        val bitmap = createBitmap(sizePx, sizePx)
-        val canvas = Canvas(bitmap)
-        
-        // Set bounds and draw - exactly your pattern
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-
-        return bitmap
+        return createBitmapFromDrawable(context, R.drawable.golf_ball)
     }
     
     /**
      * Creates a golf flag bitmap using your PNG asset and VectorDrawable approach
      */
     private fun getBitmapFromGolfFlagDrawable(context: Context): Bitmap? {
-        // Get the actual golf flag drawable from your PNG asset
-        val drawable = ContextCompat.getDrawable(context, R.drawable.golf_flag) ?: return null
+        return createBitmapFromDrawable(context, R.drawable.golf_flag)
+    }
+    
+    /**
+     * Generic function to create bitmap from drawable resource using VectorDrawable approach
+     */
+    private fun createBitmapFromDrawable(context: Context, drawableResId: Int, sizeDp: Int = 18): Bitmap? {
+        // Get the drawable from resource
+        val drawable = ContextCompat.getDrawable(context, drawableResId) ?: return null
 
-        // Calculate size for map marker (18dp - same as golf ball)
+        // Calculate size for map marker
         val density = context.resources.displayMetrics.density
-        val sizePx = (18 * density).toInt()
+        val sizePx = (sizeDp * density).toInt()
 
-        // Create bitmap following your suggested VectorDrawable pattern
+        // Create bitmap following VectorDrawable pattern
         val bitmap = createBitmap(sizePx, sizePx)
         val canvas = Canvas(bitmap)
         
