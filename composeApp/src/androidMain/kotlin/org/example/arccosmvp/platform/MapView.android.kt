@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import org.example.arccosmvp.utils.AndroidDrawableHelper
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -29,6 +30,9 @@ actual fun MapView(
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
+    
+    // Create custom golf ball marker bitmap
+    val golfBallBitmap = AndroidDrawableHelper.createGolfBallMarker()
     
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
@@ -119,8 +123,8 @@ actual fun MapView(
                 title = location.title ?: "Location",
                 icon = when (location.markerType) {
                     MarkerType.GOLF_BALL -> {
-                        // Use orange marker for golf ball locations  
-                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                        // Use custom golf ball bitmap if available, fallback to orange marker
+                        golfBallBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
                     }
                     MarkerType.DEFAULT -> {
                         // Default red marker for regular location points

@@ -5,7 +5,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreLocation.CLLocationCoordinate2DMake
+import platform.MapKit.MKCoordinateRegionMake
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
+import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
 
@@ -75,8 +77,8 @@ actual fun MapView(
                     val lngDelta = maxOf((maxLng - minLng) * 1.5, 0.01)
                     
                     val center = CLLocationCoordinate2DMake(centerLat, centerLng)
-                    val span = platform.MapKit.MKCoordinateSpanMake(latDelta, lngDelta)
-                    val region = platform.MapKit.MKCoordinateRegionMake(center, span)
+                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = MKCoordinateRegionMake(center, span)
                     mapView.setRegion(region, true)
                 }
                 centerLocation != null -> {
@@ -112,8 +114,8 @@ actual fun MapView(
                     val lngDelta = maxOf((maxLng - minLng) * 1.2, 0.01)
                     
                     val center = CLLocationCoordinate2DMake(centerLat, centerLng)
-                    val span = platform.MapKit.MKCoordinateSpanMake(latDelta, lngDelta)
-                    val region = platform.MapKit.MKCoordinateRegionMake(center, span)
+                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = MKCoordinateRegionMake(center, span)
                     mapView.setRegion(region, true)
                 }
                 else -> {
