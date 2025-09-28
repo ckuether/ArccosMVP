@@ -4,7 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
@@ -111,7 +116,21 @@ actual fun MapView(
                 state = MarkerState(
                     position = LatLng(location.latitude, location.longitude)
                 ),
-                title = location.title ?: "Location"
+                title = location.title ?: "Location",
+                icon = when (location.markerType) {
+                    MarkerType.GOLF_BALL -> {
+                        // Use orange marker for golf ball locations  
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                    }
+                    MarkerType.DEFAULT -> {
+                        // Default red marker for regular location points
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    }
+                },
+                snippet = when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "⛳ Tee Area"
+                    MarkerType.DEFAULT -> null
+                }
             )
         }
     }

@@ -30,6 +30,9 @@ maps-compose = "4.4.1"
 play-services-maps = "18.2.0"
 play-services-location = "21.0.1"
 
+## Image Loading
+coil = "3.3.0"
+
 runner = "1.7.0"
 core = "1.7.0"
 coreVersion = "1.17.0"
@@ -69,6 +72,10 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", ver
 maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "maps-compose" }
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "play-services-maps" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "play-services-location" }
+
+## Image Loading
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-svg = { module = "io.coil-kt.coil3:coil-svg", version.ref = "coil" }
 
 core = { group = "androidx.core", name = "core", version.ref = "coreVersion" }
 

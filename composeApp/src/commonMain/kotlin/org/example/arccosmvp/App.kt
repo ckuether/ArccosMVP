@@ -24,7 +24,9 @@ import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.example.arccosmvp.platform.MarkerType
 import kotlin.time.ExperimentalTime
+import org.example.arccosmvp.utils.DrawableHelper
 
 @Composable
 @Preview
@@ -44,6 +46,10 @@ fun LocationTrackingScreen(
     
     // Load hole 1 for initial map bounds
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
+    var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
+    
+    // Get golf ball icon in composable context
+    val golfBallIcon = DrawableHelper.golfBall()
     
     // Load hole data on first composition
     LaunchedEffect(Unit) {
@@ -55,6 +61,15 @@ fun LocationTrackingScreen(
                 hole.startLocation.toMapLocation("Hole 1 Start"),
                 hole.endLocation.toMapLocation("Hole 1 End")
             )
+            
+            // Create hole 1 start location with golf ball icon
+            hole1StartLocation = MapLocation(
+                latitude = hole.startLocation.lat,
+                longitude = hole.startLocation.long,
+                title = "Hole 1 Tee",
+                icon = golfBallIcon,
+                markerType = MarkerType.GOLF_BALL
+            )
         }
     }
     
@@ -62,10 +77,15 @@ fun LocationTrackingScreen(
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
-            locations = locationEvents.map { locationItem ->
-                locationItem.location.toMapLocation(
-                    title = "Location at ${formatTimestamp(locationItem.timestamp)}"
-                )
+            locations = buildList {
+                // Add location tracking points
+                addAll(locationEvents.map { locationItem ->
+                    locationItem.location.toMapLocation(
+                        title = "Location at ${formatTimestamp(locationItem.timestamp)}"
+                    )
+                })
+                // Add hole 1 start location with golf ball icon
+                hole1StartLocation?.let { add(it) }
             },
             centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
             initialBounds = initialBounds

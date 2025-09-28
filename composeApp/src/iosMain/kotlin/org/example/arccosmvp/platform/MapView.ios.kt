@@ -45,6 +45,13 @@ actual fun MapView(
                     )
                 )
                 annotation.setTitle(location.title ?: "Location")
+                
+                // Add subtitle to distinguish special locations (like golf ball icon)
+                annotation.setSubtitle(when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "🏌️ Tee Area"
+                    MarkerType.DEFAULT -> null
+                })
+                
                 mapView.addAnnotation(annotation)
             }
             
