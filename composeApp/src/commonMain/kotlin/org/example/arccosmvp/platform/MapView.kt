@@ -15,7 +15,8 @@ data class MapLocation(
 
 enum class MarkerType {
     DEFAULT,
-    GOLF_BALL
+    GOLF_BALL,
+    GOLF_FLAG
 }
 
 @Composable

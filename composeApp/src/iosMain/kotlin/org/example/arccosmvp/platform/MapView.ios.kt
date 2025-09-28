@@ -48,9 +48,10 @@ actual fun MapView(
                 )
                 annotation.setTitle(location.title ?: "Location")
                 
-                // Add subtitle to distinguish special locations (like golf ball icon)
+                // Set subtitle for golf markers
                 annotation.setSubtitle(when (location.markerType) {
-                    MarkerType.GOLF_BALL -> "🏌️ Tee Area"
+                    MarkerType.GOLF_BALL -> "⛳ Tee Area"
+                    MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
                     MarkerType.DEFAULT -> null
                 })
                 
@@ -73,8 +74,9 @@ actual fun MapView(
                     
                     val centerLat = (minLat + maxLat) / 2
                     val centerLng = (minLng + maxLng) / 2
-                    val latDelta = maxOf((maxLat - minLat) * 1.5, 0.01) // Add padding
-                    val lngDelta = maxOf((maxLng - minLng) * 1.5, 0.01)
+                    // Much tighter zoom - only add small padding and cap maximum zoom out
+                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
+                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
                     
                     val center = CLLocationCoordinate2DMake(centerLat, centerLng)
                     val span = MKCoordinateSpanMake(latDelta, lngDelta)
@@ -110,8 +112,9 @@ actual fun MapView(
                     
                     val centerLat = (minLat + maxLat) / 2
                     val centerLng = (minLng + maxLng) / 2
-                    val latDelta = maxOf((maxLat - minLat) * 1.2, 0.01) // Add padding
-                    val lngDelta = maxOf((maxLng - minLng) * 1.2, 0.01)
+                    // Much tighter zoom - only add small padding and cap maximum zoom out
+                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
+                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
                     
                     val center = CLLocationCoordinate2DMake(centerLat, centerLng)
                     val span = MKCoordinateSpanMake(latDelta, lngDelta)

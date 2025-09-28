@@ -47,6 +47,7 @@ fun LocationTrackingScreen(
     // Load hole 1 for initial map bounds
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
     var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var hole1EndLocation by remember { mutableStateOf<MapLocation?>(null) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -70,6 +71,15 @@ fun LocationTrackingScreen(
                 icon = golfBallIcon,
                 markerType = MarkerType.GOLF_BALL
             )
+            
+            // Create hole 1 end location with golf flag icon
+            hole1EndLocation = MapLocation(
+                latitude = hole.endLocation.lat,
+                longitude = hole.endLocation.long,
+                title = "Hole 1 Pin",
+                icon = golfBallIcon, // Will use different marker type
+                markerType = MarkerType.GOLF_FLAG
+            )
         }
     }
     
@@ -86,6 +96,8 @@ fun LocationTrackingScreen(
                 })
                 // Add hole 1 start location with golf ball icon
                 hole1StartLocation?.let { add(it) }
+                // Add hole 1 end location with golf flag icon
+                hole1EndLocation?.let { add(it) }
             },
             centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
             initialBounds = initialBounds

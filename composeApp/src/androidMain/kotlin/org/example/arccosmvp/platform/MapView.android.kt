@@ -34,6 +34,9 @@ actual fun MapView(
     // Create custom golf ball marker bitmap
     val golfBallBitmap = AndroidDrawableHelper.createGolfBallMarker()
     
+    // Create custom golf flag marker bitmap
+    val golfFlagBitmap = AndroidDrawableHelper.createGolfFlagMarker()
+    
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
     
@@ -126,6 +129,10 @@ actual fun MapView(
                         // Use custom golf ball bitmap if available, fallback to orange marker
                         golfBallBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
                     }
+                    MarkerType.GOLF_FLAG -> {
+                        // Use custom golf flag bitmap if available, fallback to green marker
+                        golfFlagBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                    }
                     MarkerType.DEFAULT -> {
                         // Default red marker for regular location points
                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
@@ -133,6 +140,7 @@ actual fun MapView(
                 },
                 snippet = when (location.markerType) {
                     MarkerType.GOLF_BALL -> "⛳ Tee Area"
+                    MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
                     MarkerType.DEFAULT -> null
                 }
             )
