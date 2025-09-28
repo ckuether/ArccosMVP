@@ -8,11 +8,17 @@ import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.platform.BackgroundLocationService
 import com.example.location.platform.IOSBackgroundLocationService
+import com.example.location.platform.IOSBackgroundLocationServiceWrapper
+import com.example.shared.platform.createLogger
 import org.koin.dsl.module
 
 actual val platformLocationModule = module {
     single<LocationProvider> { IOSLocationProvider() }
     single<CheckLocationPermissionUseCase> { IOSCheckLocationPermissionUseCase() }
     single<RequestLocationPermissionUseCase> { IOSRequestLocationPermissionUseCase() }
-    single<BackgroundLocationService> { IOSBackgroundLocationService(get()) }
+    single<BackgroundLocationService> {
+        // Create the iOS service directly without registering it as a separate dependency
+        // to avoid KClass reflection issues with Objective-C subclasses
+        IOSBackgroundLocationServiceWrapper(IOSBackgroundLocationService(createLogger()))
+    }
 }

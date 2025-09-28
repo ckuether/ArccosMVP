@@ -4,14 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.CoreLocation.CLLocationCoordinate2D
 import platform.CoreLocation.CLLocationCoordinate2DMake
-import platform.MapKit.MKAnnotationView
-import platform.MapKit.MKCoordinateRegion
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
-import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -71,14 +67,10 @@ actual fun MapView(
                     val latDelta = maxOf((maxLat - minLat) * 1.5, 0.01) // Add padding
                     val lngDelta = maxOf((maxLng - minLng) * 1.5, 0.01)
                     
-                    val region = MKCoordinateRegion(
-                        center = CLLocationCoordinate2DMake(centerLat, centerLng),
-                        span = platform.MapKit.MKCoordinateSpan(
-                            latitudeDelta = latDelta,
-                            longitudeDelta = lngDelta
-                        )
-                    )
-                    mapView.setRegion(region, animated = true)
+                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
+                    val span = platform.MapKit.MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = platform.MapKit.MKCoordinateRegionMake(center, span)
+                    mapView.setRegion(region, true)
                 }
                 centerLocation != null -> {
                     val coordinate = CLLocationCoordinate2DMake(
@@ -90,7 +82,7 @@ actual fun MapView(
                         1000.0, // 1km span
                         1000.0
                     )
-                    mapView.setRegion(region, animated = true)
+                    mapView.setRegion(region, true)
                 }
                 locations.isNotEmpty() -> {
                     // Calculate bounds for all locations
@@ -112,14 +104,10 @@ actual fun MapView(
                     val latDelta = maxOf((maxLat - minLat) * 1.2, 0.01) // Add padding
                     val lngDelta = maxOf((maxLng - minLng) * 1.2, 0.01)
                     
-                    val region = MKCoordinateRegion(
-                        center = CLLocationCoordinate2DMake(centerLat, centerLng),
-                        span = platform.MapKit.MKCoordinateSpan(
-                            latitudeDelta = latDelta,
-                            longitudeDelta = lngDelta
-                        )
-                    )
-                    mapView.setRegion(region, animated = true)
+                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
+                    val span = platform.MapKit.MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = platform.MapKit.MKCoordinateRegionMake(center, span)
+                    mapView.setRegion(region, true)
                 }
                 else -> {
                     // Default to Denver, CO
@@ -129,7 +117,7 @@ actual fun MapView(
                         10000.0, // 10km span
                         10000.0
                     )
-                    mapView.setRegion(region, animated = true)
+                    mapView.setRegion(region, true)
                 }
             }
         }
