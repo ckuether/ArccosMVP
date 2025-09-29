@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
+import com.example.shared.data.model.Hole
 import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.MapKit.MKCoordinateRegionMake
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
@@ -18,6 +19,7 @@ actual fun MapView(
     locations: List<MapLocation>,
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
+    currentHole: Hole?,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     UIKitView(
@@ -60,6 +62,29 @@ actual fun MapView(
             
             // Set map region
             when {
+                currentHole != null -> {
+                    // Use hole bounds with original zoom logic
+                    val startLat = currentHole.teeLocation.lat
+                    val startLng = currentHole.teeLocation.long
+                    val endLat = currentHole.flagLocation.lat
+                    val endLng = currentHole.flagLocation.long
+                    
+                    val minLat = minOf(startLat, endLat)
+                    val maxLat = maxOf(startLat, endLat)
+                    val minLng = minOf(startLng, endLng)
+                    val maxLng = maxOf(startLng, endLng)
+                    
+                    val centerLat = (minLat + maxLat) / 2
+                    val centerLng = (minLng + maxLng) / 2
+                    // Much tighter zoom - only add small padding and cap maximum zoom out
+                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
+                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
+                    
+                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
+                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = MKCoordinateRegionMake(center, span)
+                    mapView.setRegion(region, true)
+                }
                 initialBounds != null -> {
                     // Use initial bounds (highest priority)
                     val startLat = initialBounds.first.latitude

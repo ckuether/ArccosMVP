@@ -74,16 +74,17 @@ fun GolfScreen(
             println("DEBUG: Found hole $currentHoleNumber, par: ${hole.par}")
             currentHole = hole
             
-            // Set up map bounds for this hole
+            
+            // Set up map bounds for this hole (fallback)
             initialBounds = Pair(
-                hole.startLocation.toMapLocation("Hole $currentHoleNumber Start"),
-                hole.endLocation.toMapLocation("Hole $currentHoleNumber End")
+                hole.teeLocation.toMapLocation("Hole $currentHoleNumber Start"),
+                hole.flagLocation.toMapLocation("Hole $currentHoleNumber End")
             )
             
             // Create hole start location with golf ball icon
             holeStartLocation = MapLocation(
-                latitude = hole.startLocation.lat,
-                longitude = hole.startLocation.long,
+                latitude = hole.teeLocation.lat,
+                longitude = hole.teeLocation.long,
                 title = "Hole $currentHoleNumber Tee",
                 icon = golfBallIcon,
                 markerType = MarkerType.GOLF_BALL
@@ -91,8 +92,8 @@ fun GolfScreen(
             
             // Create hole end location with golf flag icon
             holeEndLocation = MapLocation(
-                latitude = hole.endLocation.lat,
-                longitude = hole.endLocation.long,
+                latitude = hole.flagLocation.lat,
+                longitude = hole.flagLocation.long,
                 title = "Hole $currentHoleNumber Pin",
                 icon = golfBallIcon, // Will use different marker type
                 markerType = MarkerType.GOLF_FLAG
@@ -117,7 +118,8 @@ fun GolfScreen(
                 holeEndLocation?.let { add(it) }
             },
             centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
-            initialBounds = initialBounds
+            initialBounds = initialBounds,
+            currentHole = currentHole
         )
         
         // Top overlay - Hole info bar
@@ -160,7 +162,7 @@ fun GolfScreen(
                     )
                     Text(
                         text = currentHole?.let { hole ->
-                            val distanceYards = hole.startLocation.distanceToInYards(hole.endLocation)
+                            val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
                             "${distanceYards.toInt()}yds"
                         } ?: "---yds",
                         style = MaterialTheme.typography.headlineSmall,
