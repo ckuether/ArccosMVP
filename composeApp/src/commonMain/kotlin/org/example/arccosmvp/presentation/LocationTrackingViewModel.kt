@@ -8,11 +8,11 @@ import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.shared.data.event.InPlayEvent
-import com.example.shared.data.event.Location
 import com.example.shared.platform.Logger
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.data.entity.toEntity
 import com.example.shared.data.entity.toInPlayEvent
+import com.example.shared.data.model.Location
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

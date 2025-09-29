@@ -3,7 +3,8 @@ package org.example.arccosmvp.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import com.example.shared.data.event.Location
+import com.example.shared.data.model.Location
+import com.example.shared.data.model.Hole
 
 data class MapLocation(
     val latitude: Double,
@@ -25,6 +26,7 @@ expect fun MapView(
     locations: List<MapLocation> = emptyList(),
     centerLocation: MapLocation? = null,
     initialBounds: Pair<MapLocation, MapLocation>? = null,
+    currentHole: Hole? = null,
     onMapClick: ((MapLocation) -> Unit)? = null
 )
 

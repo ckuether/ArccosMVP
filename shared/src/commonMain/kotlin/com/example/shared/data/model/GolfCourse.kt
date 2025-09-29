@@ -3,9 +3,8 @@ package com.example.shared.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Hole(
+data class GolfCourse(
     val id: Int,
-    val teeLocation: Location,
-    val flagLocation: Location,
-    val par: Int
+    val name: String,
+    val holes: List<Hole>
 )

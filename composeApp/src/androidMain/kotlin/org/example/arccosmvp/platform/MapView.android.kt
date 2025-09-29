@@ -8,6 +8,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import org.example.arccosmvp.utils.AndroidDrawableHelper
+import com.example.shared.data.model.Hole
+import com.example.shared.domain.usecase.CalculateBearingUseCase
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -20,6 +22,7 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.delay
 
 @Composable
 actual fun MapView(
@@ -27,9 +30,13 @@ actual fun MapView(
     locations: List<MapLocation>,
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
+    currentHole: Hole?,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
+    
+    // Create use case for bearing calculation
+    val calculateBearingUseCase = remember { CalculateBearingUseCase() }
     
     // Create custom golf ball marker bitmap
     val golfBallBitmap = AndroidDrawableHelper.createGolfBallMarker()
@@ -40,8 +47,56 @@ actual fun MapView(
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
     
-    LaunchedEffect(centerLocation, locations, initialBounds) {
+    LaunchedEffect(centerLocation, locations, initialBounds, currentHole) {
         when {
+            currentHole != null -> {
+                // Use hole bounds with original zoom logic + orientation
+                val teeLatLng = LatLng(currentHole.teeLocation.lat, currentHole.teeLocation.long)
+                val flagLatLng = LatLng(currentHole.flagLocation.lat, currentHole.flagLocation.long)
+                val bounds = LatLngBounds.builder().apply {
+                    include(teeLatLng)
+                    include(flagLatLng)
+                }.build()
+                
+                // Calculate bearing for orientation
+                val bearing = calculateBearingUseCase(currentHole.teeLocation, currentHole.flagLocation).toFloat()
+                
+                try {
+                    // First set bounds with original zoom logic
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
+                    )
+                    
+                    // Then add rotation with current zoom level
+                    delay(100) // Small delay to let bounds animation start
+                    val currentZoom = cameraPositionState.position.zoom
+                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
+                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
+                    
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            com.google.android.gms.maps.model.CameraPosition.Builder()
+                                .target(LatLng(centerLat, centerLng))
+                                .zoom(currentZoom)
+                                .bearing(bearing) // Rotate map so tee-to-flag is vertical
+                                .build()
+                        )
+                    )
+                } catch (e: Exception) {
+                    // Fallback to center between the two points with bearing
+                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
+                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            com.google.android.gms.maps.model.CameraPosition.Builder()
+                                .target(LatLng(centerLat, centerLng))
+                                .zoom(15f)
+                                .bearing(bearing)
+                                .build()
+                        )
+                    )
+                }
+            }
             initialBounds != null -> {
                 // Use initial bounds (highest priority)
                 val bounds = LatLngBounds.builder().apply {
@@ -104,9 +159,9 @@ actual fun MapView(
             isMyLocationEnabled = true
         ),
         uiSettings = MapUiSettings(
-            zoomControlsEnabled = true,
+            zoomControlsEnabled = false,
             compassEnabled = true,
-            myLocationButtonEnabled = true
+            myLocationButtonEnabled = false
         ),
         onMapClick = { latLng ->
             onMapClick?.invoke(

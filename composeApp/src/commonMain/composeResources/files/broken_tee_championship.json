@@ -1,0 +1,114 @@
+{
+  "id": 1,
+  "name": "Broken Tee - Championship",
+  "holes": [
+    {
+      "id": 1,
+      "par": 4,
+      "teeLocation": {
+        "lat": 39.643739,
+        "long": -105.013132
+      },
+      "flagLocation": {
+        "lat": 39.64618,
+        "long": -105.01283
+      }
+    },
+    {
+      "id": 2,
+      "par": 4,
+      "teeLocation": {
+        "lat": 39.646434,
+        "long": -105.011228
+      },
+      "flagLocation": {
+        "lat": 39.649451,
+        "long": -105.010411
+      }
+    },
+    {
+      "id": 3,
+      "par": 4,
+      "teeLocation": {
+        "lat": 39.649601,
+        "long": -105.011139
+      },
+      "flagLocation": {
+        "lat": 39.646633,
+        "long": -105.011736
+      }
+    },
+    {
+      "id": 4,
+      "par": 4,
+      "teeLocation": {
+        "lat": 39.646577,
+        "long": -105.012327
+      },
+      "flagLocation": {
+        "lat": 39.649003,
+        "long": -105.011853
+      }
+    },
+    {
+      "id": 5,
+      "par": 3,
+      "teeLocation": {
+        "lat": 39.648704,
+        "long": -105.012707
+      },
+      "flagLocation": {
+        "lat": 39.647098,
+        "long": -105.012901
+      }
+    },
+    {
+      "id": 6,
+      "par": 5,
+      "teeLocation": {
+        "lat": 39.648288,
+        "long": -105.013317
+      },
+      "flagLocation": {
+        "lat": 39.643915,
+        "long": -105.013731
+      }
+    },
+    {
+      "id": 7,
+      "par": 3,
+      "teeLocation": {
+        "lat": 39.644691,
+        "long": -105.015767
+      },
+      "flagLocation": {
+        "lat": 39.646107,
+        "long": -105.015590
+      }
+    },
+    {
+      "id": 8,
+      "par": 5,
+      "teeLocation": {
+        "lat": 39.646874,
+        "long": -105.015545
+      },
+      "flagLocation": {
+        "lat": 39.649842,
+        "long": -105.014861
+      }
+    },
+    {
+      "id": 9,
+      "par": 4,
+      "teeLocation": {
+        "lat": 39.649971,
+        "long": -105.015294
+      },
+      "flagLocation": {
+        "lat": 39.645894,
+        "long": -105.016170
+      }
+    }
+  ]
+}

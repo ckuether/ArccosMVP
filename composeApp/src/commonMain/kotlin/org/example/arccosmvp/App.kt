@@ -2,23 +2,25 @@ package org.example.arccosmvp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.shared.data.model.Hole
+import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.example.arccosmvp.platform.MapView
 import org.example.arccosmvp.platform.toMapLocation
 import org.example.arccosmvp.platform.MapLocation
-import org.example.arccosmvp.data.HoleRepository
-import org.koin.compose.koinInject
+import com.example.shared.data.repository.GolfCourseRepository
+import org.example.arccosmvp.utils.ComposeResourceReader
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -27,56 +29,75 @@ import kotlinx.datetime.toLocalDateTime
 import org.example.arccosmvp.platform.MarkerType
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
+import com.example.shared.data.model.distanceToInYards
+import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        LocationTrackingScreen()
+        GolfScreen()
     }
 }
 
 @Composable
-fun LocationTrackingScreen(
+fun GolfScreen(
     viewModel: LocationTrackingViewModel = koinViewModel(),
-    holeRepository: HoleRepository = koinInject()
+    golfCourseRepository: GolfCourseRepository = GolfCourseRepository(ComposeResourceReader())
 ) {
+    println("DEBUG: GolfScreen composable called")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
-    // Load hole 1 for initial map bounds
+    // Golf course and hole state
+    var golfCourse by remember { mutableStateOf<GolfCourse?>(null) }
+    var currentHoleNumber by remember { mutableStateOf(1) }
+    var currentHole by remember { mutableStateOf<Hole?>(null) }
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
-    var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var hole1EndLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var showScoreCard by remember { mutableStateOf(false) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
     
-    // Load hole data on first composition
+    // Load golf course data on first composition
     LaunchedEffect(Unit) {
+        println("DEBUG: LaunchedEffect(Unit) triggered - loading golf course")
         viewModel.checkPermissionStatus()
-        
-        // Load hole 1 data for initial map bounds
-        holeRepository.getHoleById(1)?.let { hole ->
+        val loadedCourse = golfCourseRepository.loadGolfCourse()
+        println("DEBUG: Golf course loaded: ${loadedCourse?.name}, holes: ${loadedCourse?.holes?.size}")
+        golfCourse = loadedCourse
+    }
+    
+    // Update current hole when golf course loads or hole number changes
+    LaunchedEffect(golfCourse, currentHoleNumber) {
+        println("DEBUG: LaunchedEffect(golfCourse, currentHoleNumber) triggered - course: ${golfCourse?.name}, hole: $currentHoleNumber")
+        golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
+            println("DEBUG: Found hole $currentHoleNumber, par: ${hole.par}")
+            currentHole = hole
+            
+            
+            // Set up map bounds for this hole (fallback)
             initialBounds = Pair(
-                hole.startLocation.toMapLocation("Hole 1 Start"),
-                hole.endLocation.toMapLocation("Hole 1 End")
+                hole.teeLocation.toMapLocation("Hole $currentHoleNumber Start"),
+                hole.flagLocation.toMapLocation("Hole $currentHoleNumber End")
             )
             
-            // Create hole 1 start location with golf ball icon
-            hole1StartLocation = MapLocation(
-                latitude = hole.startLocation.lat,
-                longitude = hole.startLocation.long,
-                title = "Hole 1 Tee",
+            // Create hole start location with golf ball icon
+            holeStartLocation = MapLocation(
+                latitude = hole.teeLocation.lat,
+                longitude = hole.teeLocation.long,
+                title = "Hole $currentHoleNumber Tee",
                 icon = golfBallIcon,
                 markerType = MarkerType.GOLF_BALL
             )
             
-            // Create hole 1 end location with golf flag icon
-            hole1EndLocation = MapLocation(
-                latitude = hole.endLocation.lat,
-                longitude = hole.endLocation.long,
-                title = "Hole 1 Pin",
+            // Create hole end location with golf flag icon
+            holeEndLocation = MapLocation(
+                latitude = hole.flagLocation.lat,
+                longitude = hole.flagLocation.long,
+                title = "Hole $currentHoleNumber Pin",
                 icon = golfBallIcon, // Will use different marker type
                 markerType = MarkerType.GOLF_FLAG
             )
@@ -94,45 +115,83 @@ fun LocationTrackingScreen(
                         title = "Location at ${formatTimestamp(locationItem.timestamp)}"
                     )
                 })
-                // Add hole 1 start location with golf ball icon
-                hole1StartLocation?.let { add(it) }
-                // Add hole 1 end location with golf flag icon
-                hole1EndLocation?.let { add(it) }
+                // Add current hole start location with golf ball icon
+                holeStartLocation?.let { add(it) }
+                // Add current hole end location with golf flag icon
+                holeEndLocation?.let { add(it) }
             },
             centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
-            initialBounds = initialBounds
+            initialBounds = initialBounds,
+            currentHole = currentHole
         )
         
-        // Top overlay - App title and status
+        // Top overlay - Hole info bar
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(16.dp).padding(end = 32.dp),
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-            )
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+            ),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // Hole Number
                 Text(
-                    text = "Location Tracker",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = "${if (uiState.isTracking) "Tracking" else "Stopped"} • ${locationEvents.size} locations",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = currentHoleNumber.toString(),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                uiState.error?.let { error ->
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                )
+                
+                // Distance to Hole
+                Column {
                     Text(
-                        text = "Error: $error",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 4.dp)
+                        text = "Mid Green",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = currentHole?.let { hole ->
+                            val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
+                            "${distanceYards.toInt()}yds"
+                        } ?: "---yds",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                )
+                
+                // Par
+                Column {
+                    Text(
+                        text = "Par",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = currentHole?.par?.toString() ?: "---",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -177,82 +236,103 @@ fun LocationTrackingScreen(
             }
         }
         
-        // Bottom floating action buttons
-        Row(
+        // Edit Hole component
+        Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.85f)
+            ),
+            shape = MaterialTheme.shapes.extraLarge,
+            onClick = { showScoreCard = true }
         ) {
-            FloatingActionButton(
-                onClick = { viewModel.startLocationTracking() },
-                modifier = Modifier.weight(1f),
-                containerColor = if (uiState.isTracking) 
-                    MaterialTheme.colorScheme.surfaceVariant 
-                else MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                // Left Arrow
+                IconButton(
+                    onClick = { 
+                        if (currentHoleNumber > 1) {
+                            currentHoleNumber = currentHoleNumber - 1
+                        }
+                    },
+                    modifier = Modifier.size(32.dp),
+                    enabled = currentHoleNumber > 1
                 ) {
                     Icon(
-                        imageVector = if (uiState.isTracking) Icons.Default.LocationOn else Icons.Default.PlayArrow,
-                        contentDescription = null
+                        imageVector = Icons.Default.KeyboardArrowLeft,
+                        contentDescription = "Previous hole",
+                        tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                
+                // Edit Hole text and number
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
-                        text = if (uiState.isTracking) "Tracking" else "Start",
-                        style = MaterialTheme.typography.labelLarge
+                        text = "Score Card Hole $currentHoleNumber",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Black
+                    )
+                    
+                    // Hole number box
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black.copy(alpha = 0.1f)
+                        ),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = currentHoleNumber.toString(),
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color.Black,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+                
+                // Right Arrow
+                IconButton(
+                    onClick = { 
+                        val maxHoles = golfCourse?.holes?.size ?: 9
+                        if (currentHoleNumber < maxHoles) {
+                            currentHoleNumber = currentHoleNumber + 1
+                        }
+                    },
+                    modifier = Modifier.size(32.dp),
+                    enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        contentDescription = "Next hole",
+                        tint = if (currentHoleNumber < (golfCourse?.holes?.size ?: 9)) Color.Black else Color.Gray
                     )
                 }
             }
-            
-            FloatingActionButton(
-                onClick = { viewModel.stopLocationTracking() },
-                modifier = Modifier.weight(1f),
-                containerColor = MaterialTheme.colorScheme.secondary
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Stop,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Stop",
-                        style = MaterialTheme.typography.labelLarge
-                    )
-                }
-            }
-            
-            FloatingActionButton(
-                onClick = { 
-                    viewModel.clearLocations()
-                    viewModel.clearError()
+        }
+        
+        // Score Card Bottom Sheet
+        if (showScoreCard) {
+            DraggableScoreCardBottomSheet(
+                currentHole = currentHole,
+                currentHoleNumber = currentHoleNumber,
+                totalHoles = golfCourse?.holes?.size ?: 9,
+                onDismiss = { showScoreCard = false },
+                onFinishHole = { score, putts ->
+                    // Handle score submission
+                    println("DEBUG: Hole $currentHoleNumber finished with score: $score, putts: $putts")
+                    showScoreCard = false
                 },
-                modifier = Modifier.weight(1f),
-                containerColor = MaterialTheme.colorScheme.tertiary
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Clear",
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                onNavigateToHole = { holeNumber ->
+                    currentHoleNumber = holeNumber
+                    showScoreCard = false
                 }
-            }
+            )
         }
     }
 }

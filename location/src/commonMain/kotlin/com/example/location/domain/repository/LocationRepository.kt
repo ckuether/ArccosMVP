@@ -1,7 +1,7 @@
 package com.example.location.domain.repository
 
 import com.example.location.domain.model.LocationResult
-import com.example.shared.data.event.Location
+import com.example.shared.data.model.Location
 import kotlinx.coroutines.flow.Flow
 
 interface LocationRepository {

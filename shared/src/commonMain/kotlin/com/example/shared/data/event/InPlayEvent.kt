@@ -1,5 +1,6 @@
 package com.example.shared.data.event
 
+import com.example.shared.data.model.Location
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlin.time.Clock
@@ -26,9 +27,3 @@ sealed class InPlayEvent @OptIn(ExperimentalUuidApi::class) constructor(
         val holeNumber: Int
     ): InPlayEvent(timestamp = Clock.System.now().toEpochMilliseconds(), eventID = Uuid.random())
 }
-
-@Serializable
-data class Location(
-    val lat: Double,
-    val long: Double
-)
