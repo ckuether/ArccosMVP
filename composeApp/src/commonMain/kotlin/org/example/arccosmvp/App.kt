@@ -262,7 +262,7 @@ fun GolfScreen(
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Previous hole",
-                        tint = Color.Black
+                        tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
                     )
                 }
                 
@@ -306,7 +306,7 @@ fun GolfScreen(
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowRight,
                         contentDescription = "Next hole",
-                        tint = Color.Black
+                        tint = if (currentHoleNumber < (golfCourse?.holes?.size ?: 9)) Color.Black else Color.Gray
                     )
                 }
             }
