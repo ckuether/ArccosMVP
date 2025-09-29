@@ -4,7 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import org.example.arccosmvp.utils.AndroidDrawableHelper
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.GoogleMap
@@ -24,6 +30,12 @@ actual fun MapView(
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
+    
+    // Create custom golf ball marker bitmap
+    val golfBallBitmap = AndroidDrawableHelper.createGolfBallMarker()
+    
+    // Create custom golf flag marker bitmap
+    val golfFlagBitmap = AndroidDrawableHelper.createGolfFlagMarker()
     
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
@@ -111,7 +123,26 @@ actual fun MapView(
                 state = MarkerState(
                     position = LatLng(location.latitude, location.longitude)
                 ),
-                title = location.title ?: "Location"
+                title = location.title ?: "Location",
+                icon = when (location.markerType) {
+                    MarkerType.GOLF_BALL -> {
+                        // Use custom golf ball bitmap if available, fallback to orange marker
+                        golfBallBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE)
+                    }
+                    MarkerType.GOLF_FLAG -> {
+                        // Use custom golf flag bitmap if available, fallback to green marker
+                        golfFlagBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
+                    }
+                    MarkerType.DEFAULT -> {
+                        // Default red marker for regular location points
+                        BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
+                    }
+                },
+                snippet = when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "⛳ Tee Area"
+                    MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
+                    MarkerType.DEFAULT -> null
+                }
             )
         }
     }

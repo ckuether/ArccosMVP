@@ -4,14 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.CoreLocation.CLLocationCoordinate2D
 import platform.CoreLocation.CLLocationCoordinate2DMake
-import platform.MapKit.MKAnnotationView
-import platform.MapKit.MKCoordinateRegion
+import platform.MapKit.MKCoordinateRegionMake
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
+import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
-import platform.UIKit.UIView
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -49,6 +47,14 @@ actual fun MapView(
                     )
                 )
                 annotation.setTitle(location.title ?: "Location")
+                
+                // Set subtitle for golf markers
+                annotation.setSubtitle(when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "⛳ Tee Area"
+                    MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
+                    MarkerType.DEFAULT -> null
+                })
+                
                 mapView.addAnnotation(annotation)
             }
             
@@ -68,17 +74,14 @@ actual fun MapView(
                     
                     val centerLat = (minLat + maxLat) / 2
                     val centerLng = (minLng + maxLng) / 2
-                    val latDelta = maxOf((maxLat - minLat) * 1.5, 0.01) // Add padding
-                    val lngDelta = maxOf((maxLng - minLng) * 1.5, 0.01)
+                    // Much tighter zoom - only add small padding and cap maximum zoom out
+                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
+                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
                     
-                    val region = MKCoordinateRegion(
-                        center = CLLocationCoordinate2DMake(centerLat, centerLng),
-                        span = platform.MapKit.MKCoordinateSpan(
-                            latitudeDelta = latDelta,
-                            longitudeDelta = lngDelta
-                        )
-                    )
-                    mapView.setRegion(region, animated = true)
+                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
+                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = MKCoordinateRegionMake(center, span)
+                    mapView.setRegion(region, true)
                 }
                 centerLocation != null -> {
                     val coordinate = CLLocationCoordinate2DMake(
@@ -90,7 +93,7 @@ actual fun MapView(
                         1000.0, // 1km span
                         1000.0
                     )
-                    mapView.setRegion(region, animated = true)
+                    mapView.setRegion(region, true)
                 }
                 locations.isNotEmpty() -> {
                     // Calculate bounds for all locations
@@ -109,17 +112,14 @@ actual fun MapView(
                     
                     val centerLat = (minLat + maxLat) / 2
                     val centerLng = (minLng + maxLng) / 2
-                    val latDelta = maxOf((maxLat - minLat) * 1.2, 0.01) // Add padding
-                    val lngDelta = maxOf((maxLng - minLng) * 1.2, 0.01)
+                    // Much tighter zoom - only add small padding and cap maximum zoom out
+                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
+                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
                     
-                    val region = MKCoordinateRegion(
-                        center = CLLocationCoordinate2DMake(centerLat, centerLng),
-                        span = platform.MapKit.MKCoordinateSpan(
-                            latitudeDelta = latDelta,
-                            longitudeDelta = lngDelta
-                        )
-                    )
-                    mapView.setRegion(region, animated = true)
+                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
+                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
+                    val region = MKCoordinateRegionMake(center, span)
+                    mapView.setRegion(region, true)
                 }
                 else -> {
                     // Default to Denver, CO
@@ -129,7 +129,7 @@ actual fun MapView(
                         10000.0, // 10km span
                         10000.0
                     )
-                    mapView.setRegion(region, animated = true)
+                    mapView.setRegion(region, true)
                 }
             }
         }

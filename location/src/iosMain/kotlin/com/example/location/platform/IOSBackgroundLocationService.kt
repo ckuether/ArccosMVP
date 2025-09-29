@@ -3,6 +3,8 @@ package com.example.location.platform
 import com.example.shared.data.event.InPlayEvent
 import com.example.shared.data.event.Location
 import com.example.shared.platform.Logger
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,14 +17,12 @@ import platform.darwin.NSObject
 
 class IOSBackgroundLocationService(
     private val logger: Logger
-) : BackgroundLocationService, NSObject(), CLLocationManagerDelegateProtocol {
-    
-    companion object {
-        private const val TAG = "IOSBackgroundLocationService"
-    }
+): NSObject(), CLLocationManagerDelegateProtocol {
+
+    private val TAG = "IOSBackgroundLocationService"
     
     private val _isBackgroundTrackingActive = MutableStateFlow(false)
-    override val isBackgroundTrackingActive: StateFlow<Boolean> = _isBackgroundTrackingActive.asStateFlow()
+    val isBackgroundTrackingActive: StateFlow<Boolean> = _isBackgroundTrackingActive.asStateFlow()
     
     private val locationManager = CLLocationManager().apply {
         delegate = this@IOSBackgroundLocationService
@@ -33,7 +33,7 @@ class IOSBackgroundLocationService(
     private var locationCallback: ((InPlayEvent.LocationUpdated) -> Unit)? = null
     private var updateTimer: NSTimer? = null
     
-    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<InPlayEvent.LocationUpdated> {
+    fun startBackgroundLocationTracking(intervalMs: Long): Flow<InPlayEvent.LocationUpdated> {
         logger.info(TAG, "startBackgroundLocationTracking called with intervalMs: $intervalMs")
         return callbackFlow {
             if (_isBackgroundTrackingActive.value) {
@@ -76,7 +76,7 @@ class IOSBackgroundLocationService(
         }
     }
     
-    override fun stopBackgroundLocationTracking() {
+    fun stopBackgroundLocationTracking() {
         logger.info(TAG, "stopBackgroundLocationTracking called")
         stopLocationUpdates()
         _isBackgroundTrackingActive.value = false
@@ -89,7 +89,7 @@ class IOSBackgroundLocationService(
         locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
         locationManager.startUpdatingLocation()
-        locationManager.startSignificantLocationChanges()
+        locationManager.startMonitoringSignificantLocationChanges()
         logger.info(TAG, "Location updates started")
     }
     
@@ -98,21 +98,27 @@ class IOSBackgroundLocationService(
         updateTimer?.invalidate()
         updateTimer = null
         locationManager.stopUpdatingLocation()
-        locationManager.stopSignificantLocationChanges()
+        locationManager.stopMonitoringSignificantLocationChanges()
         locationManager.allowsBackgroundLocationUpdates = false
         logger.info(TAG, "Location updates stopped")
     }
-    
-    // CLLocationManagerDelegate methods
+
+
+    @OptIn(ExperimentalForeignApi::class)
     override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
         val locations = didUpdateLocations as List<CLLocation>
         logger.debug(TAG, "Received ${locations.size} location updates")
         locations.lastOrNull()?.let { location ->
-            logger.debug(TAG, "Location received: lat=${location.coordinate.latitude}, long=${location.coordinate.longitude}")
+            val coordinate = location.coordinate
+            val lat = coordinate.useContents { latitude }
+            val lng = coordinate.useContents { longitude }
+            logger.debug(TAG, "Location received: lat=$lat, long=$lng")
+
+            logger.debug(TAG, "Location received: lat=$lat, long=$lng")
             val locationEvent = InPlayEvent.LocationUpdated(
                 Location(
-                    lat = location.coordinate.latitude,
-                    long = location.coordinate.longitude
+                    lat = lat,
+                    long = lng
                 )
             )
             locationCallback?.invoke(locationEvent)
@@ -140,6 +146,22 @@ class IOSBackgroundLocationService(
                 _isBackgroundTrackingActive.value = false
             }
         }
+    }
+}
+
+
+class IOSBackgroundLocationServiceWrapper(
+    private val iosService: IOSBackgroundLocationService
+): BackgroundLocationService{
+    override val isBackgroundTrackingActive: Flow<Boolean>
+        get() = iosService.isBackgroundTrackingActive
+
+    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<InPlayEvent.LocationUpdated> {
+        return iosService.startBackgroundLocationTracking(intervalMs)
+    }
+
+    override fun stopBackgroundLocationTracking() {
+        iosService.stopBackgroundLocationTracking()
     }
 }
 
