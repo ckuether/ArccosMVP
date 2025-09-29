@@ -1,6 +1,5 @@
 package com.example.shared.data.model
 
-import com.example.shared.data.event.Location
 import kotlinx.serialization.Serializable
 
 @Serializable

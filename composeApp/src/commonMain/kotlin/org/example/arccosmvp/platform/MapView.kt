@@ -3,7 +3,7 @@ package org.example.arccosmvp.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import com.example.shared.data.event.Location
+import com.example.shared.data.model.Location
 
 data class MapLocation(
     val latitude: Double,

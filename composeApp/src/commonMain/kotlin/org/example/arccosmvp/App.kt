@@ -27,6 +27,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.example.arccosmvp.platform.MarkerType
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
+import com.example.shared.data.model.distanceToInYards
 
 @Composable
 @Preview
@@ -48,6 +49,7 @@ fun LocationTrackingScreen(
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
     var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var hole1EndLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var hole1Data by remember { mutableStateOf<com.example.shared.data.model.Hole?>(null) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -58,6 +60,7 @@ fun LocationTrackingScreen(
         
         // Load hole 1 data for initial map bounds
         holeRepository.getHoleById(1)?.let { hole ->
+            hole1Data = hole
             initialBounds = Pair(
                 hole.startLocation.toMapLocation("Hole 1 Start"),
                 hole.endLocation.toMapLocation("Hole 1 End")
@@ -108,7 +111,7 @@ fun LocationTrackingScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .padding(16.dp).padding(end = 32.dp),
+                .padding(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
             )
@@ -118,11 +121,14 @@ fun LocationTrackingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Location Tracker",
+                    text = "Hole 1",
                     style = MaterialTheme.typography.headlineSmall
                 )
                 Text(
-                    text = "${if (uiState.isTracking) "Tracking" else "Stopped"} • ${locationEvents.size} locations",
+                    text = hole1Data?.let { hole ->
+                        val distanceYards = hole.startLocation.distanceToInYards(hole.endLocation)
+                        "Yards to Hole: ${distanceYards.toInt()}"
+                    } ?: "${if (uiState.isTracking) "Tracking" else "Stopped"} • ${locationEvents.size} locations",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

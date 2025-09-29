@@ -1,7 +1,7 @@
 package com.example.location.platform
 
 import com.example.shared.data.event.InPlayEvent
-import com.example.shared.data.event.Location
+import com.example.shared.data.model.Location
 import com.example.shared.platform.Logger
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
