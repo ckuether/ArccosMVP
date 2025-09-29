@@ -13,12 +13,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
+import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.example.arccosmvp.platform.MapView
 import org.example.arccosmvp.platform.toMapLocation
 import org.example.arccosmvp.platform.MapLocation
-import org.example.arccosmvp.data.HoleRepository
-import org.koin.compose.koinInject
+import com.example.shared.data.repository.GolfCourseRepository
+import org.example.arccosmvp.utils.ComposeResourceReader
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -33,53 +34,66 @@ import com.example.shared.data.model.distanceToInYards
 @Preview
 fun App() {
     MaterialTheme {
-        LocationTrackingScreen()
+        GolfScreen()
     }
 }
 
 @Composable
-fun LocationTrackingScreen(
+fun GolfScreen(
     viewModel: LocationTrackingViewModel = koinViewModel(),
-    holeRepository: HoleRepository = koinInject()
+    golfCourseRepository: GolfCourseRepository = GolfCourseRepository(ComposeResourceReader())
 ) {
+    println("DEBUG: GolfScreen composable called")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
-    // Load hole 1 for initial map bounds
+    // Golf course and hole state
+    var golfCourse by remember { mutableStateOf<GolfCourse?>(null) }
+    var currentHoleNumber by remember { mutableStateOf(1) }
+    var currentHole by remember { mutableStateOf<Hole?>(null) }
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
-    var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var hole1EndLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var hole1Data by remember { mutableStateOf<Hole?>(null) }
+    var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
     
-    // Load hole data on first composition
+    // Load golf course data on first composition
     LaunchedEffect(Unit) {
+        println("DEBUG: LaunchedEffect(Unit) triggered - loading golf course")
         viewModel.checkPermissionStatus()
-        
-        // Load hole 1 data for initial map bounds
-        holeRepository.getHoleById(1)?.let { hole ->
-            hole1Data = hole
+        val loadedCourse = golfCourseRepository.loadGolfCourse()
+        println("DEBUG: Golf course loaded: ${loadedCourse?.name}, holes: ${loadedCourse?.holes?.size}")
+        golfCourse = loadedCourse
+    }
+    
+    // Update current hole when golf course loads or hole number changes
+    LaunchedEffect(golfCourse, currentHoleNumber) {
+        println("DEBUG: LaunchedEffect(golfCourse, currentHoleNumber) triggered - course: ${golfCourse?.name}, hole: $currentHoleNumber")
+        golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
+            println("DEBUG: Found hole $currentHoleNumber, par: ${hole.par}")
+            currentHole = hole
+            
+            // Set up map bounds for this hole
             initialBounds = Pair(
-                hole.startLocation.toMapLocation("Hole 1 Start"),
-                hole.endLocation.toMapLocation("Hole 1 End")
+                hole.startLocation.toMapLocation("Hole $currentHoleNumber Start"),
+                hole.endLocation.toMapLocation("Hole $currentHoleNumber End")
             )
             
-            // Create hole 1 start location with golf ball icon
-            hole1StartLocation = MapLocation(
+            // Create hole start location with golf ball icon
+            holeStartLocation = MapLocation(
                 latitude = hole.startLocation.lat,
                 longitude = hole.startLocation.long,
-                title = "Hole 1 Tee",
+                title = "Hole $currentHoleNumber Tee",
                 icon = golfBallIcon,
                 markerType = MarkerType.GOLF_BALL
             )
             
-            // Create hole 1 end location with golf flag icon
-            hole1EndLocation = MapLocation(
+            // Create hole end location with golf flag icon
+            holeEndLocation = MapLocation(
                 latitude = hole.endLocation.lat,
                 longitude = hole.endLocation.long,
-                title = "Hole 1 Pin",
+                title = "Hole $currentHoleNumber Pin",
                 icon = golfBallIcon, // Will use different marker type
                 markerType = MarkerType.GOLF_FLAG
             )
@@ -97,10 +111,10 @@ fun LocationTrackingScreen(
                         title = "Location at ${formatTimestamp(locationItem.timestamp)}"
                     )
                 })
-                // Add hole 1 start location with golf ball icon
-                hole1StartLocation?.let { add(it) }
-                // Add hole 1 end location with golf flag icon
-                hole1EndLocation?.let { add(it) }
+                // Add current hole start location with golf ball icon
+                holeStartLocation?.let { add(it) }
+                // Add current hole end location with golf flag icon
+                holeEndLocation?.let { add(it) }
             },
             centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
             initialBounds = initialBounds
@@ -124,7 +138,7 @@ fun LocationTrackingScreen(
             ) {
                 // Hole Number
                 Text(
-                    text = "1",
+                    text = currentHoleNumber.toString(),
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -145,7 +159,7 @@ fun LocationTrackingScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = hole1Data?.let { hole ->
+                        text = currentHole?.let { hole ->
                             val distanceYards = hole.startLocation.distanceToInYards(hole.endLocation)
                             "${distanceYards.toInt()}yds"
                         } ?: "---yds",
@@ -170,7 +184,7 @@ fun LocationTrackingScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = hole1Data?.par?.toString() ?: "4",
+                        text = currentHole?.par?.toString() ?: "---",
                         style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -235,8 +249,13 @@ fun LocationTrackingScreen(
             ) {
                 // Left Arrow
                 IconButton(
-                    onClick = { /* Handle previous hole */ },
-                    modifier = Modifier.size(32.dp)
+                    onClick = { 
+                        if (currentHoleNumber > 1) {
+                            currentHoleNumber = currentHoleNumber - 1
+                        }
+                    },
+                    modifier = Modifier.size(32.dp),
+                    enabled = currentHoleNumber > 1
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowLeft,
@@ -250,7 +269,7 @@ fun LocationTrackingScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Score Card Hole 1",
+                        text = "Score Card Hole $currentHoleNumber",
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.Black
                     )
@@ -263,7 +282,7 @@ fun LocationTrackingScreen(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = "1",
+                            text = currentHoleNumber.toString(),
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color.Black,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -273,8 +292,14 @@ fun LocationTrackingScreen(
                 
                 // Right Arrow
                 IconButton(
-                    onClick = { /* Handle next hole */ },
-                    modifier = Modifier.size(32.dp)
+                    onClick = { 
+                        val maxHoles = golfCourse?.holes?.size ?: 9
+                        if (currentHoleNumber < maxHoles) {
+                            currentHoleNumber = currentHoleNumber + 1
+                        }
+                    },
+                    modifier = Modifier.size(32.dp),
+                    enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
                 ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowRight,
