@@ -2,6 +2,7 @@ package org.example.arccosmvp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -29,6 +30,7 @@ import org.example.arccosmvp.platform.MarkerType
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.shared.data.model.distanceToInYards
+import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 
 @Composable
 @Preview
@@ -54,6 +56,7 @@ fun GolfScreen(
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
     var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var showScoreCard by remember { mutableStateOf(false) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -242,7 +245,8 @@ fun GolfScreen(
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.85f)
             ),
-            shape = MaterialTheme.shapes.extraLarge
+            shape = MaterialTheme.shapes.extraLarge,
+            onClick = { showScoreCard = true }
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -310,6 +314,25 @@ fun GolfScreen(
                     )
                 }
             }
+        }
+        
+        // Score Card Bottom Sheet
+        if (showScoreCard) {
+            DraggableScoreCardBottomSheet(
+                currentHole = currentHole,
+                currentHoleNumber = currentHoleNumber,
+                totalHoles = golfCourse?.holes?.size ?: 9,
+                onDismiss = { showScoreCard = false },
+                onFinishHole = { score, putts ->
+                    // Handle score submission
+                    println("DEBUG: Hole $currentHoleNumber finished with score: $score, putts: $putts")
+                    showScoreCard = false
+                },
+                onNavigateToHole = { holeNumber ->
+                    currentHoleNumber = holeNumber
+                    showScoreCard = false
+                }
+            )
         }
     }
 }
