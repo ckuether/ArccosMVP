@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 data class Hole(
     val id: Int,
     val startLocation: Location,
-    val endLocation: Location
+    val endLocation: Location,
+    val par: Int
 )

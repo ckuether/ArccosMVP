@@ -3,16 +3,16 @@ package org.example.arccosmvp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.shared.data.model.Hole
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
 import org.example.arccosmvp.platform.MapView
 import org.example.arccosmvp.platform.toMapLocation
@@ -49,7 +49,7 @@ fun LocationTrackingScreen(
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
     var hole1StartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var hole1EndLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var hole1Data by remember { mutableStateOf<com.example.shared.data.model.Hole?>(null) }
+    var hole1Data by remember { mutableStateOf<Hole?>(null) }
     
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -106,39 +106,73 @@ fun LocationTrackingScreen(
             initialBounds = initialBounds
         )
         
-        // Top overlay - App title and status
+        // Top overlay - Hole info bar
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp)
+                .padding(top = 16.dp),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-            )
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+            ),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                // Hole Number
                 Text(
-                    text = "Hole 1",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Text(
-                    text = hole1Data?.let { hole ->
-                        val distanceYards = hole.startLocation.distanceToInYards(hole.endLocation)
-                        "Yards to Hole: ${distanceYards.toInt()}"
-                    } ?: "${if (uiState.isTracking) "Tracking" else "Stopped"} • ${locationEvents.size} locations",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "1",
+                    style = MaterialTheme.typography.displaySmall,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 
-                uiState.error?.let { error ->
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                )
+                
+                // Distance to Hole
+                Column {
                     Text(
-                        text = "Error: $error",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 4.dp)
+                        text = "Mid Green",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = hole1Data?.let { hole ->
+                            val distanceYards = hole.startLocation.distanceToInYards(hole.endLocation)
+                            "${distanceYards.toInt()}yds"
+                        } ?: "---yds",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Vertical Divider
+                Box(
+                    modifier = Modifier
+                        .width(1.dp)
+                        .height(40.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                )
+                
+                // Par
+                Column {
+                    Text(
+                        text = "Par",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = hole1Data?.par?.toString() ?: "4",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -183,79 +217,69 @@ fun LocationTrackingScreen(
             }
         }
         
-        // Bottom floating action buttons
-        Row(
+        // Edit Hole component
+        Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
                 .padding(horizontal = 16.dp)
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.85f)
+            ),
+            shape = MaterialTheme.shapes.extraLarge
         ) {
-            FloatingActionButton(
-                onClick = { viewModel.startLocationTracking() },
-                modifier = Modifier.weight(1f),
-                containerColor = if (uiState.isTracking) 
-                    MaterialTheme.colorScheme.surfaceVariant 
-                else MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                // Left Arrow
+                IconButton(
+                    onClick = { /* Handle previous hole */ },
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        imageVector = if (uiState.isTracking) Icons.Default.LocationOn else Icons.Default.PlayArrow,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (uiState.isTracking) "Tracking" else "Start",
-                        style = MaterialTheme.typography.labelLarge
+                        imageVector = Icons.Default.KeyboardArrowLeft,
+                        contentDescription = "Previous hole",
+                        tint = Color.Black
                     )
                 }
-            }
-            
-            FloatingActionButton(
-                onClick = { viewModel.stopLocationTracking() },
-                modifier = Modifier.weight(1f),
-                containerColor = MaterialTheme.colorScheme.secondary
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                
+                // Edit Hole text and number
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Stop,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Stop",
-                        style = MaterialTheme.typography.labelLarge
+                        text = "Score Card Hole 1",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.Black
                     )
+                    
+                    // Hole number box
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black.copy(alpha = 0.1f)
+                        ),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = "1",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = Color.Black,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
-            }
-            
-            FloatingActionButton(
-                onClick = { 
-                    viewModel.clearLocations()
-                    viewModel.clearError()
-                },
-                modifier = Modifier.weight(1f),
-                containerColor = MaterialTheme.colorScheme.tertiary
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                
+                // Right Arrow
+                IconButton(
+                    onClick = { /* Handle next hole */ },
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Clear",
-                        style = MaterialTheme.typography.labelLarge
+                        imageVector = Icons.Default.KeyboardArrowRight,
+                        contentDescription = "Next hole",
+                        tint = Color.Black
                     )
                 }
             }
