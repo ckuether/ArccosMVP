@@ -98,7 +98,7 @@ fun DraggableScoreCardBottomSheet(
                 }
                 
                 // Score card content
-                ScoreCardBottomSheet(
+                ScoreCard(
                     currentHole = currentHole,
                     currentHoleNumber = currentHoleNumber,
                     totalHoles = totalHoles,

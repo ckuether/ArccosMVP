@@ -16,7 +16,7 @@ import com.example.shared.data.model.Hole
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScoreCardBottomSheet(
+fun ScoreCard(
     currentHole: Hole?,
     currentHoleNumber: Int,
     totalHoles: Int,

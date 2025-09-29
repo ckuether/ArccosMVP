@@ -1,16 +1,19 @@
 package org.example.arccosmvp.platform
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
+import com.example.shared.domain.usecase.CalculateBearingUseCase
 import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.MapKit.MKCoordinateRegionMake
 import platform.MapKit.MKCoordinateRegionMakeWithDistance
 import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
+import platform.MapKit.MKMapCamera
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -22,6 +25,8 @@ actual fun MapView(
     currentHole: Hole?,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
+    // Create use case for bearing calculation
+    val calculateBearingUseCase = remember { CalculateBearingUseCase() }
     UIKitView(
         modifier = modifier,
         factory = {
@@ -63,7 +68,7 @@ actual fun MapView(
             // Set map region
             when {
                 currentHole != null -> {
-                    // Use hole bounds with original zoom logic
+                    // Use hole bounds with bearing calculation like Android
                     val startLat = currentHole.teeLocation.lat
                     val startLng = currentHole.teeLocation.long
                     val endLat = currentHole.flagLocation.lat
@@ -80,10 +85,23 @@ actual fun MapView(
                     val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
                     val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
                     
+                    // Calculate bearing for orientation
+                    val bearing = calculateBearingUseCase(currentHole.teeLocation, currentHole.flagLocation)
+                    
+                    // First set the region
                     val center = CLLocationCoordinate2DMake(centerLat, centerLng)
                     val span = MKCoordinateSpanMake(latDelta, lngDelta)
                     val region = MKCoordinateRegionMake(center, span)
                     mapView.setRegion(region, true)
+                    
+                    // Then set the camera with bearing (rotation)
+                    val camera = MKMapCamera()
+                    camera.setCenterCoordinate(center)
+                    camera.setHeading(bearing) // Set the bearing/rotation
+                    // Calculate altitude for the zoom level - approximate conversion
+                    val altitude = (latDelta * 111000.0 * 2.0) // Convert lat delta to meters and set altitude
+                    camera.setAltitude(altitude)
+                    mapView.setCamera(camera, true)
                 }
                 initialBounds != null -> {
                     // Use initial bounds (highest priority)
