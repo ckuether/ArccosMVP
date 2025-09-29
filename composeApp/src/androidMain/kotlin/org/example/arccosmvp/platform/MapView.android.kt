@@ -159,9 +159,9 @@ actual fun MapView(
             isMyLocationEnabled = true
         ),
         uiSettings = MapUiSettings(
-            zoomControlsEnabled = true,
+            zoomControlsEnabled = false,
             compassEnabled = true,
-            myLocationButtonEnabled = true
+            myLocationButtonEnabled = false
         ),
         onMapClick = { latLng ->
             onMapClick?.invoke(
