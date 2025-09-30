@@ -16,9 +16,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 
 class LocationTrackingServiceImpl(
-    private val trackLocationUseCase: TrackLocationUseCase,
     private val backgroundLocationService: BackgroundLocationService,
-    private val coroutineScope: CoroutineScope
 ) : LocationTrackingService {
     
     private val _isTracking = MutableStateFlow(false)

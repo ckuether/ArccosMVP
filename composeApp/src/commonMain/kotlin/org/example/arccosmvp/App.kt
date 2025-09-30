@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.GolfCourse
-import org.example.arccosmvp.presentation.LocationTrackingViewModel
+import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
@@ -32,6 +32,7 @@ import org.example.arccosmvp.utils.DrawableHelper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
+import org.example.arccosmvp.presentation.ToParScorecard
 
 @Composable
 @Preview
@@ -47,9 +48,9 @@ fun GolfScreen(
     golfCourseRepository: GolfCourseRepository = koinInject()
 ) {
     val dimensions = LocalDimensionResources.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
-    
+
     // Golf course and hole state
     var golfCourse by remember { mutableStateOf<GolfCourse?>(null) }
     var currentHoleNumber by remember { mutableStateOf(1) }
@@ -58,29 +59,29 @@ fun GolfScreen(
     var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
-    
+
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
-    
+
     // Load golf course data on first composition
     LaunchedEffect(Unit) {
         viewModel.checkPermissionStatus()
         val loadedCourse = golfCourseRepository.loadGolfCourse()
         golfCourse = loadedCourse
     }
-    
+
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
-            
-            
+
+
             // Set up map bounds for this hole (fallback)
             initialBounds = Pair(
                 hole.teeLocation.toMapLocation("Hole $currentHoleNumber Start"),
                 hole.flagLocation.toMapLocation("Hole $currentHoleNumber End")
             )
-            
+
             // Create hole start location with golf ball icon
             holeStartLocation = MapLocation(
                 latitude = hole.teeLocation.lat,
@@ -89,7 +90,7 @@ fun GolfScreen(
                 icon = golfBallIcon,
                 markerType = MarkerType.GOLF_BALL
             )
-            
+
             // Create hole end location with golf flag icon
             holeEndLocation = MapLocation(
                 latitude = hole.flagLocation.lat,
@@ -100,12 +101,12 @@ fun GolfScreen(
             )
         }
     }
-    
+
     Box(modifier = Modifier.fillMaxSize().safeContentPadding()) {
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
-            locations = buildList {
+            userLocations = buildList {
                 // Add location tracking points
                 addAll(locationEvents.map { locationItem ->
                     locationItem.location.toMapLocation(
@@ -117,11 +118,11 @@ fun GolfScreen(
                 // Add current hole end location with golf flag icon
                 holeEndLocation?.let { add(it) }
             },
-            centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
-            initialBounds = initialBounds,
+            centerLocation = null,
+            initialBounds = initialBounds, // Only center when hole changes
             currentHole = currentHole
         )
-        
+
         // Top overlay - Hole info bar
         Card(
             modifier = Modifier
@@ -129,7 +130,7 @@ fun GolfScreen(
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(top = dimensions.paddingLarge),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
+                containerColor = MaterialTheme.colorScheme.surface
             ),
             shape = MaterialTheme.shapes.extraLarge
         ) {
@@ -144,7 +145,7 @@ fun GolfScreen(
                     style = MaterialTheme.typography.displaySmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                
+
                 // Vertical Divider
                 Box(
                     modifier = Modifier
@@ -152,7 +153,7 @@ fun GolfScreen(
                         .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
-                
+
                 // Distance to Hole
                 Column {
                     Text(
@@ -169,7 +170,7 @@ fun GolfScreen(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
-                
+
                 // Vertical Divider
                 Box(
                     modifier = Modifier
@@ -177,7 +178,7 @@ fun GolfScreen(
                         .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
-                
+
                 // Par
                 Column {
                     Text(
@@ -193,9 +194,9 @@ fun GolfScreen(
                 }
             }
         }
-        
+
         // Permission overlay (when needed)
-        if (uiState.hasPermission == false) {
+        if (locationState.hasPermission == false) {
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -222,97 +223,122 @@ fun GolfScreen(
                     )
                     Button(
                         onClick = { viewModel.requestLocationPermission() },
-                        enabled = !uiState.isRequestingPermission
+                        enabled = !locationState.isRequestingPermission
                     ) {
                         Text(
-                            if (uiState.isRequestingPermission) "Requesting..." 
+                            if (locationState.isRequestingPermission) "Requesting..."
                             else "Grant Permission"
                         )
                     }
                 }
             }
         }
-        
-        // Edit Hole component
-        Card(
+
+        // Bottom components row
+        Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(bottom = dimensions.paddingLarge),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White.copy(alpha = 0.85f)
-            ),
-            shape = MaterialTheme.shapes.extraLarge,
-            onClick = { showScoreCard = true }
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+            verticalAlignment = Alignment.Bottom
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
+            // To Par Scorecard - Bottom Left
+            ToParScorecard(
+                onScoreCardClick = { showScoreCard = true }
+            )
+            
+            // Edit Hole component - fills available space
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = MaterialTheme.shapes.extraLarge,
+                onClick = { showScoreCard = true }
             ) {
-                // Left Arrow
-                IconButton(
-                    onClick = { 
-                        if (currentHoleNumber > 1) {
-                            currentHoleNumber = currentHoleNumber - 1
-                        }
-                    },
-                    modifier = Modifier.size(dimensions.iconButtonSize),
-                    enabled = currentHoleNumber > 1
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowLeft,
-                        contentDescription = "Previous hole",
-                        tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
-                    )
-                }
-                
-                // Edit Hole text and number
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Score Card Hole $currentHoleNumber",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = Color.Black
-                    )
-                    
-                    // Hole number box
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Black.copy(alpha = 0.1f)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = dimensions.paddingLarge,
+                            vertical = dimensions.paddingMedium
                         ),
-                        shape = MaterialTheme.shapes.small
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Left Arrow
+                    IconButton(
+                        onClick = {
+                            if (currentHoleNumber > 1) {
+                                currentHoleNumber = currentHoleNumber - 1
+                            }
+                        },
+                        modifier = Modifier.size(dimensions.iconButtonSize),
+                        enabled = currentHoleNumber > 1
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowLeft,
+                            contentDescription = "Previous hole",
+                            tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
+                        )
+                    }
+
+                    // Edit Hole text and number
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = currentHoleNumber.toString(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.Black,
-                            modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingSmall)
+                            text = "Hole $currentHoleNumber",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color.Black
+                        )
+
+                        // Hole number box
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.Black.copy(alpha = 0.1f)
+                            ),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text(
+                                text = currentHoleNumber.toString(),
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Color.Black,
+                                modifier = Modifier.padding(
+                                    horizontal = dimensions.paddingLarge,
+                                    vertical = dimensions.paddingSmall
+                                )
+                            )
+                        }
+                    }
+
+                    // Right Arrow
+                    IconButton(
+                        onClick = {
+                            val maxHoles = golfCourse?.holes?.size ?: 9
+                            if (currentHoleNumber < maxHoles) {
+                                currentHoleNumber = currentHoleNumber + 1
+                            }
+                        },
+                        modifier = Modifier.size(dimensions.iconButtonSize),
+                        enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowRight,
+                            contentDescription = "Next hole",
+                            tint = if (currentHoleNumber < (golfCourse?.holes?.size
+                                    ?: 9)
+                            ) Color.Black else Color.Gray
                         )
                     }
                 }
-                
-                // Right Arrow
-                IconButton(
-                    onClick = { 
-                        val maxHoles = golfCourse?.holes?.size ?: 9
-                        if (currentHoleNumber < maxHoles) {
-                            currentHoleNumber = currentHoleNumber + 1
-                        }
-                    },
-                    modifier = Modifier.size(dimensions.iconButtonSize),
-                    enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowRight,
-                        contentDescription = "Next hole",
-                        tint = if (currentHoleNumber < (golfCourse?.holes?.size ?: 9)) Color.Black else Color.Gray
-                    )
-                }
             }
+
+            Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
         }
-        
+
         // Score Card Bottom Sheet
         if (showScoreCard) {
             DraggableScoreCardBottomSheet(
@@ -339,17 +365,17 @@ fun GolfScreen(
 private fun formatTimestamp(timestamp: Long): String {
     val instant = Instant.fromEpochMilliseconds(timestamp)
     val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-    
+
     val months = arrayOf(
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     )
-    
+
     val month = months[localDateTime.month.ordinal - 1]
     val day = localDateTime.day
     val hour = localDateTime.hour
     val minute = localDateTime.minute
     val second = localDateTime.second
-    
+
     return "$month, $day at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}"
 }

@@ -18,13 +18,12 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
-import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
 @Composable
 actual fun MapView(
     modifier: Modifier,
-    locations: List<MapLocation>,
+    userLocations: List<MapLocation>,
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
     currentHole: Hole?,
@@ -45,107 +44,96 @@ actual fun MapView(
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
     
-    LaunchedEffect(centerLocation, locations, initialBounds, currentHole) {
-        when {
-            currentHole != null -> {
-                // Use hole bounds with original zoom logic + orientation
-                val teeLatLng = LatLng(currentHole.teeLocation.lat, currentHole.teeLocation.long)
-                val flagLatLng = LatLng(currentHole.flagLocation.lat, currentHole.flagLocation.long)
-                val bounds = LatLngBounds.builder().apply {
-                    include(teeLatLng)
-                    include(flagLatLng)
-                }.build()
+    // Handle currentHole updates with highest priority
+    LaunchedEffect(currentHole) {
+        currentHole?.let { hole ->
+            val teeLatLng = LatLng(hole.teeLocation.lat, hole.teeLocation.long)
+            val flagLatLng = LatLng(hole.flagLocation.lat, hole.flagLocation.long)
+            val bounds = LatLngBounds.builder().apply {
+                include(teeLatLng)
+                include(flagLatLng)
+            }.build()
+            
+            // Calculate bearing for orientation
+            val bearing = calculateBearingUseCase(hole.teeLocation, hole.flagLocation).toFloat()
+            
+            try {
+                // First set bounds with original zoom logic
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
+                )
                 
-                // Calculate bearing for orientation
-                val bearing = calculateBearingUseCase(currentHole.teeLocation, currentHole.flagLocation).toFloat()
+                // Then add rotation with current zoom level
+                val currentZoom = cameraPositionState.position.zoom
+                val centerLat = (hole.teeLocation.lat + hole.flagLocation.lat) / 2
+                val centerLng = (hole.teeLocation.long + hole.flagLocation.long) / 2
                 
-                try {
-                    // First set bounds with original zoom logic
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newCameraPosition(
+                        com.google.android.gms.maps.model.CameraPosition.Builder()
+                            .target(LatLng(centerLat, centerLng))
+                            .zoom(currentZoom)
+                            .bearing(bearing) // Rotate map so tee-to-flag is vertical
+                            .build()
                     )
-                    
-                    // Then add rotation with current zoom level
-                    delay(100) // Small delay to let bounds animation start
-                    val currentZoom = cameraPositionState.position.zoom
-                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
-                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
-                    
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newCameraPosition(
-                            com.google.android.gms.maps.model.CameraPosition.Builder()
-                                .target(LatLng(centerLat, centerLng))
-                                .zoom(currentZoom)
-                                .bearing(bearing) // Rotate map so tee-to-flag is vertical
-                                .build()
-                        )
+                )
+            } catch (e: Exception) {
+                // Fallback to center between the two points with bearing
+                val centerLat = (hole.teeLocation.lat + hole.flagLocation.lat) / 2
+                val centerLng = (hole.teeLocation.long + hole.flagLocation.long) / 2
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newCameraPosition(
+                        com.google.android.gms.maps.model.CameraPosition.Builder()
+                            .target(LatLng(centerLat, centerLng))
+                            .zoom(15f)
+                            .bearing(bearing)
+                            .build()
                     )
-                } catch (e: Exception) {
-                    // Fallback to center between the two points with bearing
-                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
-                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newCameraPosition(
-                            com.google.android.gms.maps.model.CameraPosition.Builder()
-                                .target(LatLng(centerLat, centerLng))
-                                .zoom(15f)
-                                .bearing(bearing)
-                                .build()
-                        )
-                    )
-                }
+                )
             }
-            initialBounds != null -> {
-                // Use initial bounds (highest priority)
-                val bounds = LatLngBounds.builder().apply {
-                    include(LatLng(initialBounds.first.latitude, initialBounds.first.longitude))
-                    include(LatLng(initialBounds.second.latitude, initialBounds.second.longitude))
-                }.build()
-                
-                try {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
-                    )
-                } catch (e: Exception) {
-                    // Fallback to center between the two points
-                    val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
-                    val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), 15f)
-                    )
-                }
+        }
+    }
+    
+    // Handle initialBounds updates (only when no currentHole)
+    LaunchedEffect(initialBounds) {
+        if (currentHole == null && initialBounds != null) {
+            val bounds = LatLngBounds.builder().apply {
+                include(LatLng(initialBounds.first.latitude, initialBounds.first.longitude))
+                include(LatLng(initialBounds.second.latitude, initialBounds.second.longitude))
+            }.build()
+            
+            try {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngBounds(bounds, 200) // 200dp padding
+                )
+            } catch (e: Exception) {
+                // Fallback to center between the two points
+                val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
+                val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(LatLng(centerLat, centerLng), 15f)
+                )
             }
-            centerLocation != null -> {
-                val latLng = LatLng(centerLocation.latitude, centerLocation.longitude)
-                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-            }
-            locations.isNotEmpty() -> {
-                // Fit all locations in view
-                val bounds = LatLngBounds.builder().apply {
-                    locations.forEach { location ->
-                        include(LatLng(location.latitude, location.longitude))
-                    }
-                }.build()
-                
-                try {
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngBounds(bounds, 100)
-                    )
-                } catch (e: Exception) {
-                    // Fallback to first location if bounds calculation fails
-                    val firstLocation = locations.first()
-                    cameraPositionState.animate(
-                        CameraUpdateFactory.newLatLngZoom(
-                            LatLng(firstLocation.latitude, firstLocation.longitude), 
-                            15f
-                        )
-                    )
-                }
-            }
-            else -> {
-                // Default location
-                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
-            }
+        }
+    }
+    
+    // Handle centerLocation updates (only when no currentHole or initialBounds)
+    LaunchedEffect(centerLocation) {
+        if (currentHole == null && initialBounds == null && centerLocation != null) {
+            val latLng = LatLng(centerLocation.latitude, centerLocation.longitude)
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+        }
+    }
+    
+    // Handle userLocations updates (only when no higher priority data)
+    LaunchedEffect(userLocations) {
+        //DO Nothing for now
+    }
+    
+    // Handle default location (when no data is provided)
+    LaunchedEffect(Unit) {
+        if (currentHole == null && initialBounds == null && centerLocation == null && userLocations.isEmpty()) {
+            cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(defaultLocation, 10f))
         }
     }
     
@@ -171,7 +159,7 @@ actual fun MapView(
         }
     ) {
         // Add markers for each location
-        locations.forEach { location ->
+        userLocations.forEach { location ->
             Marker(
                 state = MarkerState(
                     position = LatLng(location.latitude, location.longitude)
