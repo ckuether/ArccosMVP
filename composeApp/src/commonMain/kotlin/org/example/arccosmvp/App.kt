@@ -19,15 +19,12 @@ import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import com.example.core_ui.platform.MarkerType
 import com.example.core_ui.theme.GolfAppTheme
-import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
+import com.example.shared.utils.formatTimestamp
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 import org.example.arccosmvp.presentation.ToParScorecard
 
@@ -35,12 +32,12 @@ import org.example.arccosmvp.presentation.ToParScorecard
 @Preview
 fun App() {
     GolfAppTheme {
-        GolfScreen()
+        GolfApp()
     }
 }
 
 @Composable
-fun GolfScreen(
+fun GolfApp(
     viewModel: LocationTrackingViewModel = koinViewModel()
 ) {
     val dimensions = LocalDimensionResources.current
@@ -242,7 +239,7 @@ fun GolfScreen(
             ToParScorecard(
                 onScoreCardClick = { showScoreCard = true }
             )
-            
+
             // Edit Hole component - fills available space
             Card(
                 modifier = Modifier.weight(1f),
@@ -352,24 +349,4 @@ fun GolfScreen(
             )
         }
     }
-}
-
-
-@OptIn(ExperimentalTime::class)
-private fun formatTimestamp(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    val months = arrayOf(
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    )
-
-    val month = months[localDateTime.month.ordinal - 1]
-    val day = localDateTime.day
-    val hour = localDateTime.hour
-    val minute = localDateTime.minute
-    val second = localDateTime.second
-
-    return "$month, $day at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}"
 }
