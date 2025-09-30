@@ -31,3 +31,4 @@ dependencyResolutionManagement {
 include(":composeApp")
 include(":shared")
 include(":location")
+include(":core-ui")

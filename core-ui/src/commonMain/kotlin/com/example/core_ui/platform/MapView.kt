@@ -1,4 +1,4 @@
-package org.example.arccosmvp.platform
+package com.example.core_ui.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier

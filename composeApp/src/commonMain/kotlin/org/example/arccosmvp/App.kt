@@ -2,7 +2,6 @@ package org.example.arccosmvp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -16,17 +15,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
-import org.example.arccosmvp.platform.MapView
-import org.example.arccosmvp.platform.toMapLocation
-import org.example.arccosmvp.platform.MapLocation
+import com.example.core_ui.platform.MapView
+import com.example.core_ui.platform.toMapLocation
+import com.example.core_ui.platform.MapLocation
 import com.example.shared.data.repository.GolfCourseRepository
-import org.example.arccosmvp.utils.ComposeResourceReader
+import org.koin.compose.koinInject
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.example.arccosmvp.platform.MarkerType
+import com.example.core_ui.platform.MarkerType
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.shared.data.model.distanceToInYards
@@ -43,9 +42,8 @@ fun App() {
 @Composable
 fun GolfScreen(
     viewModel: LocationTrackingViewModel = koinViewModel(),
-    golfCourseRepository: GolfCourseRepository = GolfCourseRepository(ComposeResourceReader())
+    golfCourseRepository: GolfCourseRepository = koinInject()
 ) {
-    println("DEBUG: GolfScreen composable called")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
@@ -63,18 +61,14 @@ fun GolfScreen(
     
     // Load golf course data on first composition
     LaunchedEffect(Unit) {
-        println("DEBUG: LaunchedEffect(Unit) triggered - loading golf course")
         viewModel.checkPermissionStatus()
         val loadedCourse = golfCourseRepository.loadGolfCourse()
-        println("DEBUG: Golf course loaded: ${loadedCourse?.name}, holes: ${loadedCourse?.holes?.size}")
         golfCourse = loadedCourse
     }
     
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
-        println("DEBUG: LaunchedEffect(golfCourse, currentHoleNumber) triggered - course: ${golfCourse?.name}, hole: $currentHoleNumber")
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
-            println("DEBUG: Found hole $currentHoleNumber, par: ${hole.par}")
             currentHole = hole
             
             

@@ -1,13 +1,9 @@
-package org.example.arccosmvp.platform
+package com.example.core_ui.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
-import org.example.arccosmvp.utils.AndroidDrawableHelper
 import com.example.shared.data.model.Hole
 import com.example.shared.domain.usecase.CalculateBearingUseCase
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -23,6 +19,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 
 @Composable
 actual fun MapView(
@@ -38,11 +35,12 @@ actual fun MapView(
     // Create use case for bearing calculation
     val calculateBearingUseCase = remember { CalculateBearingUseCase() }
     
-    // Create custom golf ball marker bitmap
-    val golfBallBitmap = AndroidDrawableHelper.createGolfBallMarker()
+    // Inject drawable provider
+    val drawableProvider: DrawableProvider = koinInject()
     
-    // Create custom golf flag marker bitmap
-    val golfFlagBitmap = AndroidDrawableHelper.createGolfFlagMarker()
+    // Get custom markers from the drawable provider
+    val golfBallBitmap = drawableProvider.getGolfBallMarker() as? BitmapDescriptor
+    val golfFlagBitmap = drawableProvider.getGolfFlagMarker() as? BitmapDescriptor
     
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)

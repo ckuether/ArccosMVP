@@ -3,8 +3,6 @@ package org.example.arccosmvp.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
@@ -19,10 +17,7 @@ object AndroidDrawableHelper {
     /**
      * Creates a BitmapDescriptor for Google Maps markers using the VectorDrawable approach
      */
-    @Composable
-    fun createGolfBallMarker(): BitmapDescriptor? {
-        val context = LocalContext.current
-        
+    fun createGolfBallMarker(context: Context): BitmapDescriptor? {
         return try {
             // Create a golf ball bitmap using the VectorDrawable pattern
             getBitmapFromGolfBallDrawable(context)?.let { bitmap ->
@@ -37,10 +32,7 @@ object AndroidDrawableHelper {
     /**
      * Creates a BitmapDescriptor for Google Maps golf flag markers
      */
-    @Composable
-    fun createGolfFlagMarker(): BitmapDescriptor? {
-        val context = LocalContext.current
-        
+    fun createGolfFlagMarker(context: Context): BitmapDescriptor? {
         return try {
             // Create a golf flag bitmap using the VectorDrawable pattern
             getBitmapFromGolfFlagDrawable(context)?.let { bitmap ->

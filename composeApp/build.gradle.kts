@@ -28,14 +28,15 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            
-            // Google Maps
+
+//            // Google Maps
             implementation(libs.maps.compose)
-            implementation(libs.play.services.maps)
-            implementation(libs.play.services.location)
+//            implementation(libs.play.services.maps)
+//            implementation(libs.play.services.location)
         }
         commonMain.dependencies {
             implementation(projects.shared)
+            implementation(projects.coreUi)
             implementation(projects.location)
 
             implementation(libs.kotlin.stdlib)

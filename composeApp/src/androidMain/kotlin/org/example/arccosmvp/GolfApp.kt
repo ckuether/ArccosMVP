@@ -11,15 +11,16 @@ import com.example.shared.di.databaseModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.example.arccosmvp.di.appModule
+import org.example.arccosmvp.di.platformModule
 
-class ArccosApp : Application(), SingletonImageLoader.Factory {
+class GolfApp : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         super.onCreate()
         
         // Initialize Koin
         startKoin {
-            androidContext(this@ArccosApp)
-            modules(locationModule, platformLocationModule, appModule, databaseModule)
+            androidContext(this@GolfApp)
+            modules(locationModule, platformLocationModule, appModule, databaseModule, platformModule)
         }
     }
     
