@@ -37,14 +37,18 @@ class LocationTrackingViewModel(
         private const val TAG = "LocationTrackingViewModel"
     }
     
-    private val _uiState = MutableStateFlow(LocationTrackingUiState())
-    val uiState: StateFlow<LocationTrackingUiState> = _uiState.asStateFlow()
+    private val _locationState = MutableStateFlow(LocationTrackingUiState())
+    val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
     
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
     
     private var trackingJob: Job? = null
+
+    init {
+        startLocationTracking()
+    }
     
     fun startLocationTracking() {
         logger.info(TAG, "startLocationTracking() called")
@@ -52,7 +56,7 @@ class LocationTrackingViewModel(
             // Check permission first
             if (!checkLocationPermissionUseCase()) {
                 logger.warn(TAG, "Location permission not granted")
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     error = "Location permission required. Please grant permission first.",
                     hasPermission = false
                 )
@@ -67,7 +71,7 @@ class LocationTrackingViewModel(
             
             try {
                 logger.info(TAG, "Setting UI state and starting location service")
-                _uiState.value = _uiState.value.copy(isLoading = true, isTracking = true, error = null)
+                _locationState.value = _locationState.value.copy(isLoading = true, isTracking = true, error = null)
                 
                 logger.info(TAG, "Calling startLocationTrackingUseCase()")
                 trackingJob = startLocationTrackingUseCase()
@@ -85,7 +89,7 @@ class LocationTrackingViewModel(
                             }
                         )
                         
-                        _uiState.value = _uiState.value.copy(
+                        _locationState.value = _locationState.value.copy(
                             isLoading = false,
                             isTracking = true,
                             lastLocationEvent = locationEvent,
@@ -97,7 +101,7 @@ class LocationTrackingViewModel(
                             is LocationException -> throwable.message
                             else -> "Location tracking error: ${throwable.message}"
                         }
-                        _uiState.value = _uiState.value.copy(
+                        _locationState.value = _locationState.value.copy(
                             isLoading = false,
                             isTracking = false,
                             error = errorMessage
@@ -106,7 +110,7 @@ class LocationTrackingViewModel(
                     .launchIn(viewModelScope)
                     
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     isLoading = false,
                     isTracking = false,
                     error = e.message ?: "Failed to start location tracking"
@@ -122,7 +126,7 @@ class LocationTrackingViewModel(
                 trackingJob?.cancel()
                 trackingJob = null
                 stopLocationTrackingUseCase()
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     isLoading = false,
                     isTracking = false,
                     error = null
@@ -130,7 +134,7 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Location tracking stopped successfully")
             } catch (e: Exception) {
                 logger.error(TAG, "Error stopping location tracking", e)
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     error = e.message ?: "Failed to stop location tracking"
                 )
             }
@@ -139,28 +143,28 @@ class LocationTrackingViewModel(
 
     fun requestLocationPermission() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isRequestingPermission = true, error = null)
+            _locationState.value = _locationState.value.copy(isRequestingPermission = true, error = null)
             
             try {
                 val result = requestLocationPermissionUseCase()
                 
                 when (result) {
                     is PermissionResult.Granted -> {
-                        _uiState.value = _uiState.value.copy(
+                        _locationState.value = _locationState.value.copy(
                             hasPermission = true,
                             isRequestingPermission = false,
                             error = null
                         )
                     }
                     is PermissionResult.Denied -> {
-                        _uiState.value = _uiState.value.copy(
+                        _locationState.value = _locationState.value.copy(
                             hasPermission = false,
                             isRequestingPermission = false,
                             error = "Location permission denied. Please try again."
                         )
                     }
                     is PermissionResult.PermanentlyDenied -> {
-                        _uiState.value = _uiState.value.copy(
+                        _locationState.value = _locationState.value.copy(
                             hasPermission = false,
                             isRequestingPermission = false,
                             error = "Location permission permanently denied. Please enable it in settings."
@@ -168,7 +172,7 @@ class LocationTrackingViewModel(
                     }
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     isRequestingPermission = false,
                     error = e.message ?: "Error requesting permission"
                 )
@@ -180,9 +184,9 @@ class LocationTrackingViewModel(
         viewModelScope.launch {
             try {
                 val hasPermission = checkLocationPermissionUseCase()
-                _uiState.value = _uiState.value.copy(hasPermission = hasPermission)
+                _locationState.value = _locationState.value.copy(hasPermission = hasPermission)
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
+                _locationState.value = _locationState.value.copy(
                     error = e.message ?: "Error checking permission"
                 )
             }
@@ -203,7 +207,7 @@ class LocationTrackingViewModel(
     }
     
     fun clearError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _locationState.value = _locationState.value.copy(error = null)
     }
     
     override fun onCleared() {

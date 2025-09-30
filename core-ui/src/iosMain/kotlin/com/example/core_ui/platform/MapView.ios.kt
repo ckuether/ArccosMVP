@@ -20,7 +20,7 @@ import org.koin.compose.koinInject
 @Composable
 actual fun MapView(
     modifier: Modifier,
-    locations: List<MapLocation>,
+    userLocations: List<MapLocation>,
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
     currentHole: Hole?,
@@ -49,7 +49,7 @@ actual fun MapView(
             mapView.removeAnnotations(mapView.annotations)
             
             // Add new annotations for locations
-            locations.forEach { location ->
+            userLocations.forEach { location ->
                 val annotation = MKPointAnnotation()
                 annotation.setCoordinate(
                     CLLocationCoordinate2DMake(
@@ -142,15 +142,15 @@ actual fun MapView(
                     )
                     mapView.setRegion(region, true)
                 }
-                locations.isNotEmpty() -> {
+                userLocations.isNotEmpty() -> {
                     // Calculate bounds for all locations
-                    val firstLocation = locations.first()
+                    val firstLocation = userLocations.first()
                     var minLat = firstLocation.latitude
                     var maxLat = firstLocation.latitude
                     var minLng = firstLocation.longitude
                     var maxLng = firstLocation.longitude
                     
-                    locations.forEach { location ->
+                    userLocations.forEach { location ->
                         minLat = minOf(minLat, location.latitude)
                         maxLat = maxOf(maxLat, location.latitude)
                         minLng = minOf(minLng, location.longitude)

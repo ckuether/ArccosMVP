@@ -48,7 +48,7 @@ fun GolfScreen(
     golfCourseRepository: GolfCourseRepository = koinInject()
 ) {
     val dimensions = LocalDimensionResources.current
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Golf course and hole state
@@ -106,7 +106,7 @@ fun GolfScreen(
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
-            locations = buildList {
+            userLocations = buildList {
                 // Add location tracking points
                 addAll(locationEvents.map { locationItem ->
                     locationItem.location.toMapLocation(
@@ -118,8 +118,8 @@ fun GolfScreen(
                 // Add current hole end location with golf flag icon
                 holeEndLocation?.let { add(it) }
             },
-            centerLocation = locationEvents.firstOrNull()?.location?.toMapLocation(),
-            initialBounds = initialBounds,
+            centerLocation = null,
+            initialBounds = initialBounds, // Only center when hole changes
             currentHole = currentHole
         )
 
@@ -196,7 +196,7 @@ fun GolfScreen(
         }
 
         // Permission overlay (when needed)
-        if (uiState.hasPermission == false) {
+        if (locationState.hasPermission == false) {
             Card(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -223,10 +223,10 @@ fun GolfScreen(
                     )
                     Button(
                         onClick = { viewModel.requestLocationPermission() },
-                        enabled = !uiState.isRequestingPermission
+                        enabled = !locationState.isRequestingPermission
                     ) {
                         Text(
-                            if (uiState.isRequestingPermission) "Requesting..."
+                            if (locationState.isRequestingPermission) "Requesting..."
                             else "Grant Permission"
                         )
                     }
