@@ -11,6 +11,8 @@ import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.repository.GolfCourseRepository
+import com.example.shared.data.model.GolfCourse
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,7 @@ class LocationTrackingViewModel(
     private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
+    private val golfCourseRepository: GolfCourseRepository,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -38,6 +41,8 @@ class LocationTrackingViewModel(
     private val _locationState = MutableStateFlow(LocationTrackingUiState())
     val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
+    private val _golfCourse = MutableStateFlow<GolfCourse?>(null)
+    val golfCourse: StateFlow<GolfCourse?> = _golfCourse.asStateFlow()
     
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
@@ -46,6 +51,19 @@ class LocationTrackingViewModel(
 
     init {
         startLocationTracking()
+        loadGolfCourse()
+    }
+    
+    private fun loadGolfCourse() {
+        viewModelScope.launch {
+            try {
+                val course = golfCourseRepository.loadGolfCourse()
+                _golfCourse.value = course
+                logger.info(TAG, "Golf course loaded: ${course?.name}")
+            } catch (e: Exception) {
+                logger.error(TAG, "Failed to load golf course", e)
+            }
+        }
     }
     
     fun startLocationTracking() {

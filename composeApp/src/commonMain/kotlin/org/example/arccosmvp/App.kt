@@ -13,13 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
-import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
-import com.example.shared.data.repository.GolfCourseRepository
-import org.koin.compose.koinInject
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
@@ -44,15 +41,14 @@ fun App() {
 
 @Composable
 fun GolfScreen(
-    viewModel: LocationTrackingViewModel = koinViewModel(),
-    golfCourseRepository: GolfCourseRepository = koinInject()
+    viewModel: LocationTrackingViewModel = koinViewModel()
 ) {
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
+    val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
 
     // Golf course and hole state
-    var golfCourse by remember { mutableStateOf<GolfCourse?>(null) }
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember { mutableStateOf<Hole?>(null) }
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
@@ -63,11 +59,9 @@ fun GolfScreen(
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
 
-    // Load golf course data on first composition
+    // Check permission status on first composition
     LaunchedEffect(Unit) {
         viewModel.checkPermissionStatus()
-        val loadedCourse = golfCourseRepository.loadGolfCourse()
-        golfCourse = loadedCourse
     }
 
     // Update current hole when golf course loads or hole number changes
