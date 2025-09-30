@@ -1,4 +1,4 @@
-package org.example.arccosmvp.platform
+package com.example.core_ui.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -14,6 +14,7 @@ import platform.MapKit.MKCoordinateSpanMake
 import platform.MapKit.MKMapView
 import platform.MapKit.MKPointAnnotation
 import platform.MapKit.MKMapCamera
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
@@ -27,6 +28,9 @@ actual fun MapView(
 ) {
     // Create use case for bearing calculation
     val calculateBearingUseCase = remember { CalculateBearingUseCase() }
+    
+    // Inject drawable provider (not used on iOS currently, but available for future use)
+    val drawableProvider: DrawableProvider = koinInject()
     UIKitView(
         modifier = modifier,
         factory = {

@@ -2,7 +2,6 @@ package org.example.arccosmvp
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -16,26 +15,28 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.LocationTrackingViewModel
-import org.example.arccosmvp.platform.MapView
-import org.example.arccosmvp.platform.toMapLocation
-import org.example.arccosmvp.platform.MapLocation
+import com.example.core_ui.platform.MapView
+import com.example.core_ui.platform.toMapLocation
+import com.example.core_ui.platform.MapLocation
 import com.example.shared.data.repository.GolfCourseRepository
-import org.example.arccosmvp.utils.ComposeResourceReader
+import org.koin.compose.koinInject
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.example.arccosmvp.platform.MarkerType
+import com.example.core_ui.platform.MarkerType
+import com.example.core_ui.theme.GolfAppTheme
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
+import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    GolfAppTheme {
         GolfScreen()
     }
 }
@@ -43,9 +44,9 @@ fun App() {
 @Composable
 fun GolfScreen(
     viewModel: LocationTrackingViewModel = koinViewModel(),
-    golfCourseRepository: GolfCourseRepository = GolfCourseRepository(ComposeResourceReader())
+    golfCourseRepository: GolfCourseRepository = koinInject()
 ) {
-    println("DEBUG: GolfScreen composable called")
+    val dimensions = LocalDimensionResources.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
@@ -63,18 +64,14 @@ fun GolfScreen(
     
     // Load golf course data on first composition
     LaunchedEffect(Unit) {
-        println("DEBUG: LaunchedEffect(Unit) triggered - loading golf course")
         viewModel.checkPermissionStatus()
         val loadedCourse = golfCourseRepository.loadGolfCourse()
-        println("DEBUG: Golf course loaded: ${loadedCourse?.name}, holes: ${loadedCourse?.holes?.size}")
         golfCourse = loadedCourse
     }
     
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
-        println("DEBUG: LaunchedEffect(golfCourse, currentHoleNumber) triggered - course: ${golfCourse?.name}, hole: $currentHoleNumber")
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
-            println("DEBUG: Found hole $currentHoleNumber, par: ${hole.par}")
             currentHole = hole
             
             
@@ -129,17 +126,17 @@ fun GolfScreen(
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp),
+                .padding(horizontal = dimensions.paddingLarge)
+                .padding(top = dimensions.paddingLarge),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
             ),
             shape = MaterialTheme.shapes.extraLarge
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
             ) {
                 // Hole Number
                 Text(
@@ -152,7 +149,7 @@ fun GolfScreen(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(40.dp)
+                        .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
                 
@@ -177,7 +174,7 @@ fun GolfScreen(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(40.dp)
+                        .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
                 
@@ -203,13 +200,13 @@ fun GolfScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(dimensions.paddingLarge),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(dimensions.paddingLarge),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -221,7 +218,7 @@ fun GolfScreen(
                         text = "This app needs location permission to track your location.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = dimensions.paddingSmall)
                     )
                     Button(
                         onClick = { viewModel.requestLocationPermission() },
@@ -240,8 +237,8 @@ fun GolfScreen(
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
+                .padding(horizontal = dimensions.paddingLarge)
+                .padding(bottom = dimensions.paddingLarge),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.85f)
             ),
@@ -249,9 +246,9 @@ fun GolfScreen(
             onClick = { showScoreCard = true }
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
                 // Left Arrow
                 IconButton(
@@ -260,7 +257,7 @@ fun GolfScreen(
                             currentHoleNumber = currentHoleNumber - 1
                         }
                     },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(dimensions.iconButtonSize),
                     enabled = currentHoleNumber > 1
                 ) {
                     Icon(
@@ -291,7 +288,7 @@ fun GolfScreen(
                             text = currentHoleNumber.toString(),
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color.Black,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingSmall)
                         )
                     }
                 }
@@ -304,7 +301,7 @@ fun GolfScreen(
                             currentHoleNumber = currentHoleNumber + 1
                         }
                     },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(dimensions.iconButtonSize),
                     enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
                 ) {
                     Icon(

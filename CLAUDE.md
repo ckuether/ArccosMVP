@@ -51,24 +51,51 @@ This is a Kotlin Multiplatform project targeting Android and iOS using Compose M
 **shared**: Shared business logic module containing:
 - `commonMain`: Platform-agnostic business logic, data models, and utilities
 - `androidMain`: Android-specific implementations
-- `iosMain`: iOS-specific implementations (exports as `sharedKit` framework)
+- `iosMain`: iOS-specific implementations (exports as `Shared` framework)
 - Namespace: `com.example.shared`
+
+**location**: Location services module containing:
+- Cross-platform location tracking and permission handling
+- Platform-specific implementations for Android and iOS location services
+- Background location service implementations
+
+**core-ui**: Core UI components module containing:
+- Shared UI components and theme definitions
+- Platform-specific implementations for MapView and other UI components
+- Design system resources (colors, dimensions, fonts)
 
 ### Key Dependencies
 - Kotlin 2.2.20 with Compose Multiplatform 1.9.0
 - AndroidX Lifecycle and Activity Compose
 - Kotlinx Serialization, Coroutines, and DateTime
 - Material3 design system
+- Room Database with KSP for cross-platform data persistence
+- Koin for dependency injection
+- Google Maps and location services
+- Coil for image loading with SVG support
 
 ### Platform Targets
-- Android: Min SDK 24, Target SDK 36, Compile SDK 36
-- iOS: arm64 and simulator arm64 architectures
-- JVM target: Java 11
+- Android: Min SDK 26, Target SDK 36, Compile SDK 36, Java 17
+- iOS: iosArm64, iosSimulatorArm64, iosX64 architectures
 
 ## Development Notes
 
 - The app uses Compose Multiplatform for shared UI across platforms
 - Business logic is separated into the `shared` module for maximum code reuse
 - Platform-specific implementations use the expect/actual pattern
-- iOS framework exports as `sharedKit` for integration with Xcode projects
+- iOS framework exports as `Shared` for integration with Xcode projects
 - Configuration cache and build cache are enabled for faster builds
+- Room database schemas are stored in `shared/schemas/` directory
+- Google Maps API key is configured in `gradle.properties` and injected via manifest placeholders
+
+## Testing Commands
+
+```shell
+# Run specific module tests
+./gradlew :shared:testDebugUnitTest
+./gradlew :location:testDebugUnitTest
+./gradlew :core-ui:testDebugUnitTest
+
+# Run Android device tests
+./gradlew :shared:connectedAndroidTest
+```

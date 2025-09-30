@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.shared.data.model.Hole
+import com.example.core_ui.resources.LocalDimensionResources
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -24,13 +25,14 @@ fun ScoreCard(
     onFinishHole: (score: Int, putts: Int) -> Unit,
     onNavigateToHole: (holeNumber: Int) -> Unit
 ) {
+    val dimensions = LocalDimensionResources.current
     var selectedScore by remember(currentHoleNumber) { mutableStateOf<Int?>(null) }
     var selectedPutts by remember(currentHoleNumber) { mutableStateOf(0) }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(24.dp)
+            .padding(dimensions.paddingXXLarge)
     ) {
         // Score section
         Row(
@@ -51,7 +53,7 @@ fun ScoreCard(
             )
         }
         
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingLarge))
         
         // Score selection grid
         val par = currentHole?.par ?: 4
@@ -72,7 +74,7 @@ fun ScoreCard(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingMedium))
         
         // Second row: 4 (Par), 5 (Bogey highlighted), 6
         Row(
@@ -96,7 +98,7 @@ fun ScoreCard(
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingMedium))
         
         // Third row: 7, 8, 9
         Row(
@@ -113,7 +115,7 @@ fun ScoreCard(
             }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingXLarge))
         
         // Putts section
         Text(
@@ -123,7 +125,7 @@ fun ScoreCard(
             color = Color.Black
         )
         
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingMedium))
         
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -138,7 +140,7 @@ fun ScoreCard(
             }
         }
         
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(dimensions.spacingXLarge))
         
         // Navigation and finish button
         Row(
@@ -172,12 +174,12 @@ fun ScoreCard(
                 enabled = selectedScore != null,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 16.dp)
-                    .height(56.dp),
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .height(dimensions.buttonHeight),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
-                shape = RoundedCornerShape(28.dp)
+                shape = RoundedCornerShape(dimensions.buttonCornerRadius)
             ) {
                 Text(
                     text = "Finish Hole $currentHoleNumber",

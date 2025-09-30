@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
 import com.example.shared.data.model.Hole
 import kotlin.math.roundToInt
+import com.example.core_ui.resources.LocalDimensionResources
 
 @Composable
 fun DraggableScoreCardBottomSheet(
@@ -28,6 +29,7 @@ fun DraggableScoreCardBottomSheet(
     onFinishHole: (score: Int, putts: Int) -> Unit,
     onNavigateToHole: (holeNumber: Int) -> Unit
 ) {
+    val dimensions = LocalDimensionResources.current
     val density = LocalDensity.current
     val screenHeight = with(density) { 800.dp.toPx() } // Approximate screen height
     val sheetHeight = screenHeight * 0.8f
@@ -59,7 +61,7 @@ fun DraggableScoreCardBottomSheet(
                 .fillMaxWidth()
                 .fillMaxHeight(0.8f)
                 .offset { IntOffset(0, totalOffset.roundToInt()) }
-                .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                .clip(RoundedCornerShape(topStart = dimensions.cornerRadiusXLarge, topEnd = dimensions.cornerRadiusXLarge))
                 .background(Color.White)
                 .clickable { /* Prevent click through */ }
                 .pointerInput(Unit) {
@@ -83,16 +85,16 @@ fun DraggableScoreCardBottomSheet(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp),
+                        .padding(top = dimensions.paddingMedium),
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(40.dp)
-                            .height(4.dp)
+                            .width(dimensions.dragHandleWidth)
+                            .height(dimensions.dragHandleHeight)
                             .background(
                                 Color.Gray.copy(alpha = 0.5f),
-                                RoundedCornerShape(2.dp)
+                                RoundedCornerShape(dimensions.paddingXSmall)
                             )
                     )
                 }

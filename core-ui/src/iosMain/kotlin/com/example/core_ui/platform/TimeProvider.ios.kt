@@ -1,4 +1,4 @@
-package org.example.arccosmvp.platform
+package com.example.core_ui.platform
 
 import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSince1970

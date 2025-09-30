@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.core_ui.resources.LocalDimensionResources
 
 @Composable
 fun ScoreButton(
@@ -23,6 +24,7 @@ fun ScoreButton(
     onClick: () -> Unit,
     par: Int = 4
 ) {
+    val dimensions = LocalDimensionResources.current
     val scoreName = getScoreName(score, par)
     
     if (isSelected) {
@@ -32,8 +34,8 @@ fun ScoreButton(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(dimensions.scoreButtonSize)
+                    .clip(RoundedCornerShape(dimensions.cornerRadiusSmall))
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
@@ -60,7 +62,7 @@ fun ScoreButton(
     } else {
         Box(
             modifier = Modifier
-                .size(60.dp)
+                .size(dimensions.scoreButtonSize)
                 .clip(CircleShape)
                 .background(Color.LightGray.copy(alpha = 0.5f))
                 .clickable { onClick() },
@@ -82,6 +84,7 @@ fun ParButton(
     onClick: () -> Unit,
     par: Int = 4
 ) {
+    val dimensions = LocalDimensionResources.current
     if (isSelected) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -89,8 +92,8 @@ fun ParButton(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .size(dimensions.scoreButtonSize)
+                    .clip(RoundedCornerShape(dimensions.cornerRadiusSmall))
                     .background(MaterialTheme.colorScheme.primary),
                 contentAlignment = Alignment.Center
             ) {
@@ -119,7 +122,7 @@ fun ParButton(
         ) {
             Box(
                 modifier = Modifier
-                    .size(60.dp)
+                    .size(dimensions.scoreButtonSize)
                     .clip(CircleShape)
                     .background(Color.LightGray.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
@@ -131,7 +134,7 @@ fun ParButton(
                     fontWeight = FontWeight.Bold
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(dimensions.paddingXSmall))
             Text(
                 text = "Par",
                 style = MaterialTheme.typography.bodySmall,
@@ -147,14 +150,15 @@ fun PuttsButton(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
+    val dimensions = LocalDimensionResources.current
     Box(
         modifier = Modifier
-            .size(50.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(dimensions.puttsButtonSize)
+            .clip(RoundedCornerShape(dimensions.cornerRadiusSmall))
             .border(
                 width = 1.dp,
                 color = if (isSelected) MaterialTheme.colorScheme.primary else Color.Gray,
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(dimensions.cornerRadiusSmall)
             )
             .background(
                 if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else Color.Transparent
