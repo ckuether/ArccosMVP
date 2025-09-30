@@ -1,19 +1,18 @@
-package org.example.arccosmvp.presentation
+package org.example.arccosmvp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.location.domain.service.LocationTrackingService
 import com.example.location.domain.usecase.LocationException
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
+import com.example.location.domain.usecase.StartLocationTrackingUseCase
+import com.example.location.domain.usecase.StopLocationTrackingUseCase
+import com.example.location.domain.usecase.SaveLocationEventUseCase
+import com.example.location.domain.usecase.GetLocationEventsUseCase
+import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.shared.data.event.InPlayEvent
 import com.example.shared.platform.Logger
-import com.example.shared.data.dao.InPlayEventDao
-import com.example.shared.data.entity.toEntity
-import com.example.shared.data.entity.toInPlayEvent
-import com.example.shared.data.model.Location
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,10 +23,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 
 class LocationTrackingViewModel(
-    private val locationTrackingService: LocationTrackingService,
+    private val startLocationTrackingUseCase: StartLocationTrackingUseCase,
+    private val stopLocationTrackingUseCase: StopLocationTrackingUseCase,
+    private val saveLocationEventUseCase: SaveLocationEventUseCase,
+    private val getLocationEventsUseCase: GetLocationEventsUseCase,
+    private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val inPlayEventDao: InPlayEventDao,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -37,28 +39,10 @@ class LocationTrackingViewModel(
     
     private val _uiState = MutableStateFlow(LocationTrackingUiState())
     val uiState: StateFlow<LocationTrackingUiState> = _uiState.asStateFlow()
-    
-    val isTracking = locationTrackingService.isTracking
+
     
     // Flow of location events from database
-    val locationEvents = inPlayEventDao.getEventsByType("LocationUpdated")
-        .map { entities ->
-            entities.mapNotNull { entity ->
-                try {
-                    // Convert entity back to InPlayEvent and then to LocationItem
-                    val event = entity.toInPlayEvent() as? InPlayEvent.LocationUpdated
-                    event?.let { 
-                        LocationItem(
-                            location = it.location,
-                            timestamp = it.timestamp
-                        )
-                    }
-                } catch (e: Exception) {
-                    logger.error(TAG, "Failed to convert entity to LocationItem", e)
-                    null
-                }
-            }
-        }
+    val locationEvents = getLocationEventsUseCase()
     
     private var trackingJob: Job? = null
     
@@ -85,19 +69,21 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Setting UI state and starting location service")
                 _uiState.value = _uiState.value.copy(isLoading = true, isTracking = true, error = null)
                 
-                logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
-                trackingJob = locationTrackingService.startLocationTracking()
+                logger.info(TAG, "Calling startLocationTrackingUseCase()")
+                trackingJob = startLocationTrackingUseCase()
                     .onEach { locationEvent ->
                         logger.debug(TAG, "Received location event: ${locationEvent.location.lat}, ${locationEvent.location.long}")
                         
-                        // Try to save to database with error handling
-                        try {
-                            inPlayEventDao.insertEvent(locationEvent.toEntity())
-                            logger.debug(TAG, "Location event saved to database successfully")
-                        } catch (e: Exception) {
-                            logger.error(TAG, "Failed to save location event to database", e)
-                            // Continue with UI update even if database save fails
-                        }
+                        // Try to save to database using use case
+                        saveLocationEventUseCase(locationEvent).fold(
+                            onSuccess = { 
+                                logger.debug(TAG, "Location event saved successfully")
+                            },
+                            onFailure = { error ->
+                                logger.error(TAG, "Failed to save location event", error)
+                                // Continue with UI update even if database save fails
+                            }
+                        )
                         
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
@@ -128,14 +114,14 @@ class LocationTrackingViewModel(
             }
         }
     }
-    
+
     fun stopLocationTracking() {
         logger.info(TAG, "stopLocationTracking() called")
         viewModelScope.launch {
             try {
                 trackingJob?.cancel()
                 trackingJob = null
-                locationTrackingService.stopLocationTracking()
+                stopLocationTrackingUseCase()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isTracking = false,
@@ -150,7 +136,7 @@ class LocationTrackingViewModel(
             }
         }
     }
-    
+
     fun requestLocationPermission() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRequestingPermission = true, error = null)
@@ -205,17 +191,14 @@ class LocationTrackingViewModel(
     
     fun clearLocations() {
         viewModelScope.launch {
-            try {
-                // Delete all location events from database
-                inPlayEventDao.getEventsByType("LocationUpdated").collect { events ->
-                    events.forEach { event ->
-                        inPlayEventDao.deleteEvent(event)
-                    }
-                    logger.info(TAG, "All location events cleared from database")
+            clearLocationEventsUseCase().fold(
+                onSuccess = {
+                    logger.info(TAG, "All location events cleared successfully")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to clear location events", error)
                 }
-            } catch (e: Exception) {
-                logger.error(TAG, "Failed to clear location events", e)
-            }
+            )
         }
     }
     
@@ -236,9 +219,4 @@ data class LocationTrackingUiState(
     val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
     val isRequestingPermission: Boolean = false,
     val error: String? = null
-)
-
-data class LocationItem(
-    val location: Location,
-    val timestamp: Long // Epoch milliseconds
 )

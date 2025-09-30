@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.GolfCourse
-import org.example.arccosmvp.presentation.LocationTrackingViewModel
+import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
