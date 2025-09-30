@@ -15,7 +15,7 @@ val Pink40 = Color(0xFF7D5260)
 // App Brand Colors
 private val BrandPrimary = Purple40  // Using the darker purple for better contrast
 private val BrandPrimaryDisabled = PurpleGrey80
-private val BrandOffWhite = Pink80
+private val BrandOffWhite = Color.White.copy(alpha = 0.8f)
 
 // Base Colors
 private val BaseWhite = Color(0xFFFFFFFF)
