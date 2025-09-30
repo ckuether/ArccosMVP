@@ -12,7 +12,9 @@ import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.event.InPlayEvent
 import com.example.shared.data.repository.GolfCourseRepository
+import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.model.GolfCourse
+import com.example.shared.data.model.Player
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +33,7 @@ class LocationTrackingViewModel(
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
     private val golfCourseRepository: GolfCourseRepository,
+    private val userRepository: UserRepository,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -43,6 +46,9 @@ class LocationTrackingViewModel(
 
     private val _golfCourse = MutableStateFlow<GolfCourse?>(null)
     val golfCourse: StateFlow<GolfCourse?> = _golfCourse.asStateFlow()
+
+    private val _currentPlayer = MutableStateFlow<Player?>(null)
+    val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
     
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
@@ -51,6 +57,7 @@ class LocationTrackingViewModel(
 
     init {
         loadGolfCourse()
+        loadCurrentUser()
         checkPermissionStatus()
     }
     
@@ -62,6 +69,26 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Golf course loaded: ${course?.name}")
             } catch (e: Exception) {
                 logger.error(TAG, "Failed to load golf course", e)
+            }
+        }
+    }
+    
+    private fun loadCurrentUser() {
+        viewModelScope.launch {
+            try {
+                val player = userRepository.getCurrentUser()
+                if (player != null) {
+                    _currentPlayer.value = player
+                    logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
+                } else {
+                    logger.warn(TAG, "No user data found, using default player")
+                    // Create a default player if none found
+                    _currentPlayer.value = Player(name = "Guest Player")
+                }
+            } catch (e: Exception) {
+                logger.error(TAG, "Failed to load current user", e)
+                // Fallback to default player on error
+                _currentPlayer.value = Player(name = "Guest Player")
             }
         }
     }
