@@ -56,10 +56,6 @@ fun GolfApp(
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
 
-    // Check permission status on first composition
-    LaunchedEffect(Unit) {
-        viewModel.checkPermissionStatus()
-    }
 
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
@@ -111,7 +107,8 @@ fun GolfApp(
             },
             centerLocation = null,
             initialBounds = initialBounds, // Only center when hole changes
-            currentHole = currentHole
+            currentHole = currentHole,
+            hasLocationPermission = locationState.hasPermission == true
         )
 
         // Top overlay - Hole info bar

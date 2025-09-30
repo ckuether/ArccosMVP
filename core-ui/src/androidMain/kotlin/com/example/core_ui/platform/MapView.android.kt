@@ -27,6 +27,7 @@ actual fun MapView(
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
     currentHole: Hole?,
+    hasLocationPermission: Boolean,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
@@ -142,7 +143,7 @@ actual fun MapView(
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
             mapType = MapType.HYBRID,
-            isMyLocationEnabled = true
+            isMyLocationEnabled = hasLocationPermission
         ),
         uiSettings = MapUiSettings(
             zoomControlsEnabled = false,

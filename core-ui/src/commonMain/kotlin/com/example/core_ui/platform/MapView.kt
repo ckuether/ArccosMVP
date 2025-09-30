@@ -27,6 +27,7 @@ expect fun MapView(
     centerLocation: MapLocation? = null,
     initialBounds: Pair<MapLocation, MapLocation>? = null,
     currentHole: Hole? = null,
+    hasLocationPermission: Boolean = false,
     onMapClick: ((MapLocation) -> Unit)? = null
 )
 

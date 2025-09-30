@@ -24,6 +24,7 @@ actual fun MapView(
     centerLocation: MapLocation?,
     initialBounds: Pair<MapLocation, MapLocation>?,
     currentHole: Hole?,
+    hasLocationPermission: Boolean,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
     // Create use case for bearing calculation
@@ -37,7 +38,7 @@ actual fun MapView(
             val mapView = MKMapView()
             
             // Configure map settings
-            mapView.setShowsUserLocation(true)
+            mapView.setShowsUserLocation(hasLocationPermission)
             mapView.setZoomEnabled(true)
             mapView.setScrollEnabled(true)
             mapView.setRotateEnabled(true)

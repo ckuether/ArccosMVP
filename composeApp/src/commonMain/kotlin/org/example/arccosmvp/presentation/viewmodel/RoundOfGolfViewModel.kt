@@ -50,8 +50,8 @@ class LocationTrackingViewModel(
     private var trackingJob: Job? = null
 
     init {
-        startLocationTracking()
         loadGolfCourse()
+        checkPermissionStatus()
     }
     
     private fun loadGolfCourse() {
@@ -171,6 +171,9 @@ class LocationTrackingViewModel(
                             isRequestingPermission = false,
                             error = null
                         )
+                        // Automatically start location tracking after permission is granted
+                        logger.info(TAG, "Permission granted, starting location tracking")
+                        startLocationTracking()
                     }
                     is PermissionResult.Denied -> {
                         _locationState.value = _locationState.value.copy(
@@ -201,6 +204,12 @@ class LocationTrackingViewModel(
             try {
                 val hasPermission = checkLocationPermissionUseCase()
                 _locationState.value = _locationState.value.copy(hasPermission = hasPermission)
+                
+                // Automatically start location tracking if permission is granted
+                if (hasPermission && !_locationState.value.isTracking) {
+                    logger.info(TAG, "Permission granted, starting location tracking automatically")
+                    startLocationTracking()
+                }
             } catch (e: Exception) {
                 _locationState.value = _locationState.value.copy(
                     error = e.message ?: "Error checking permission"
