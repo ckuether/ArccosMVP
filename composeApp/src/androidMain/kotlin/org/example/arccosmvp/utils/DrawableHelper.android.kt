@@ -12,15 +12,15 @@ import androidx.core.graphics.createBitmap
 /**
  * Android-specific helper for creating map markers using VectorDrawable to Bitmap approach
  */
-object AndroidDrawableHelper {
+class AndroidDrawableHelper(private val context: Context) {
     
     /**
      * Creates a BitmapDescriptor for Google Maps markers using the VectorDrawable approach
      */
-    fun createGolfBallMarker(context: Context): BitmapDescriptor? {
+    fun createGolfBallMarker(): BitmapDescriptor? {
         return try {
             // Create a golf ball bitmap using the VectorDrawable pattern
-            getBitmapFromGolfBallDrawable(context)?.let { bitmap ->
+            getBitmapFromGolfBallDrawable()?.let { bitmap ->
                 BitmapDescriptorFactory.fromBitmap(bitmap)
             }
         } catch (e: Exception) {
@@ -32,10 +32,10 @@ object AndroidDrawableHelper {
     /**
      * Creates a BitmapDescriptor for Google Maps golf flag markers
      */
-    fun createGolfFlagMarker(context: Context): BitmapDescriptor? {
+    fun createGolfFlagMarker(): BitmapDescriptor? {
         return try {
             // Create a golf flag bitmap using the VectorDrawable pattern
-            getBitmapFromGolfFlagDrawable(context)?.let { bitmap ->
+            getBitmapFromGolfFlagDrawable()?.let { bitmap ->
                 BitmapDescriptorFactory.fromBitmap(bitmap)
             }
         } catch (e: Exception) {
@@ -47,21 +47,21 @@ object AndroidDrawableHelper {
     /**
      * Creates a golf ball bitmap using your PNG asset and VectorDrawable approach
      */
-    private fun getBitmapFromGolfBallDrawable(context: Context): Bitmap? {
-        return createBitmapFromDrawable(context, R.drawable.golf_ball)
+    private fun getBitmapFromGolfBallDrawable(): Bitmap? {
+        return createBitmapFromDrawable(R.drawable.golf_ball)
     }
     
     /**
      * Creates a golf flag bitmap using your PNG asset and VectorDrawable approach
      */
-    private fun getBitmapFromGolfFlagDrawable(context: Context): Bitmap? {
-        return createBitmapFromDrawable(context, R.drawable.golf_flag)
+    private fun getBitmapFromGolfFlagDrawable(): Bitmap? {
+        return createBitmapFromDrawable(R.drawable.golf_flag)
     }
     
     /**
      * Generic function to create bitmap from drawable resource using VectorDrawable approach
      */
-    private fun createBitmapFromDrawable(context: Context, drawableResId: Int, sizeDp: Int = 18): Bitmap? {
+    private fun createBitmapFromDrawable(drawableResId: Int, sizeDp: Int = 18): Bitmap? {
         // Get the drawable from resource
         val drawable = ContextCompat.getDrawable(context, drawableResId) ?: return null
 

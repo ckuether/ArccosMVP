@@ -26,6 +26,7 @@ import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import com.example.core_ui.platform.MarkerType
+import com.example.core_ui.theme.GolfAppTheme
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.shared.data.model.distanceToInYards
@@ -34,7 +35,7 @@ import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    GolfAppTheme {
         GolfScreen()
     }
 }
