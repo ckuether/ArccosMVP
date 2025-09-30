@@ -58,9 +58,6 @@ data class ColorResources(
     val transparent: Color = Color.Transparent,
     val transparentOverlay: Color = Color(0x1F000000), // 12% black overlay
     val divider: Color = lightGrey,
-    val defaultButtonColor: Color = Grey6C7, // Default icon tint color
-
-
 )
 
 val LocalColorResources = compositionLocalOf { ColorResources() }

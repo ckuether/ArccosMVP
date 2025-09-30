@@ -10,8 +10,8 @@ import com.example.core_ui.resources.LocalColorResources
 import com.example.core_ui.resources.LocalFontSizeResources
 import com.example.core_ui.resources.Pink40
 import com.example.core_ui.resources.Purple80
-import com.example.shared.resources.DimensionResources
-import com.example.shared.resources.LocalDimensionResources
+import com.example.core_ui.resources.DimensionResources
+import com.example.core_ui.resources.LocalDimensionResources
 
 @Composable
 expect fun PlatformThemeSetup()

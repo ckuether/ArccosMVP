@@ -29,6 +29,7 @@ import com.example.core_ui.platform.MarkerType
 import com.example.core_ui.theme.GolfAppTheme
 import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
+import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
 
@@ -45,6 +46,7 @@ fun GolfScreen(
     viewModel: LocationTrackingViewModel = koinViewModel(),
     golfCourseRepository: GolfCourseRepository = koinInject()
 ) {
+    val dimensions = LocalDimensionResources.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     
@@ -124,17 +126,17 @@ fun GolfScreen(
         Card(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(horizontal = 16.dp)
-                .padding(top = 16.dp),
+                .padding(horizontal = dimensions.paddingLarge)
+                .padding(top = dimensions.paddingLarge),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f)
             ),
             shape = MaterialTheme.shapes.extraLarge
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp)
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
             ) {
                 // Hole Number
                 Text(
@@ -147,7 +149,7 @@ fun GolfScreen(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(40.dp)
+                        .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
                 
@@ -172,7 +174,7 @@ fun GolfScreen(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(40.dp)
+                        .height(dimensions.spacingXXLarge)
                         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 )
                 
@@ -198,13 +200,13 @@ fun GolfScreen(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(16.dp),
+                    .padding(dimensions.paddingLarge),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer
                 )
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(dimensions.paddingLarge),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -216,7 +218,7 @@ fun GolfScreen(
                         text = "This app needs location permission to track your location.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = dimensions.paddingSmall)
                     )
                     Button(
                         onClick = { viewModel.requestLocationPermission() },
@@ -235,8 +237,8 @@ fun GolfScreen(
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 16.dp)
-                .padding(bottom = 16.dp),
+                .padding(horizontal = dimensions.paddingLarge)
+                .padding(bottom = dimensions.paddingLarge),
             colors = CardDefaults.cardColors(
                 containerColor = Color.White.copy(alpha = 0.85f)
             ),
@@ -244,9 +246,9 @@ fun GolfScreen(
             onClick = { showScoreCard = true }
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingMedium),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingLarge)
             ) {
                 // Left Arrow
                 IconButton(
@@ -255,7 +257,7 @@ fun GolfScreen(
                             currentHoleNumber = currentHoleNumber - 1
                         }
                     },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(dimensions.iconButtonSize),
                     enabled = currentHoleNumber > 1
                 ) {
                     Icon(
@@ -286,7 +288,7 @@ fun GolfScreen(
                             text = currentHoleNumber.toString(),
                             style = MaterialTheme.typography.headlineMedium,
                             color = Color.Black,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = dimensions.paddingLarge, vertical = dimensions.paddingSmall)
                         )
                     }
                 }
@@ -299,7 +301,7 @@ fun GolfScreen(
                             currentHoleNumber = currentHoleNumber + 1
                         }
                     },
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(dimensions.iconButtonSize),
                     enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
                 ) {
                     Icon(
