@@ -13,9 +13,6 @@ import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.shared.platform.Logger
 import com.example.shared.platform.createLogger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Dispatchers
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -38,8 +35,7 @@ val locationModule = module {
     
     // Services
     single<LocationTrackingService> {
-        val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        LocationTrackingServiceImpl(get(), get(), serviceScope)
+        LocationTrackingServiceImpl(get())
     }
 }
 

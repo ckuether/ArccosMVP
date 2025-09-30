@@ -5,12 +5,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.location.domain.usecase.LocationException
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
-import com.example.location.domain.usecase.StartLocationTrackingUseCase
-import com.example.location.domain.usecase.StopLocationTrackingUseCase
 import com.example.location.domain.usecase.SaveLocationEventUseCase
 import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
+import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.event.InPlayEvent
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,8 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 
 class LocationTrackingViewModel(
-    private val startLocationTrackingUseCase: StartLocationTrackingUseCase,
-    private val stopLocationTrackingUseCase: StopLocationTrackingUseCase,
+    private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
     private val getLocationEventsUseCase: GetLocationEventsUseCase,
     private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
@@ -73,8 +71,8 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Setting UI state and starting location service")
                 _locationState.value = _locationState.value.copy(isLoading = true, isTracking = true, error = null)
                 
-                logger.info(TAG, "Calling startLocationTrackingUseCase()")
-                trackingJob = startLocationTrackingUseCase()
+                logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
+                trackingJob = locationTrackingService.startLocationTracking()
                     .onEach { locationEvent ->
                         logger.debug(TAG, "Received location event: ${locationEvent.location.lat}, ${locationEvent.location.long}")
                         
@@ -125,7 +123,7 @@ class LocationTrackingViewModel(
             try {
                 trackingJob?.cancel()
                 trackingJob = null
-                stopLocationTrackingUseCase()
+                locationTrackingService.stopLocationTracking()
                 _locationState.value = _locationState.value.copy(
                     isLoading = false,
                     isTracking = false,
