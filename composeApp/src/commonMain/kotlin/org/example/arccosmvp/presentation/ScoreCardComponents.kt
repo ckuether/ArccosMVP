@@ -176,16 +176,14 @@ fun PuttsButton(
 }
 
 fun getScoreName(score: Int, par: Int): String {
+    if (score == 1) return "Hole In One"
     return when (score - par) {
-        -3 -> "Albatross"
         -2 -> "Eagle"
         -1 -> "Birdie"
         0 -> "Par"
         1 -> "Bogey"
-        2 -> "Double Bogey"
         else -> {
-            if (score == 1) "Hole In One"
-            else if (score - par > 2) "+${score - par}"
+            if (score - par > 1) "+${score - par}"
             else ""
         }
     }
