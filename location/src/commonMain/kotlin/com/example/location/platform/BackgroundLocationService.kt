@@ -8,5 +8,3 @@ interface BackgroundLocationService {
     fun stopBackgroundLocationTracking()
     val isBackgroundTrackingActive: Flow<Boolean>
 }
-
-expect fun createBackgroundLocationService(): BackgroundLocationService
