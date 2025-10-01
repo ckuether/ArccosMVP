@@ -40,7 +40,7 @@ fun HoleStats(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Score",
+                text = "Hole $currentHoleNumber Score",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black

@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
+import com.example.shared.data.model.ScoreCard
 import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
@@ -24,8 +25,9 @@ import com.example.core_ui.theme.GolfAppTheme
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
-import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
+import org.example.arccosmvp.presentation.HoleStatsBottomSheet
 import org.example.arccosmvp.presentation.MiniScorecard
+import org.example.arccosmvp.presentation.ScoreCardBottomSheet
 
 @Composable
 @Preview
@@ -42,6 +44,7 @@ fun GolfApp(
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
+    val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
@@ -50,6 +53,7 @@ fun GolfApp(
     var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
+    var showFullScoreCard by remember { mutableStateOf(false) }
 
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -227,7 +231,7 @@ fun GolfApp(
         ) {
             // To Par Scorecard - Bottom Left
             MiniScorecard(
-                onScoreCardClick = { showScoreCard = true }
+                onScoreCardClick = { showFullScoreCard = true }
             )
 
             // Edit Hole component - fills available space
@@ -322,7 +326,7 @@ fun GolfApp(
 
         // Score Card Bottom Sheet
         if (showScoreCard) {
-            DraggableScoreCardBottomSheet(
+            HoleStatsBottomSheet(
                 currentHole = currentHole,
                 currentHoleNumber = currentHoleNumber,
                 totalHoles = golfCourse?.holes?.size ?: 9,
@@ -336,6 +340,22 @@ fun GolfApp(
                     currentHoleNumber = holeNumber
                     showScoreCard = false
                 }
+            )
+        }
+
+        // Full ScoreCard Bottom Sheet
+        if (showFullScoreCard) {
+            ScoreCardBottomSheet(
+                golfCourse = golfCourse,
+                currentPlayer = currentPlayer,
+                currentScoreCard = currentPlayer?.let { player ->
+                    ScoreCard(
+                        courseId = golfCourse?.id ?: 0L,
+                        playerId = player.id,
+                        scorecard = emptyMap()
+                    )
+                },
+                onDismiss = { showFullScoreCard = false }
             )
         }
     }
