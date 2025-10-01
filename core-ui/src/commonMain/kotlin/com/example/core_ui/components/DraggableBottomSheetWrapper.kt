@@ -1,10 +1,11 @@
-package org.example.arccosmvp.presentation
+package com.example.core_ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -14,39 +15,41 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.IntOffset
-import com.example.shared.data.model.Hole
-import kotlin.math.roundToInt
+import androidx.compose.ui.unit.dp
 import com.example.core_ui.resources.LocalDimensionResources
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 @Composable
-fun DraggableScoreCardBottomSheet(
-    currentHole: Hole?,
-    currentHoleNumber: Int,
-    totalHoles: Int,
+fun DraggableBottomSheetWrapper(
     onDismiss: () -> Unit,
-    onFinishHole: (score: Int, putts: Int) -> Unit,
-    onNavigateToHole: (holeNumber: Int) -> Unit
+    fillMaxHeight: Float? = 0.8f,
+    content: @Composable () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
     val density = LocalDensity.current
     val screenHeight = with(density) { 800.dp.toPx() } // Approximate screen height
-    val sheetHeight = screenHeight * 0.8f
+    val sheetHeight = fillMaxHeight?.let { screenHeight * it } ?: (screenHeight * 0.5f) // Fallback for drag calculations
     
     var dragOffsetY by remember { mutableStateOf(0f) }
     val dismissThreshold = sheetHeight * 0.3f // Dismiss if dragged down 30% of sheet height
+
+    var isVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit){
+        isVisible = true
+    }
     
-    // Simple entrance animation - starts from bottom and slides to 0
     val entranceOffset by animateFloatAsState(
-        targetValue = 0f,
+        targetValue = if (isVisible) 0f else sheetHeight,
         animationSpec = tween(durationMillis = 300),
         label = "entranceAnimation"
     )
     
     // Combine entrance animation with drag offset
     val totalOffset = entranceOffset + dragOffsetY
-    
+
     // Background overlay
     Box(
         modifier = Modifier
@@ -59,33 +62,59 @@ fun DraggableScoreCardBottomSheet(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(0.8f)
+                .let { modifier ->
+                    if (fillMaxHeight != null) {
+                        modifier.fillMaxHeight(fillMaxHeight)
+                    } else {
+                        modifier.wrapContentHeight()
+                    }
+                }
                 .offset { IntOffset(0, totalOffset.roundToInt()) }
                 .clip(RoundedCornerShape(topStart = dimensions.cornerRadiusXLarge, topEnd = dimensions.cornerRadiusXLarge))
                 .background(Color.White)
                 .clickable { /* Prevent click through */ }
                 .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragEnd = {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val down = awaitFirstDown(requireUnconsumed = false)
+                            var isDragging = false
+                            
+                            drag(down.id) { change ->
+                                val dragAmount = change.position - change.previousPosition
+                                
+                                // If we haven't started dragging yet, check if this is a vertical drag
+                                if (!isDragging) {
+                                    if (abs(dragAmount.y) > abs(dragAmount.x) &&
+                                        abs(dragAmount.y) > 5f) {
+                                        isDragging = true
+                                    }
+                                }
+                                
+                                // If we're dragging vertically, handle it
+                                if (isDragging && dragAmount.y > 0) {
+                                    val newOffset = dragOffsetY + dragAmount.y
+                                    dragOffsetY = if (newOffset > 0) newOffset else 0f
+                                    change.consume()
+                                }
+                            }
+                            
+                            // Handle drag end
                             if (dragOffsetY > dismissThreshold) {
                                 onDismiss()
                             } else {
                                 dragOffsetY = 0f
                             }
                         }
-                    ) { _, dragAmount ->
-                        val newOffset = dragOffsetY + dragAmount.y
-                        // Only allow dragging down (positive Y)
-                        dragOffsetY = if (newOffset > 0) newOffset else 0f
                     }
                 }
         ) {
             Column {
-                // Drag handle
+                // Drag handle area - larger touch target
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = dimensions.paddingMedium),
+                        .padding(top = dimensions.paddingMedium)
+                        .height(32.dp), // Larger touch area
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
@@ -99,15 +128,8 @@ fun DraggableScoreCardBottomSheet(
                     )
                 }
                 
-                // Score card content
-                HoleStats(
-                    currentHole = currentHole,
-                    currentHoleNumber = currentHoleNumber,
-                    totalHoles = totalHoles,
-                    onDismiss = onDismiss,
-                    onFinishHole = onFinishHole,
-                    onNavigateToHole = onNavigateToHole
-                )
+                // Content
+                content()
             }
         }
     }

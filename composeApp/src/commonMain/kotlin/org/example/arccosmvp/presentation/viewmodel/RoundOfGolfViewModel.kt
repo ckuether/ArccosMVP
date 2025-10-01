@@ -14,6 +14,7 @@ import com.example.shared.data.repository.GolfCourseRepository
 import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.model.GolfCourse
 import com.example.shared.data.model.Player
+import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-class LocationTrackingViewModel(
+class RoundOfGolfViewModel(
     private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
     private val getLocationEventsUseCase: GetLocationEventsUseCase,
@@ -38,7 +39,7 @@ class LocationTrackingViewModel(
     private val logger: Logger
 ) : ViewModel() {
     
-    companion object {
+    companion object Companion {
         private const val TAG = "LocationTrackingViewModel"
     }
     
@@ -50,7 +51,16 @@ class LocationTrackingViewModel(
 
     private val _currentPlayer = MutableStateFlow<Player?>(null)
     val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
-    
+
+    private val _currentScoreCard = MutableStateFlow(
+        ScoreCard(
+            courseId = 0L,
+            playerId = 0L,
+            scorecard = emptyMap()
+        )
+    )
+    val currentScoreCard: StateFlow<ScoreCard> = _currentScoreCard.asStateFlow()
+
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
     
@@ -216,6 +226,52 @@ class LocationTrackingViewModel(
                     error = e.message ?: "Error requesting permission"
                 )
             }
+        }
+    }
+    
+    fun updateHoleScore(holeNumber: Int, score: Int) {
+        val currentCard = _currentScoreCard.value
+        val updatedScorecard = currentCard.scorecard.toMutableMap()
+        updatedScorecard[holeNumber] = score
+        
+        _currentScoreCard.value = currentCard.copy(
+            scorecard = updatedScorecard
+        )
+        logger.info(TAG, "Updated hole $holeNumber score to $score")
+    }
+    
+    fun getHoleScore(holeNumber: Int): Int? {
+        return _currentScoreCard.value.scorecard[holeNumber]
+    }
+    
+    fun getTotalScore(): Int {
+        return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
+    }
+    
+    fun getTotalPar(): Int {
+        val course = _golfCourse.value ?: return 0
+        return course.holes.sumOf { it.par }
+    }
+    
+    fun getCompletedHolesPar(): Int {
+        val course = _golfCourse.value ?: return 0
+        val completedHoles = _currentScoreCard.value.scorecard.keys
+        return course.holes.filter { it.id in completedHoles }.sumOf { it.par }
+    }
+    
+    fun getScoreToPar(): String {
+        val totalScore = getTotalScore()
+        val completedPar = getCompletedHolesPar()
+        
+        return if (totalScore > 0 && completedPar > 0) {
+            val difference = totalScore - completedPar
+            when {
+                difference > 0 -> "+$difference"
+                difference < 0 -> "$difference"
+                else -> "E"
+            }
+        } else {
+            "E"
         }
     }
     
