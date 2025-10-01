@@ -24,9 +24,8 @@ import com.example.core_ui.theme.GolfAppTheme
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
-import com.example.shared.utils.formatTimestamp
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
-import org.example.arccosmvp.presentation.ToParScorecard
+import org.example.arccosmvp.presentation.MiniScorecard
 
 @Composable
 @Preview
@@ -42,7 +41,6 @@ fun GolfApp(
 ) {
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
-    val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
 
     // Golf course and hole state
@@ -94,12 +92,7 @@ fun GolfApp(
         MapView(
             modifier = Modifier.fillMaxSize(),
             userLocations = buildList {
-                // Add location tracking points
-                addAll(locationEvents.map { locationItem ->
-                    locationItem.location.toMapLocation(
-                        title = "Location at ${formatTimestamp(locationItem.timestamp)}"
-                    )
-                })
+                // Only show hole markers, no location tracking points
                 // Add current hole start location with golf ball icon
                 holeStartLocation?.let { add(it) }
                 // Add current hole end location with golf flag icon
@@ -233,7 +226,7 @@ fun GolfApp(
             verticalAlignment = Alignment.Bottom
         ) {
             // To Par Scorecard - Bottom Left
-            ToParScorecard(
+            MiniScorecard(
                 onScoreCardClick = { showScoreCard = true }
             )
 

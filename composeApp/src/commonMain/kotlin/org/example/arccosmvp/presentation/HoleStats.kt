@@ -11,13 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import com.example.shared.data.model.Hole
 import com.example.core_ui.resources.LocalDimensionResources
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ScoreCard(
+fun HoleStats(
     currentHole: Hole?,
     currentHoleNumber: Int,
     totalHoles: Int,

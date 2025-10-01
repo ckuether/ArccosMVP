@@ -182,6 +182,7 @@ fun getScoreName(score: Int, par: Int): String {
         -1 -> "Birdie"
         0 -> "Par"
         1 -> "Bogey"
+        2 -> "Double Bogey"
         else -> {
             if (score == 1) "Hole In One"
             else if (score - par > 2) "+${score - par}"

@@ -10,7 +10,6 @@ import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.event.InPlayEvent
 import com.example.shared.data.repository.GolfCourseRepository
 import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.model.GolfCourse
@@ -24,6 +23,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 
 class LocationTrackingViewModel(
     private val locationTrackingService: LocationTrackingService,
@@ -119,25 +120,17 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
                 trackingJob = locationTrackingService.startLocationTracking()
                     .onEach { locationEvent ->
-                        logger.debug(TAG, "Received location event: ${locationEvent.location.lat}, ${locationEvent.location.long}")
-                        
-                        // Try to save to database using use case
-                        saveLocationEventUseCase(locationEvent).fold(
-                            onSuccess = { 
-                                logger.debug(TAG, "Location event saved successfully")
-                            },
-                            onFailure = { error ->
-                                logger.error(TAG, "Failed to save location event", error)
-                                // Continue with UI update even if database save fails
-                            }
-                        )
-                        
-                        _locationState.value = _locationState.value.copy(
-                            isLoading = false,
-                            isTracking = true,
-                            lastLocationEvent = locationEvent,
-                            error = null
-                        )
+                        // Only save to database, no UI updates to prevent recomposition
+                        launch(Dispatchers.IO) {
+                            saveLocationEventUseCase(locationEvent).fold(
+                                onSuccess = { 
+                                    // Location saved successfully - no UI update needed
+                                },
+                                onFailure = { error ->
+                                    logger.error(TAG, "Failed to save location event", error)
+                                }
+                            )
+                        }
                     }
                     .catch { throwable ->
                         val errorMessage = when (throwable) {
@@ -271,7 +264,6 @@ class LocationTrackingViewModel(
 data class LocationTrackingUiState(
     val isLoading: Boolean = false,
     val isTracking: Boolean = false,
-    val lastLocationEvent: InPlayEvent.LocationUpdated? = null,
     val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
     val isRequestingPermission: Boolean = false,
     val error: String? = null
