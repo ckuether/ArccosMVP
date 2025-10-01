@@ -11,6 +11,7 @@ import com.example.core_ui.resources.LocalDimensionResources
 
 @Composable
 fun MiniScorecard(
+    scoreToPar: String = "E",
     onScoreCardClick: () -> Unit = {}
 ) {
     val dimensions = LocalDimensionResources.current
@@ -36,7 +37,7 @@ fun MiniScorecard(
                 fontWeight = FontWeight.Medium
             )
             Text(
-                text = "+1",
+                text = scoreToPar,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Black,
                 fontWeight = FontWeight.Bold

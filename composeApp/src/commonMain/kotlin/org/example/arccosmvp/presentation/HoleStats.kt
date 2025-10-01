@@ -20,12 +20,13 @@ fun HoleStats(
     currentHole: Hole?,
     currentHoleNumber: Int,
     totalHoles: Int,
+    existingScore: Int? = null,
     onDismiss: () -> Unit,
     onFinishHole: (score: Int, putts: Int) -> Unit,
     onNavigateToHole: (holeNumber: Int) -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
-    var selectedScore by remember(currentHoleNumber) { mutableStateOf<Int?>(null) }
+    var selectedScore by remember(currentHoleNumber) { mutableStateOf(existingScore) }
     var selectedPutts by remember(currentHoleNumber) { mutableStateOf(0) }
 
     Column(
@@ -181,7 +182,7 @@ fun HoleStats(
                 shape = RoundedCornerShape(dimensions.buttonCornerRadius)
             ) {
                 Text(
-                    text = "Finish Hole $currentHoleNumber",
+                    text = if (currentHoleNumber == totalHoles) "Finish Round" else "Finish Hole $currentHoleNumber",
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold

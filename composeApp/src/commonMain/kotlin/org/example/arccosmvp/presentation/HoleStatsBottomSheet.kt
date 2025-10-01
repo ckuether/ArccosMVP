@@ -9,6 +9,7 @@ fun HoleStatsBottomSheet(
     currentHole: Hole?,
     currentHoleNumber: Int,
     totalHoles: Int,
+    existingScore: Int? = null,
     onDismiss: () -> Unit,
     onFinishHole: (score: Int, putts: Int) -> Unit,
     onNavigateToHole: (holeNumber: Int) -> Unit
@@ -21,6 +22,7 @@ fun HoleStatsBottomSheet(
             currentHole = currentHole,
             currentHoleNumber = currentHoleNumber,
             totalHoles = totalHoles,
+            existingScore = existingScore,
             onDismiss = onDismiss,
             onFinishHole = onFinishHole,
             onNavigateToHole = onNavigateToHole

@@ -13,8 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
-import com.example.shared.data.model.ScoreCard
-import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
+import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
@@ -39,12 +38,13 @@ fun App() {
 
 @Composable
 fun GolfApp(
-    viewModel: LocationTrackingViewModel = koinViewModel()
+    viewModel: RoundOfGolfViewModel = koinViewModel()
 ) {
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
+    val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
@@ -231,6 +231,7 @@ fun GolfApp(
         ) {
             // To Par Scorecard - Bottom Left
             MiniScorecard(
+                scoreToPar = viewModel.getScoreToPar(),
                 onScoreCardClick = { showFullScoreCard = true }
             )
 
@@ -330,11 +331,19 @@ fun GolfApp(
                 currentHole = currentHole,
                 currentHoleNumber = currentHoleNumber,
                 totalHoles = golfCourse?.holes?.size ?: 9,
+                existingScore = viewModel.getHoleScore(currentHoleNumber),
                 onDismiss = { showScoreCard = false },
                 onFinishHole = { score, putts ->
                     // Handle score submission
+                    viewModel.updateHoleScore(currentHoleNumber, score)
                     println("DEBUG: Hole $currentHoleNumber finished with score: $score, putts: $putts")
                     showScoreCard = false
+                    
+                    // Navigate to next hole (equivalent to hitting next button)
+                    val maxHoles = golfCourse?.holes?.size ?: 9
+                    if (currentHoleNumber < maxHoles) {
+                        currentHoleNumber = currentHoleNumber + 1
+                    }
                 },
                 onNavigateToHole = { holeNumber ->
                     currentHoleNumber = holeNumber
@@ -348,13 +357,7 @@ fun GolfApp(
             ScoreCardBottomSheet(
                 golfCourse = golfCourse,
                 currentPlayer = currentPlayer,
-                currentScoreCard = currentPlayer?.let { player ->
-                    ScoreCard(
-                        courseId = golfCourse?.id ?: 0L,
-                        playerId = player.id,
-                        scorecard = emptyMap()
-                    )
-                },
+                currentScoreCard = currentScoreCard,
                 onDismiss = { showFullScoreCard = false }
             )
         }
