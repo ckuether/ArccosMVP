@@ -200,7 +200,3 @@ class LocationForegroundService : Service() {
         .build()
 }
 
-actual fun createBackgroundLocationService(): BackgroundLocationService {
-    // This will need to be injected with context through DI
-    throw IllegalStateException("Use DI to inject AndroidBackgroundLocationService with context")
-}

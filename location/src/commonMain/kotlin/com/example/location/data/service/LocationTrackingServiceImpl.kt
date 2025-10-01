@@ -30,7 +30,7 @@ class LocationTrackingServiceImpl(
         }
         
         return try {
-            backgroundLocationService.startBackgroundLocationTracking(intervalMs = 5000L)
+            backgroundLocationService.startBackgroundLocationTracking(intervalMs = 15000L)
                 .onStart { 
                     _isTracking.value = true 
                 }

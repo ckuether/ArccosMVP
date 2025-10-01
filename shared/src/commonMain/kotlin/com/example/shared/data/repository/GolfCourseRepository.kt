@@ -11,11 +11,8 @@ class GolfCourseRepository(
 
     suspend fun loadGolfCourse(): GolfCourse? {
         return try {
-            println("DEBUG: GolfCourseRepository.loadGolfCourse() called")
             val jsonString = resourceReader.readTextFile(ResourcePaths.GOLF_COURSE_DATA)
-            println("DEBUG: JSON string received: ${jsonString?.take(100)}...")
             val result = jsonString?.let { Json.Default.decodeFromString<GolfCourse>(it) }
-            println("DEBUG: Parsed golf course: ${result?.name} with ${result?.holes?.size} holes")
             result
         } catch (e: Exception) {
             println("DEBUG: Error in loadGolfCourse: ${e.message}")

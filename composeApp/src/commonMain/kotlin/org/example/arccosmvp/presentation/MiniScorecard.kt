@@ -10,7 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import com.example.core_ui.resources.LocalDimensionResources
 
 @Composable
-fun ToParScorecard(
+fun MiniScorecard(
     onScoreCardClick: () -> Unit = {}
 ) {
     val dimensions = LocalDimensionResources.current

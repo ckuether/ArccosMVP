@@ -13,46 +13,37 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.shared.data.model.Hole
-import com.example.shared.data.model.GolfCourse
 import org.example.arccosmvp.presentation.viewmodel.LocationTrackingViewModel
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.platform.MapLocation
-import com.example.shared.data.repository.GolfCourseRepository
-import org.koin.compose.koinInject
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
-import kotlin.time.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import com.example.core_ui.platform.MarkerType
 import com.example.core_ui.theme.GolfAppTheme
-import kotlin.time.ExperimentalTime
 import org.example.arccosmvp.utils.DrawableHelper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.distanceToInYards
 import org.example.arccosmvp.presentation.DraggableScoreCardBottomSheet
-import org.example.arccosmvp.presentation.ToParScorecard
+import org.example.arccosmvp.presentation.MiniScorecard
 
 @Composable
 @Preview
 fun App() {
     GolfAppTheme {
-        GolfScreen()
+        GolfApp()
     }
 }
 
 @Composable
-fun GolfScreen(
-    viewModel: LocationTrackingViewModel = koinViewModel(),
-    golfCourseRepository: GolfCourseRepository = koinInject()
+fun GolfApp(
+    viewModel: LocationTrackingViewModel = koinViewModel()
 ) {
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
-    val locationEvents by viewModel.locationEvents.collectAsStateWithLifecycle(initialValue = emptyList())
+    val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
 
     // Golf course and hole state
-    var golfCourse by remember { mutableStateOf<GolfCourse?>(null) }
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember { mutableStateOf<Hole?>(null) }
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
@@ -63,12 +54,6 @@ fun GolfScreen(
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
 
-    // Load golf course data on first composition
-    LaunchedEffect(Unit) {
-        viewModel.checkPermissionStatus()
-        val loadedCourse = golfCourseRepository.loadGolfCourse()
-        golfCourse = loadedCourse
-    }
 
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
@@ -107,12 +92,7 @@ fun GolfScreen(
         MapView(
             modifier = Modifier.fillMaxSize(),
             userLocations = buildList {
-                // Add location tracking points
-                addAll(locationEvents.map { locationItem ->
-                    locationItem.location.toMapLocation(
-                        title = "Location at ${formatTimestamp(locationItem.timestamp)}"
-                    )
-                })
+                // Only show hole markers, no location tracking points
                 // Add current hole start location with golf ball icon
                 holeStartLocation?.let { add(it) }
                 // Add current hole end location with golf flag icon
@@ -120,7 +100,8 @@ fun GolfScreen(
             },
             centerLocation = null,
             initialBounds = initialBounds, // Only center when hole changes
-            currentHole = currentHole
+            currentHole = currentHole,
+            hasLocationPermission = locationState.hasPermission == true
         )
 
         // Top overlay - Hole info bar
@@ -245,10 +226,10 @@ fun GolfScreen(
             verticalAlignment = Alignment.Bottom
         ) {
             // To Par Scorecard - Bottom Left
-            ToParScorecard(
+            MiniScorecard(
                 onScoreCardClick = { showScoreCard = true }
             )
-            
+
             // Edit Hole component - fills available space
             Card(
                 modifier = Modifier.weight(1f),
@@ -358,24 +339,4 @@ fun GolfScreen(
             )
         }
     }
-}
-
-
-@OptIn(ExperimentalTime::class)
-private fun formatTimestamp(timestamp: Long): String {
-    val instant = Instant.fromEpochMilliseconds(timestamp)
-    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
-
-    val months = arrayOf(
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    )
-
-    val month = months[localDateTime.month.ordinal - 1]
-    val day = localDateTime.day
-    val hour = localDateTime.hour
-    val minute = localDateTime.minute
-    val second = localDateTime.second
-
-    return "$month, $day at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}"
 }

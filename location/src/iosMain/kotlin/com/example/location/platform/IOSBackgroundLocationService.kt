@@ -164,7 +164,3 @@ class IOSBackgroundLocationServiceWrapper(
         iosService.stopBackgroundLocationTracking()
     }
 }
-
-actual fun createBackgroundLocationService(): BackgroundLocationService {
-    throw IllegalStateException("Use DI to inject IOSBackgroundLocationService with logger")
-}

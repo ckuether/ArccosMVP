@@ -10,7 +10,10 @@ import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.repository.GolfCourseRepository
+import com.example.shared.data.repository.UserRepository
+import com.example.shared.data.model.GolfCourse
+import com.example.shared.data.model.Player
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +23,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 
 class LocationTrackingViewModel(
     private val locationTrackingService: LocationTrackingService,
@@ -28,6 +33,8 @@ class LocationTrackingViewModel(
     private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
+    private val golfCourseRepository: GolfCourseRepository,
+    private val userRepository: UserRepository,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -38,6 +45,11 @@ class LocationTrackingViewModel(
     private val _locationState = MutableStateFlow(LocationTrackingUiState())
     val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
+    private val _golfCourse = MutableStateFlow<GolfCourse?>(null)
+    val golfCourse: StateFlow<GolfCourse?> = _golfCourse.asStateFlow()
+
+    private val _currentPlayer = MutableStateFlow<Player?>(null)
+    val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
     
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
@@ -45,7 +57,41 @@ class LocationTrackingViewModel(
     private var trackingJob: Job? = null
 
     init {
-        startLocationTracking()
+        loadGolfCourse()
+        loadCurrentUser()
+        checkPermissionStatus()
+    }
+    
+    private fun loadGolfCourse() {
+        viewModelScope.launch {
+            try {
+                val course = golfCourseRepository.loadGolfCourse()
+                _golfCourse.value = course
+                logger.info(TAG, "Golf course loaded: ${course?.name}")
+            } catch (e: Exception) {
+                logger.error(TAG, "Failed to load golf course", e)
+            }
+        }
+    }
+    
+    private fun loadCurrentUser() {
+        viewModelScope.launch {
+            try {
+                val player = userRepository.getCurrentUser()
+                if (player != null) {
+                    _currentPlayer.value = player
+                    logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
+                } else {
+                    logger.warn(TAG, "No user data found, using default player")
+                    // Create a default player if none found
+                    _currentPlayer.value = Player(name = "Guest Player")
+                }
+            } catch (e: Exception) {
+                logger.error(TAG, "Failed to load current user", e)
+                // Fallback to default player on error
+                _currentPlayer.value = Player(name = "Guest Player")
+            }
+        }
     }
     
     fun startLocationTracking() {
@@ -74,25 +120,17 @@ class LocationTrackingViewModel(
                 logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
                 trackingJob = locationTrackingService.startLocationTracking()
                     .onEach { locationEvent ->
-                        logger.debug(TAG, "Received location event: ${locationEvent.location.lat}, ${locationEvent.location.long}")
-                        
-                        // Try to save to database using use case
-                        saveLocationEventUseCase(locationEvent).fold(
-                            onSuccess = { 
-                                logger.debug(TAG, "Location event saved successfully")
-                            },
-                            onFailure = { error ->
-                                logger.error(TAG, "Failed to save location event", error)
-                                // Continue with UI update even if database save fails
-                            }
-                        )
-                        
-                        _locationState.value = _locationState.value.copy(
-                            isLoading = false,
-                            isTracking = true,
-                            lastLocationEvent = locationEvent,
-                            error = null
-                        )
+                        // Only save to database, no UI updates to prevent recomposition
+                        launch(Dispatchers.IO) {
+                            saveLocationEventUseCase(locationEvent).fold(
+                                onSuccess = { 
+                                    // Location saved successfully - no UI update needed
+                                },
+                                onFailure = { error ->
+                                    logger.error(TAG, "Failed to save location event", error)
+                                }
+                            )
+                        }
                     }
                     .catch { throwable ->
                         val errorMessage = when (throwable) {
@@ -153,6 +191,9 @@ class LocationTrackingViewModel(
                             isRequestingPermission = false,
                             error = null
                         )
+                        // Automatically start location tracking after permission is granted
+                        logger.info(TAG, "Permission granted, starting location tracking")
+                        startLocationTracking()
                     }
                     is PermissionResult.Denied -> {
                         _locationState.value = _locationState.value.copy(
@@ -183,6 +224,12 @@ class LocationTrackingViewModel(
             try {
                 val hasPermission = checkLocationPermissionUseCase()
                 _locationState.value = _locationState.value.copy(hasPermission = hasPermission)
+                
+                // Automatically start location tracking if permission is granted
+                if (hasPermission && !_locationState.value.isTracking) {
+                    logger.info(TAG, "Permission granted, starting location tracking automatically")
+                    startLocationTracking()
+                }
             } catch (e: Exception) {
                 _locationState.value = _locationState.value.copy(
                     error = e.message ?: "Error checking permission"
@@ -217,7 +264,6 @@ class LocationTrackingViewModel(
 data class LocationTrackingUiState(
     val isLoading: Boolean = false,
     val isTracking: Boolean = false,
-    val lastLocationEvent: InPlayEvent.LocationUpdated? = null,
     val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
     val isRequestingPermission: Boolean = false,
     val error: String? = null
