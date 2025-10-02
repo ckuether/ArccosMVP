@@ -10,8 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 class LocationRepositoryImpl(
-    private val locationProvider: LocationProvider,
-    private val locationDao: LocationDao
+    private val locationProvider: LocationProvider
 ) : LocationRepository {
     
     private var isUpdating = false
@@ -44,24 +43,6 @@ class LocationRepositoryImpl(
         // This needs platform-specific implementation
         // For now, assume it's always enabled
         return true
-    }
-    
-    override suspend fun saveLocation(location: Location, timestamp: Long) {
-        locationDao.insertLocation(location.toEntity(timestamp))
-    }
-    
-    override fun getStoredLocations(): Flow<List<Location>> {
-        return locationDao.getAllLocations().map { entities ->
-            entities.map { it.toLocation() }
-        }
-    }
-    
-    override suspend fun clearStoredLocations() {
-        locationDao.deleteAllLocations()
-    }
-    
-    override suspend fun getLocationCount(): Int {
-        return locationDao.getLocationCount()
     }
 }
 
