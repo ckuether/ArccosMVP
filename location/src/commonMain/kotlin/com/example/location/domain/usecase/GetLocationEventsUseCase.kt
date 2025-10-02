@@ -2,7 +2,7 @@ package com.example.location.domain.usecase
 
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.data.entity.toInPlayEvent
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.InPlayEvent
 import com.example.shared.data.model.Location
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.Flow

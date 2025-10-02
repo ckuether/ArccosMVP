@@ -6,7 +6,7 @@ import android.content.Intent
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.IBinder
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.InPlayEvent
 import com.example.shared.data.model.Location
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.channels.awaitClose

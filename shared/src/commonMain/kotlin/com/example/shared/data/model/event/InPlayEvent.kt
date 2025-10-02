@@ -1,4 +1,4 @@
-package com.example.shared.data.event
+package com.example.shared.data.model.event
 
 import com.example.shared.data.model.Location
 import com.example.shared.platform.getCurrentTimeMillis

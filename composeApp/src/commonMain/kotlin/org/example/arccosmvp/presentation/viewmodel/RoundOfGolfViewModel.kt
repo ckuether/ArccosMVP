@@ -10,11 +10,12 @@ import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.repository.GolfCourseRepository
-import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.model.GolfCourse
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
+import com.example.shared.domain.usecase.SaveScoreCardUseCase
+import com.example.shared.domain.usecase.LoadGolfCourseUseCase
+import com.example.shared.domain.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,8 +35,9 @@ class RoundOfGolfViewModel(
     private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val golfCourseRepository: GolfCourseRepository,
-    private val userRepository: UserRepository,
+    private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
+    private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
+    private val saveScoreCardUseCase: SaveScoreCardUseCase,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -76,33 +78,30 @@ class RoundOfGolfViewModel(
     
     private fun loadGolfCourse() {
         viewModelScope.launch {
-            try {
-                val course = golfCourseRepository.loadGolfCourse()
-                _golfCourse.value = course
-                logger.info(TAG, "Golf course loaded: ${course?.name}")
-            } catch (e: Exception) {
-                logger.error(TAG, "Failed to load golf course", e)
-            }
+            loadGolfCourseUseCase().fold(
+                onSuccess = { course ->
+                    _golfCourse.value = course
+                    logger.info(TAG, "Golf course loaded: ${course?.name}")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to load golf course", error)
+                }
+            )
         }
     }
     
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            try {
-                val player = userRepository.getCurrentUser()
-                if (player != null) {
+            loadCurrentUserUseCase().fold(
+                onSuccess = { player ->
                     _currentPlayer.value = player
                     logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
-                } else {
-                    logger.warn(TAG, "No user data found, using default player")
-                    // Create a default player if none found
-                    _currentPlayer.value = Player(name = "Guest Player")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to load current user", error)
+                    _currentPlayer.value = Player(name = "Player")
                 }
-            } catch (e: Exception) {
-                logger.error(TAG, "Failed to load current user", e)
-                // Fallback to default player on error
-                _currentPlayer.value = Player(name = "Guest Player")
-            }
+            )
         }
     }
     
@@ -236,10 +235,22 @@ class RoundOfGolfViewModel(
         val updatedScorecard = currentCard.scorecard.toMutableMap()
         updatedScorecard[holeNumber] = score
         
-        _currentScoreCard.value = currentCard.copy(
+        val updatedCard = currentCard.copy(
             scorecard = updatedScorecard
         )
-        logger.info(TAG, "Updated hole $holeNumber score to $score")
+        _currentScoreCard.value = updatedCard
+        
+        // Save to database using UseCase
+        viewModelScope.launch(Dispatchers.IO) {
+            saveScoreCardUseCase(updatedCard).fold(
+                onSuccess = {
+                    logger.info(TAG, "Updated hole $holeNumber score to $score and saved to database")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to save scorecard to database", error)
+                }
+            )
+        }
     }
     
     fun getHoleScore(holeNumber: Int): Int? {

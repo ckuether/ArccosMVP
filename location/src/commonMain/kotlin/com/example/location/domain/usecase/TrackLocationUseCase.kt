@@ -2,7 +2,7 @@ package com.example.location.domain.usecase
 
 import com.example.location.domain.repository.LocationRepository
 import com.example.location.domain.model.LocationResult
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.InPlayEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 

@@ -1,10 +1,8 @@
 package com.example.location.data.service
 
 import com.example.location.domain.service.LocationTrackingService
-import com.example.location.domain.usecase.TrackLocationUseCase
 import com.example.location.platform.BackgroundLocationService
-import com.example.shared.data.event.InPlayEvent
-import kotlinx.coroutines.CoroutineScope
+import com.example.shared.data.model.event.InPlayEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

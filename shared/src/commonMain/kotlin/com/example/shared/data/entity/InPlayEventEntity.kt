@@ -2,7 +2,7 @@ package com.example.shared.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.InPlayEvent
 import kotlinx.serialization.json.Json
 import kotlin.uuid.ExperimentalUuidApi
 

@@ -1,7 +1,7 @@
 package com.example.location.domain.usecase
 
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.InPlayEvent
 import kotlinx.coroutines.flow.Flow
 
 class StartLocationTrackingUseCase(
