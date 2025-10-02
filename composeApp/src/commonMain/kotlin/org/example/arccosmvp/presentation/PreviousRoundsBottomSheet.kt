@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.ScoreCard
@@ -93,13 +94,11 @@ private fun ScoreCardItem(
     scoreCard: ScoreCard
 ) {
     val dimensions = LocalDimensionResources.current
-    val totalScore = scoreCard.scorecard.values.filterNotNull().sum()
-    val holesPlayed = scoreCard.scorecard.size
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
@@ -107,92 +106,136 @@ private fun ScoreCardItem(
                 .fillMaxWidth()
                 .padding(dimensions.paddingLarge)
         ) {
-            // Round ID and basic info
+            // Course name and view course button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Round #${scoreCard.roundId}",
+                    text = "Broken Tee Golf Course", // Placeholder course name
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 
-                if (totalScore > 0) {
+                TextButton(onClick = { /* View course action */ }) {
                     Text(
-                        text = "Score: $totalScore",
-                        style = MaterialTheme.typography.titleMedium,
+                        text = "View Course",
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(dimensions.spacingSmall))
+            // Course details
+            Text(
+                text = "Broken Tee Englewood • ${scoreCard.holesPlayed} Holes",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             
-            // Player and course info
+            Spacer(modifier = Modifier.height(dimensions.spacingMedium))
+            
+            // To Par score with purple background and Final label
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Player ID: ${scoreCard.playerId}",
+                    text = "Final (Thru ${scoreCard.holesPlayed} Holes)",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                Text(
-                    text = "$holesPlayed hole${if (holesPlayed != 1) "s" else ""} played",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontWeight = FontWeight.Medium
                 )
             }
             
-            // Show some hole scores if available
-            if (scoreCard.scorecard.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(dimensions.spacingMedium))
-                
+            Spacer(modifier = Modifier.height(dimensions.spacingSmall))
+            
+            // To Par score display
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "Hole Scores:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "To Par",
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 
-                Spacer(modifier = Modifier.height(dimensions.spacingSmall))
+                Spacer(modifier = Modifier.width(dimensions.spacingMedium))
                 
-                // Display scores in a grid-like format
-                val scores = scoreCard.scorecard.toList().sortedBy { it.first }
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.spacingSmall)
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.size(width = 50.dp, height = 40.dp)
                 ) {
-                    items(scores) { (hole, score) ->
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(
-                                    horizontal = dimensions.paddingMedium,
-                                    vertical = dimensions.paddingSmall
-                                ),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "H$hole",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = score?.toString() ?: "-",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Text(
+                            text = if (scoreCard.toPar > 0) "+${scoreCard.toPar}" else "${scoreCard.toPar}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
                     }
                 }
+                
+                Spacer(modifier = Modifier.width(dimensions.spacingLarge))
+                
+                // Gross score
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Gross: ${scoreCard.totalScore}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
+            
+            Spacer(modifier = Modifier.height(dimensions.spacingMedium))
+            
+            // Statistics row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatisticItem(label = "Par", count = scoreCard.pars)
+                StatisticItem(label = "Birdies", count = scoreCard.birdies)
+                StatisticItem(label = "Bogeys", count = scoreCard.bogeys)
+            }
+            
+            Spacer(modifier = Modifier.height(dimensions.spacingMedium))
+            
+            // Date
+            Text(
+                text = "09/12/2025", // Placeholder date
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
+    }
+}
+
+@Composable
+private fun StatisticItem(
+    label: String,
+    count: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

@@ -36,42 +36,61 @@ class IOSBackgroundLocationService(
     fun startBackgroundLocationTracking(intervalMs: Long): Flow<InPlayEvent.LocationUpdated> {
         logger.info(TAG, "startBackgroundLocationTracking called with intervalMs: $intervalMs")
         return callbackFlow {
-            if (_isBackgroundTrackingActive.value) {
-                logger.warn(TAG, "Background tracking already active, closing flow")
-                close()
-                return@callbackFlow
-            }
-            
-            logger.info(TAG, "Starting background location tracking")
-            _isBackgroundTrackingActive.value = true
-            locationCallback = { locationEvent ->
-                trySend(locationEvent)
-            }
-            
-            // Request background location permission
-            logger.info(TAG, "Checking location authorization status: ${locationManager.authorizationStatus}")
-            when (locationManager.authorizationStatus) {
-                kCLAuthorizationStatusNotDetermined -> {
-                    logger.info(TAG, "Requesting always authorization")
-                    locationManager.requestAlwaysAuthorization()
+            try {
+                if (_isBackgroundTrackingActive.value) {
+                    logger.warn(TAG, "Background tracking already active, closing flow")
+                    close()
+                    return@callbackFlow
                 }
-                kCLAuthorizationStatusAuthorizedAlways,
-                kCLAuthorizationStatusAuthorizedWhenInUse -> {
-                    logger.info(TAG, "Location authorized, starting updates")
-                    startLocationUpdates()
+                
+                logger.info(TAG, "Starting background location tracking")
+                _isBackgroundTrackingActive.value = true
+                
+                locationCallback = { locationEvent ->
+                    try {
+                        val result = trySend(locationEvent)
+                        if (result.isFailure) {
+                            logger.warn(TAG, "Failed to send location update: ${result.exceptionOrNull()?.message}")
+                        }
+                    } catch (e: Exception) {
+                        logger.error(TAG, "Exception in location callback: ${e.message}")
+                    }
                 }
-                else -> {
-                    logger.error(TAG, "Location permission denied")
-                    _isBackgroundTrackingActive.value = false
-                    close(Exception("Location permission denied"))
+                
+                // Request background location permission
+                logger.info(TAG, "Checking location authorization status: ${locationManager.authorizationStatus}")
+                when (locationManager.authorizationStatus) {
+                    kCLAuthorizationStatusNotDetermined -> {
+                        logger.info(TAG, "Requesting always authorization")
+                        locationManager.requestAlwaysAuthorization()
+                    }
+                    kCLAuthorizationStatusAuthorizedAlways,
+                    kCLAuthorizationStatusAuthorizedWhenInUse -> {
+                        logger.info(TAG, "Location authorized, starting updates")
+                        startLocationUpdates()
+                    }
+                    else -> {
+                        logger.error(TAG, "Location permission denied")
+                        _isBackgroundTrackingActive.value = false
+                        close(Exception("Location permission denied"))
+                        return@callbackFlow
+                    }
                 }
-            }
-            
-            awaitClose {
-                logger.info(TAG, "Stopping background location tracking")
-                stopLocationUpdates()
-                locationCallback = null
+                
+                awaitClose {
+                    logger.info(TAG, "Flow closing - stopping background location tracking")
+                    try {
+                        stopLocationUpdates()
+                        locationCallback = null
+                        _isBackgroundTrackingActive.value = false
+                    } catch (e: Exception) {
+                        logger.error(TAG, "Error during cleanup: ${e.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error(TAG, "Exception in startBackgroundLocationTracking: ${e.message}")
                 _isBackgroundTrackingActive.value = false
+                close(e)
             }
         }
     }
@@ -86,8 +105,23 @@ class IOSBackgroundLocationService(
     
     private fun startLocationUpdates() {
         logger.info(TAG, "Starting location updates")
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
+        
+        // Only enable background updates if we have "always" authorization
+        if (locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedAlways) {
+            logger.info(TAG, "Setting up background location updates")
+            try {
+                locationManager.allowsBackgroundLocationUpdates = true
+                locationManager.pausesLocationUpdatesAutomatically = false
+                logger.info(TAG, "Background location updates enabled successfully")
+            } catch (e: Exception) {
+                logger.warn(TAG, "Failed to enable background location updates: ${e.message}. Continuing with foreground only.")
+                locationManager.pausesLocationUpdatesAutomatically = false
+            }
+        } else {
+            logger.warn(TAG, "Only 'when in use' authorization available, background updates disabled")
+            locationManager.pausesLocationUpdatesAutomatically = false
+        }
+        
         locationManager.startUpdatingLocation()
         locationManager.startMonitoringSignificantLocationChanges()
         logger.info(TAG, "Location updates started")
@@ -99,52 +133,71 @@ class IOSBackgroundLocationService(
         updateTimer = null
         locationManager.stopUpdatingLocation()
         locationManager.stopMonitoringSignificantLocationChanges()
-        locationManager.allowsBackgroundLocationUpdates = false
+        
+        // Only disable background updates if it was previously enabled
+        if (locationManager.authorizationStatus == kCLAuthorizationStatusAuthorizedAlways) {
+            try {
+                locationManager.allowsBackgroundLocationUpdates = false
+            } catch (e: Exception) {
+                logger.warn(TAG, "Failed to disable background location updates: ${e.message}")
+            }
+        }
         logger.info(TAG, "Location updates stopped")
     }
 
 
     @OptIn(ExperimentalForeignApi::class)
     override fun locationManager(manager: CLLocationManager, didUpdateLocations: List<*>) {
-        val locations = didUpdateLocations as List<CLLocation>
-        logger.debug(TAG, "Received ${locations.size} location updates")
-        locations.lastOrNull()?.let { location ->
-            val coordinate = location.coordinate
-            val lat = coordinate.useContents { latitude }
-            val lng = coordinate.useContents { longitude }
-            logger.debug(TAG, "Location received: lat=$lat, long=$lng")
+        try {
+            val locations = didUpdateLocations as List<CLLocation>
+            logger.debug(TAG, "Received ${locations.size} location updates")
+            locations.lastOrNull()?.let { location ->
+                val coordinate = location.coordinate
+                val lat = coordinate.useContents { latitude }
+                val lng = coordinate.useContents { longitude }
+                logger.debug(TAG, "Location received: lat=$lat, long=$lng")
 
-            logger.debug(TAG, "Location received: lat=$lat, long=$lng")
-            val locationEvent = InPlayEvent.LocationUpdated(
-                Location(
-                    lat = lat,
-                    long = lng
+                val locationEvent = InPlayEvent.LocationUpdated(
+                    Location(
+                        lat = lat,
+                        long = lng
+                    )
                 )
-            )
-            locationCallback?.invoke(locationEvent)
+                locationCallback?.invoke(locationEvent)
+            }
+        } catch (e: Exception) {
+            logger.error(TAG, "Error processing location update: ${e.message}")
         }
     }
     
     override fun locationManager(manager: CLLocationManager, didFailWithError: platform.Foundation.NSError) {
-        logger.error(TAG, "Location manager failed with error: ${didFailWithError.localizedDescription}")
-        _isBackgroundTrackingActive.value = false
+        try {
+            logger.error(TAG, "Location manager failed with error: ${didFailWithError.localizedDescription}")
+            _isBackgroundTrackingActive.value = false
+        } catch (e: Exception) {
+            logger.error(TAG, "Error handling location manager failure: ${e.message}")
+        }
     }
     
     override fun locationManager(manager: CLLocationManager, didChangeAuthorizationStatus: CLAuthorizationStatus) {
-        logger.info(TAG, "Authorization status changed to: $didChangeAuthorizationStatus")
-        when (didChangeAuthorizationStatus) {
-            kCLAuthorizationStatusAuthorizedAlways,
-            kCLAuthorizationStatusAuthorizedWhenInUse -> {
-                logger.info(TAG, "Location authorized")
-                if (_isBackgroundTrackingActive.value) {
-                    startLocationUpdates()
+        try {
+            logger.info(TAG, "Authorization status changed to: $didChangeAuthorizationStatus")
+            when (didChangeAuthorizationStatus) {
+                kCLAuthorizationStatusAuthorizedAlways,
+                kCLAuthorizationStatusAuthorizedWhenInUse -> {
+                    logger.info(TAG, "Location authorized")
+                    if (_isBackgroundTrackingActive.value) {
+                        startLocationUpdates()
+                    }
+                }
+                else -> {
+                    logger.warn(TAG, "Location not authorized, stopping updates")
+                    stopLocationUpdates()
+                    _isBackgroundTrackingActive.value = false
                 }
             }
-            else -> {
-                logger.warn(TAG, "Location not authorized, stopping updates")
-                stopLocationUpdates()
-                _isBackgroundTrackingActive.value = false
-            }
+        } catch (e: Exception) {
+            logger.error(TAG, "Error handling authorization status change: ${e.message}")
         }
     }
 }

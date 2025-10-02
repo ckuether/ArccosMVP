@@ -1,7 +1,6 @@
 package com.example.shared.data.model
 
 import com.example.shared.platform.getCurrentTimeMillis
-import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlin.random.Random
 
@@ -14,4 +13,25 @@ data class ScoreCard(
     val roundInProgress: Boolean = true,
     val createdTimestamp: Long = getCurrentTimeMillis(),
     val lastUpdatedTimestamp: Long = getCurrentTimeMillis()
-)
+) {
+    val totalScore: Int
+        get() = scorecard.values.filterNotNull().sum()
+    
+    val holesPlayed: Int
+        get() = scorecard.size
+    
+    val scores: List<Int>
+        get() = scorecard.values.filterNotNull()
+    
+    val pars: Int
+        get() = scores.count { it == 4 } // Assuming par 4 for simplicity
+    
+    val birdies: Int
+        get() = scores.count { it == 3 } // Assuming par 4, so 3 is birdie
+    
+    val bogeys: Int
+        get() = scores.count { it == 5 } // Assuming par 4, so 5 is bogey
+    
+    val toPar: Int
+        get() = totalScore - (holesPlayed * 4) // Assuming all holes are par 4
+}
