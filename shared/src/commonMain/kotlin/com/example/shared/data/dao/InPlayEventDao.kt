@@ -18,6 +18,12 @@ interface InPlayEventDao {
     @Query("SELECT * FROM in_play_events WHERE eventType = :eventType ORDER BY timestamp DESC")
     fun getEventsByType(eventType: String): Flow<List<InPlayEventEntity>>
     
+    @Query("SELECT * FROM in_play_events WHERE roundID = :roundID ORDER BY timestamp DESC")
+    fun getEventsByRound(roundID: Long): Flow<List<InPlayEventEntity>>
+    
+    @Query("SELECT * FROM in_play_events WHERE roundID = :roundID AND eventType = :eventType ORDER BY timestamp DESC")
+    fun getEventsByRoundAndType(roundID: Long, eventType: String): Flow<List<InPlayEventEntity>>
+    
     @Query("SELECT * FROM in_play_events WHERE eventId = :eventId")
     suspend fun getEventById(eventId: String): InPlayEventEntity?
     

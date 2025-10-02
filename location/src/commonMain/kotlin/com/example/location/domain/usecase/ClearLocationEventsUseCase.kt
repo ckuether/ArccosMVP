@@ -2,7 +2,6 @@ package com.example.location.domain.usecase
 
 import com.example.shared.data.dao.InPlayEventDao
 import com.example.shared.platform.Logger
-import kotlinx.coroutines.flow.collect
 
 class ClearLocationEventsUseCase(
     private val inPlayEventDao: InPlayEventDao,

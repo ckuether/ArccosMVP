@@ -1,29 +1,26 @@
 package com.example.shared.data.event
 
 import com.example.shared.data.model.Location
+import com.example.shared.platform.getCurrentTimeMillis
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 @Serializable
 sealed class InPlayEvent @OptIn(ExperimentalUuidApi::class) constructor(
-    val eventID: Uuid,
-    val timestamp: Long,
+    val eventID: Uuid = Uuid.random(),
+    val timestamp: Long = getCurrentTimeMillis(),
 ){
-    @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
     @Serializable
     @SerialName("location_updated")
     data class LocationUpdated(
         val location: Location
-    ): InPlayEvent(timestamp = Clock.System.now().toEpochMilliseconds(), eventID = Uuid.random())
+    ): InPlayEvent()
 
-    @OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
     @Serializable
     @SerialName("shot_tracked")
     data class ShotTracked(
         val holeNumber: Int
-    ): InPlayEvent(timestamp = Clock.System.now().toEpochMilliseconds(), eventID = Uuid.random())
+    ): InPlayEvent()
 }

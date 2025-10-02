@@ -13,9 +13,9 @@ class SaveLocationEventUseCase(
         private const val TAG = "SaveLocationEventUseCase"
     }
     
-    suspend operator fun invoke(locationEvent: InPlayEvent.LocationUpdated): Result<Unit> {
+    suspend operator fun invoke(locationEvent: InPlayEvent.LocationUpdated, roundID: Long): Result<Unit> {
         return try {
-            inPlayEventDao.insertEvent(locationEvent.toEntity())
+            inPlayEventDao.insertEvent(locationEvent.toEntity(roundID))
             logger.debug(TAG, "Location event saved to database successfully")
             Result.success(Unit)
         } catch (e: Exception) {

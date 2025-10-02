@@ -11,6 +11,7 @@ data class InPlayEventEntity(
     @PrimaryKey
     val eventId: String,
     val timestamp: Long,
+    val roundID: Long,
     val eventType: String, // "LocationUpdated" or "ShotTracked"
     val json: String // Serialized event data
 )
@@ -25,20 +26,22 @@ fun InPlayEventEntity.toInPlayEvent(): InPlayEvent {
 }
 
 @OptIn(ExperimentalUuidApi::class)
-fun InPlayEvent.LocationUpdated.toEntity(): InPlayEventEntity {
+fun InPlayEvent.LocationUpdated.toEntity(roundID: Long): InPlayEventEntity {
     return InPlayEventEntity(
         eventId = eventID.toString(),
         timestamp = timestamp,
+        roundID = roundID,
         eventType = "LocationUpdated",
         json = Json.encodeToString(this)
     )
 }
 
 @OptIn(ExperimentalUuidApi::class)
-fun InPlayEvent.ShotTracked.toEntity(): InPlayEventEntity {
+fun InPlayEvent.ShotTracked.toEntity(roundID: Long): InPlayEventEntity {
     return InPlayEventEntity(
         eventId = eventID.toString(),
         timestamp = timestamp,
+        roundID = roundID,
         eventType = "ShotTracked", 
         json = Json.encodeToString(this)
     )

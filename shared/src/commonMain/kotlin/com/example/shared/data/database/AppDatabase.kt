@@ -2,7 +2,6 @@ package com.example.shared.data.database
 
 import androidx.room.ConstructedBy
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
@@ -44,3 +43,5 @@ fun getRoomDatabase(
 }
 
 fun getInPlayEventDao(appDatabase: AppDatabase) = appDatabase.inPlayEventDao()
+
+fun getLocationDao(appDatabase: AppDatabase) = appDatabase.locationDao()
