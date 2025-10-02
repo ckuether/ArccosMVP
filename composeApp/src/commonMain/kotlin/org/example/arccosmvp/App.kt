@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import com.example.shared.data.model.distanceToInYards
 import org.example.arccosmvp.presentation.HoleStatsBottomSheet
 import org.example.arccosmvp.presentation.MiniScorecard
 import org.example.arccosmvp.presentation.ScoreCardBottomSheet
+import org.example.arccosmvp.presentation.PreviousRoundsBottomSheet
 
 @Composable
 @Preview
@@ -45,6 +47,7 @@ fun GolfApp(
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
+    val allScoreCards by viewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
@@ -54,6 +57,7 @@ fun GolfApp(
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
+    var showPreviousRounds by remember { mutableStateOf(false) }
 
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -108,22 +112,29 @@ fun GolfApp(
             hasLocationPermission = locationState.hasPermission == true
         )
 
-        // Top overlay - Hole info bar
-        Card(
+        // Top overlay - Hole info bar with Previous Rounds button
+        Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
+                .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(top = dimensions.paddingLarge),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            shape = MaterialTheme.shapes.extraLarge
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
+            // Main hole info card
+            Card(
+                modifier = Modifier.weight(1f),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                shape = MaterialTheme.shapes.extraLarge
             ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
+                ) {
                 // Hole Number
                 Text(
                     text = currentHoleNumber.toString(),
@@ -177,6 +188,22 @@ fun GolfApp(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+                }
+            }
+            
+            Spacer(modifier = Modifier.width(dimensions.spacingMedium))
+            
+            // Previous Rounds button
+            FloatingActionButton(
+                onClick = { showPreviousRounds = true },
+                modifier = Modifier.size(56.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(
+                    imageVector = Icons.Default.List,
+                    contentDescription = "Previous Rounds",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
             }
         }
 
@@ -359,6 +386,14 @@ fun GolfApp(
                 currentPlayer = currentPlayer,
                 currentScoreCard = currentScoreCard,
                 onDismiss = { showFullScoreCard = false }
+            )
+        }
+        
+        // Previous Rounds Bottom Sheet
+        if (showPreviousRounds) {
+            PreviousRoundsBottomSheet(
+                scoreCards = allScoreCards,
+                onDismiss = { showPreviousRounds = false }
             )
         }
     }

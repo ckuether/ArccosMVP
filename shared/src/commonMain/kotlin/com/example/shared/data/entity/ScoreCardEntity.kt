@@ -11,7 +11,10 @@ data class ScoreCardEntity(
     val roundId: Long,
     val courseId: Long,
     val playerId: Long,
-    val scorecardJson: String // Serialized scorecard map
+    val scorecardJson: String, // Serialized scorecard map
+    val roundInProgress: Boolean = true,
+    val createdTimestamp: Long,
+    val lastUpdatedTimestamp: Long
 )
 
 fun ScoreCardEntity.toScoreCard(): ScoreCard {
@@ -20,7 +23,10 @@ fun ScoreCardEntity.toScoreCard(): ScoreCard {
         roundId = roundId,
         courseId = courseId,
         playerId = playerId,
-        scorecard = scorecardMap
+        scorecard = scorecardMap,
+        roundInProgress = roundInProgress,
+        createdTimestamp = createdTimestamp,
+        lastUpdatedTimestamp = lastUpdatedTimestamp
     )
 }
 
@@ -29,6 +35,9 @@ fun ScoreCard.toEntity(): ScoreCardEntity {
         roundId = roundId,
         courseId = courseId,
         playerId = playerId,
-        scorecardJson = Json.encodeToString(scorecard)
+        scorecardJson = Json.encodeToString(scorecard),
+        roundInProgress = roundInProgress,
+        createdTimestamp = createdTimestamp,
+        lastUpdatedTimestamp = lastUpdatedTimestamp
     )
 }

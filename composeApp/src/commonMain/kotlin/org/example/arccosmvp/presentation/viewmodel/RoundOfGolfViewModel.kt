@@ -13,9 +13,11 @@ import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.model.GolfCourse
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
+import com.example.shared.platform.getCurrentTimeMillis
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
 import com.example.shared.domain.usecase.LoadGolfCourseUseCase
 import com.example.shared.domain.usecase.LoadCurrentUserUseCase
+import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,6 +40,7 @@ class RoundOfGolfViewModel(
     private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
     private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
+    private val getAllScoreCardsUseCase: GetAllScoreCardsUseCase,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -67,6 +70,9 @@ class RoundOfGolfViewModel(
 
     // Flow of location events from database
     val locationEvents = getLocationEventsUseCase()
+    
+    // Flow of all scorecards from database
+    val allScoreCards = getAllScoreCardsUseCase()
     
     private var trackingJob: Job? = null
 
@@ -236,7 +242,8 @@ class RoundOfGolfViewModel(
         updatedScorecard[holeNumber] = score
         
         val updatedCard = currentCard.copy(
-            scorecard = updatedScorecard
+            scorecard = updatedScorecard,
+            lastUpdatedTimestamp = getCurrentTimeMillis()
         )
         _currentScoreCard.value = updatedCard
         
