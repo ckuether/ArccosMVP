@@ -6,8 +6,6 @@ import com.example.location.domain.usecase.LocationException
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.domain.usecase.SaveLocationEventUseCase
-import com.example.location.domain.usecase.GetLocationEventsUseCase
-import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.model.GolfCourse
@@ -33,8 +31,6 @@ import kotlinx.coroutines.IO
 class RoundOfGolfViewModel(
     private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
-    private val getLocationEventsUseCase: GetLocationEventsUseCase,
-    private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
     private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
@@ -261,11 +257,6 @@ class RoundOfGolfViewModel(
         return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
     }
     
-    fun getTotalPar(): Int {
-        val course = _golfCourse.value ?: return 0
-        return course.holes.sumOf { it.par }
-    }
-    
     fun getCompletedHolesPar(): Int {
         val course = _golfCourse.value ?: return 0
         val completedHoles = _currentScoreCard.value.scorecard.keys
@@ -306,24 +297,7 @@ class RoundOfGolfViewModel(
             }
         }
     }
-    
-    fun clearLocations() {
-        viewModelScope.launch {
-            clearLocationEventsUseCase().fold(
-                onSuccess = {
-                    logger.info(TAG, "All location events cleared successfully")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to clear location events", error)
-                }
-            )
-        }
-    }
-    
-    fun clearError() {
-        _locationState.value = _locationState.value.copy(error = null)
-    }
-    
+
     override fun onCleared() {
         super.onCleared()
         stopLocationTracking()

@@ -2,7 +2,7 @@ package com.example.location.domain.usecase
 
 import com.example.location.domain.repository.LocationRepository
 import com.example.location.domain.model.LocationResult
-import com.example.shared.data.model.event.InPlayEvent
+import com.example.shared.data.model.event.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -10,7 +10,7 @@ class TrackLocationUseCase(
     private val locationRepository: LocationRepository,
     private val checkLocationPermission: CheckLocationPermissionUseCase
 ) {
-    suspend fun execute(intervalMs: Long = 5000): Flow<InPlayEvent.LocationUpdated> {
+    suspend fun execute(intervalMs: Long = 5000): Flow<RoundOfGolfEvent.LocationUpdated> {
         if (!checkLocationPermission()) {
             throw LocationPermissionException("Location permission is required")
         }
@@ -22,7 +22,7 @@ class TrackLocationUseCase(
         return locationRepository.startLocationUpdates(intervalMs)
             .map { result ->
                 when (result) {
-                    is LocationResult.Success -> InPlayEvent.LocationUpdated(result.location)
+                    is LocationResult.Success -> RoundOfGolfEvent.LocationUpdated(result.location)
                     is LocationResult.Error -> throw LocationException(result.message)
                     is LocationResult.PermissionDenied -> throw LocationPermissionException("Location permission denied")
                     is LocationResult.LocationDisabled -> throw LocationDisabledException("Location services disabled")
