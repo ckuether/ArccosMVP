@@ -63,7 +63,6 @@ class RoundOfGolfViewModel(
     private val roundId: Long get() = _currentScoreCard.value.roundId
 
     // Flow of location events from database
-    val locationEvents = getLocationEventsUseCase()
     
     // Flow of all scorecards from database
     val allScoreCards = getAllScoreCardsUseCase()
@@ -133,7 +132,7 @@ class RoundOfGolfViewModel(
                     .onEach { locationEvent ->
                         // Only save to database, no UI updates to prevent recomposition
                         launch(Dispatchers.IO) {
-                            saveLocationEventUseCase(locationEvent, roundId).fold(
+                            saveLocationEventUseCase(locationEvent.location, roundId).fold(
                                 onSuccess = { 
                                     // Location saved successfully - no UI update needed
                                 },

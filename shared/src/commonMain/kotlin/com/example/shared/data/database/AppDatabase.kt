@@ -5,25 +5,25 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.example.shared.data.dao.InPlayEventDao
+import com.example.shared.data.dao.LocationDao
 import com.example.shared.data.dao.ScoreCardDao
-import com.example.shared.data.entity.InPlayEventEntity
+import com.example.shared.data.entity.LocationEntity
 import com.example.shared.data.entity.ScoreCardEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
 @Database(
     entities = [
-        InPlayEventEntity::class,
-        ScoreCardEntity::class
+        ScoreCardEntity::class,
+        LocationEntity::class
     ],
     version = DatabaseConstants.DATABASE_VERSION,
     exportSchema = true
 )
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun inPlayEventDao(): InPlayEventDao
     abstract fun scoreCardDao(): ScoreCardDao
+    abstract fun locationDao(): LocationDao
 }
 
 // Database constructor for Room
@@ -42,6 +42,6 @@ fun getRoomDatabase(
         .build()
 }
 
-fun getInPlayEventDao(appDatabase: AppDatabase) = appDatabase.inPlayEventDao()
-
 fun getScoreCardDao(appDatabase: AppDatabase) = appDatabase.scoreCardDao()
+
+fun getLocationDao(appDatabase: AppDatabase) = appDatabase.locationDao()
