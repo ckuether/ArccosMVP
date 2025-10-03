@@ -57,13 +57,7 @@ class RoundOfGolfViewModel(
     private val _currentPlayer = MutableStateFlow<Player?>(null)
     val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
 
-    private val _currentScoreCard = MutableStateFlow(
-        ScoreCard(
-            courseId = 0L,
-            playerId = 0L,
-            scorecard = emptyMap()
-        )
-    )
+    private val _currentScoreCard = MutableStateFlow(ScoreCard())
     val currentScoreCard: StateFlow<ScoreCard> = _currentScoreCard.asStateFlow()
     
     private val roundId: Long get() = _currentScoreCard.value.roundId

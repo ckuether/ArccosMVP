@@ -2,7 +2,6 @@ package org.example.arccosmvp.presentation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.ScoreCard
+import com.example.shared.utils.formatDate
 
 @Composable
 fun PreviousRoundsBottomSheet(
@@ -98,38 +98,25 @@ private fun ScoreCardItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+        ),
+        shape = MaterialTheme.shapes.large
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(dimensions.paddingLarge)
         ) {
-            // Course name and view course button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Broken Tee Golf Course", // Placeholder course name
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                TextButton(onClick = { /* View course action */ }) {
-                    Text(
-                        text = "View Course",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
+            // Course name
+            Text(
+                text = scoreCard.courseName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
             
             // Course details
             Text(
-                text = "Broken Tee Englewood • ${scoreCard.holesPlayed} Holes",
+                text = "${scoreCard.courseName} • ${scoreCard.holesPlayed} Holes",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -202,8 +189,8 @@ private fun ScoreCardItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatisticItem(label = "Par", count = scoreCard.pars)
                 StatisticItem(label = "Birdies", count = scoreCard.birdies)
+                StatisticItem(label = "Par", count = scoreCard.pars)
                 StatisticItem(label = "Bogeys", count = scoreCard.bogeys)
             }
             
@@ -211,7 +198,7 @@ private fun ScoreCardItem(
             
             // Date
             Text(
-                text = "09/12/2025", // Placeholder date
+                text = formatDate(scoreCard.createdTimestamp),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -224,18 +211,32 @@ private fun StatisticItem(
     label: String,
     count: Int
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.padding(horizontal = dimensions.spacingXSmall)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = count.toString(),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(
+                horizontal = dimensions.paddingMedium,
+                vertical = dimensions.paddingSmall
+            )
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

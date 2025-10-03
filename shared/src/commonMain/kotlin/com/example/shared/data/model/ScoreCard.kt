@@ -7,8 +7,9 @@ import kotlin.random.Random
 @Serializable
 data class ScoreCard(
     val roundId: Long = Random.nextLong(1000000L, 9999999L),
-    val courseId: Long,
-    val playerId: Long,
+    val courseId: Long = 0L,
+    val courseName: String = "",
+    val playerId: Long = 0L,
     val scorecard: Map<Int, Int?> = mapOf(),
     val roundInProgress: Boolean = true,
     val createdTimestamp: Long = getCurrentTimeMillis(),
