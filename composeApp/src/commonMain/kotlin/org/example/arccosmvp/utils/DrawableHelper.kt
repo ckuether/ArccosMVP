@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.painter.Painter
 import arccosmvp.composeapp.generated.resources.Res
 import arccosmvp.composeapp.generated.resources.golf_ball
+import arccosmvp.composeapp.generated.resources.golf_bg
 import coil3.compose.rememberAsyncImagePainter
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -22,6 +23,15 @@ object DrawableHelper {
     @Composable
     fun golfBall(): Painter {
         return getSvgPainter(Res.drawable.golf_ball)
+    }
+
+    /**
+     * Golf background image painter
+     * Used as background image for golf-related screens
+     */
+    @Composable
+    fun golfBackground(): Painter {
+        return getPainterRes(Res.drawable.golf_bg)
     }
 
     /**
