@@ -1,6 +1,10 @@
 package org.example.arccosmvp.presentation
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
@@ -29,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +47,7 @@ import com.example.core_ui.platform.toMapLocation
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.distanceToInYards
+import com.example.shared.platform.getCurrentTimeMillis
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import org.example.arccosmvp.utils.DrawableHelper
 import org.koin.compose.viewmodel.koinViewModel
@@ -63,10 +70,38 @@ fun RoundOfGolf(
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
+    
+    // UI visibility state
+    var isUIVisible by remember { mutableStateOf(true) }
+    var lastTouchTime by remember { mutableStateOf(getCurrentTimeMillis()) }
 
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
 
+    // Auto-hide UI timer
+    LaunchedEffect(lastTouchTime) {
+        delay(5000) // 5 seconds
+        isUIVisible = false
+    }
+
+    // Animation values for smooth slide transitions
+    val topOffset by animateFloatAsState(
+        targetValue = if (isUIVisible) 0f else -200f,
+        animationSpec = tween(durationMillis = 500),
+        label = "topOffset"
+    )
+    
+    val bottomOffset by animateFloatAsState(
+        targetValue = if (isUIVisible) 0f else 200f,
+        animationSpec = tween(durationMillis = 500),
+        label = "bottomOffset"
+    )
+
+    // Function to reset touch timer
+    val resetUITimer = {
+        lastTouchTime = getCurrentTimeMillis()
+        isUIVisible = true
+    }
 
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
@@ -100,7 +135,15 @@ fun RoundOfGolf(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().safeContentPadding()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .safeContentPadding()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) { resetUITimer() }
+    ) {
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
@@ -114,14 +157,15 @@ fun RoundOfGolf(
             centerLocation = null,
             initialBounds = initialBounds, // Only center when hole changes
             currentHole = currentHole,
-            hasLocationPermission = locationState.hasPermission == true
+            hasLocationPermission = locationState.hasPermission == true,
+            onMapClick = { resetUITimer() }
         )
 
         // Top overlay - Hole info bar
         HoleInfoCard(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .fillMaxWidth()
+                .offset(y = topOffset.dp)
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(top = dimensions.paddingLarge),
             currentHoleNumber = currentHoleNumber,
@@ -144,6 +188,7 @@ fun RoundOfGolf(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
+                .offset(y = bottomOffset.dp)
                 .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(bottom = dimensions.paddingLarge),
@@ -153,7 +198,10 @@ fun RoundOfGolf(
             // To Par Scorecard - Bottom Left
             MiniScorecard(
                 scoreToPar = viewModel.getScoreToPar(),
-                onScoreCardClick = { showFullScoreCard = true }
+                onScoreCardClick = { 
+                    resetUITimer()
+                    showFullScoreCard = true 
+                }
             )
 
             // Edit Hole component - fills available space
@@ -162,17 +210,22 @@ fun RoundOfGolf(
                 currentHoleNumber = currentHoleNumber,
                 maxHoles = golfCourse?.holes?.size ?: 9,
                 onPreviousHole = {
+                    resetUITimer()
                     if (currentHoleNumber > 1) {
                         currentHoleNumber = currentHoleNumber - 1
                     }
                 },
                 onNextHole = {
+                    resetUITimer()
                     val maxHoles = golfCourse?.holes?.size ?: 9
                     if (currentHoleNumber < maxHoles) {
                         currentHoleNumber = currentHoleNumber + 1
                     }
                 },
-                onClick = { showScoreCard = true }
+                onClick = { 
+                    resetUITimer()
+                    showScoreCard = true 
+                }
             )
 
             Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
