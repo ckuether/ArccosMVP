@@ -16,11 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +54,6 @@ fun RoundOfGolf(
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
-    val allScoreCards by viewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
@@ -66,7 +63,6 @@ fun RoundOfGolf(
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
-    var showPreviousRounds by remember { mutableStateOf(false) }
 
     // Get golf ball icon in composable context
     val golfBallIcon = DrawableHelper.golfBall()
@@ -121,28 +117,16 @@ fun RoundOfGolf(
             hasLocationPermission = locationState.hasPermission == true
         )
 
-        // Top overlay - Hole info bar with Previous Rounds button
-        Row(
+        // Top overlay - Hole info bar
+        HoleInfoCard(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(top = dimensions.paddingLarge),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HoleInfoCard(
-                modifier = Modifier.weight(1f),
-                currentHoleNumber = currentHoleNumber,
-                currentHole = currentHole
-            )
-
-            Spacer(modifier = Modifier.width(dimensions.spacingMedium))
-
-            PreviousRoundsButton(
-                onClick = { showPreviousRounds = true }
-            )
-        }
+            currentHoleNumber = currentHoleNumber,
+            currentHole = currentHole
+        )
 
         // Permission overlay (when needed)
         if (locationState.hasPermission == false) {
@@ -231,13 +215,6 @@ fun RoundOfGolf(
             )
         }
 
-        // Previous Rounds Bottom Sheet
-        if (showPreviousRounds) {
-            PreviousRoundsBottomSheet(
-                scoreCards = allScoreCards,
-                onDismiss = { showPreviousRounds = false }
-            )
-        }
     }
 }
 
@@ -318,22 +295,6 @@ private fun HoleInfoCard(
     }
 }
 
-@Composable
-private fun PreviousRoundsButton(
-    onClick: () -> Unit
-) {
-    FloatingActionButton(
-        onClick = onClick,
-        modifier = Modifier.size(56.dp),
-        containerColor = MaterialTheme.colorScheme.primary
-    ) {
-        Icon(
-            imageVector = Icons.Default.List,
-            contentDescription = "Previous Rounds",
-            tint = MaterialTheme.colorScheme.onPrimary
-        )
-    }
-}
 
 @Composable
 private fun LocationPermissionCard(
