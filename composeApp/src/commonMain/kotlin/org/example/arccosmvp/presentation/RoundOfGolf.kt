@@ -131,128 +131,29 @@ fun RoundOfGolf(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Main hole info card
-            Card(
+            HoleInfoCard(
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = MaterialTheme.shapes.extraLarge
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
-                ) {
-                    // Hole Number
-                    Text(
-                        text = currentHoleNumber.toString(),
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    // Vertical Divider
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(dimensions.spacingXXLarge)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-                    )
-
-                    // Distance to Hole
-                    Column {
-                        Text(
-                            text = "Mid Green",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = currentHole?.let { hole ->
-                                val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
-                                "${distanceYards.toInt()}yds"
-                            } ?: "---yds",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    // Vertical Divider
-                    Box(
-                        modifier = Modifier
-                            .width(1.dp)
-                            .height(dimensions.spacingXXLarge)
-                            .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-                    )
-
-                    // Par
-                    Column {
-                        Text(
-                            text = "Par",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = currentHole?.par?.toString() ?: "---",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
+                currentHoleNumber = currentHoleNumber,
+                currentHole = currentHole
+            )
 
             Spacer(modifier = Modifier.width(dimensions.spacingMedium))
 
-            // Previous Rounds button
-            FloatingActionButton(
-                onClick = { showPreviousRounds = true },
-                modifier = Modifier.size(56.dp),
-                containerColor = MaterialTheme.colorScheme.primary
-            ) {
-                Icon(
-                    imageVector = Icons.Default.List,
-                    contentDescription = "Previous Rounds",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+            PreviousRoundsButton(
+                onClick = { showPreviousRounds = true }
+            )
         }
 
         // Permission overlay (when needed)
         if (locationState.hasPermission == false) {
-            Card(
+            LocationPermissionCard(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
                     .padding(dimensions.paddingLarge),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(dimensions.paddingLarge),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Location Permission Required",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Text(
-                        text = "This app needs location permission to track your location.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.padding(vertical = dimensions.paddingSmall)
-                    )
-                    Button(
-                        onClick = { viewModel.requestLocationPermission() },
-                        enabled = !locationState.isRequestingPermission
-                    ) {
-                        Text(
-                            if (locationState.isRequestingPermission) "Requesting..."
-                            else "Grant Permission"
-                        )
-                    }
-                }
-            }
+                isRequestingPermission = locationState.isRequestingPermission,
+                onRequestPermission = { viewModel.requestLocationPermission() }
+            )
         }
 
         // Bottom components row
@@ -272,91 +173,23 @@ fun RoundOfGolf(
             )
 
             // Edit Hole component - fills available space
-            Card(
+            HoleNavigationCard(
                 modifier = Modifier.weight(1f),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = MaterialTheme.shapes.extraLarge,
+                currentHoleNumber = currentHoleNumber,
+                maxHoles = golfCourse?.holes?.size ?: 9,
+                onPreviousHole = {
+                    if (currentHoleNumber > 1) {
+                        currentHoleNumber = currentHoleNumber - 1
+                    }
+                },
+                onNextHole = {
+                    val maxHoles = golfCourse?.holes?.size ?: 9
+                    if (currentHoleNumber < maxHoles) {
+                        currentHoleNumber = currentHoleNumber + 1
+                    }
+                },
                 onClick = { showScoreCard = true }
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = dimensions.paddingLarge,
-                            vertical = dimensions.paddingMedium
-                        ),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Left Arrow
-                    IconButton(
-                        onClick = {
-                            if (currentHoleNumber > 1) {
-                                currentHoleNumber = currentHoleNumber - 1
-                            }
-                        },
-                        modifier = Modifier.size(dimensions.iconButtonSize),
-                        enabled = currentHoleNumber > 1
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowLeft,
-                            contentDescription = "Previous hole",
-                            tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
-                        )
-                    }
-
-                    // Edit Hole text and number
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Hole $currentHoleNumber",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.Black
-                        )
-
-                        // Hole number box
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.Black.copy(alpha = 0.1f)
-                            ),
-                            shape = MaterialTheme.shapes.small
-                        ) {
-                            Text(
-                                text = currentHoleNumber.toString(),
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = Color.Black,
-                                modifier = Modifier.padding(
-                                    horizontal = dimensions.paddingLarge,
-                                    vertical = dimensions.paddingSmall
-                                )
-                            )
-                        }
-                    }
-
-                    // Right Arrow
-                    IconButton(
-                        onClick = {
-                            val maxHoles = golfCourse?.holes?.size ?: 9
-                            if (currentHoleNumber < maxHoles) {
-                                currentHoleNumber = currentHoleNumber + 1
-                            }
-                        },
-                        modifier = Modifier.size(dimensions.iconButtonSize),
-                        enabled = currentHoleNumber < (golfCourse?.holes?.size ?: 9)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowRight,
-                            contentDescription = "Next hole",
-                            tint = if (currentHoleNumber < (golfCourse?.holes?.size
-                                    ?: 9)
-                            ) Color.Black else Color.Gray
-                        )
-                    }
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
         }
@@ -404,6 +237,229 @@ fun RoundOfGolf(
                 scoreCards = allScoreCards,
                 onDismiss = { showPreviousRounds = false }
             )
+        }
+    }
+}
+
+@Composable
+private fun HoleInfoCard(
+    modifier: Modifier = Modifier,
+    currentHoleNumber: Int,
+    currentHole: Hole?
+) {
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = MaterialTheme.shapes.extraLarge
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
+        ) {
+            // Hole Number
+            Text(
+                text = currentHoleNumber.toString(),
+                style = MaterialTheme.typography.displaySmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            // Vertical Divider
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(dimensions.spacingXXLarge)
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+            )
+
+            // Distance to Hole
+            Column {
+                Text(
+                    text = "Mid Green",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = currentHole?.let { hole ->
+                        val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
+                        "${distanceYards.toInt()}yds"
+                    } ?: "---yds",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
+            // Vertical Divider
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(dimensions.spacingXXLarge)
+                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+            )
+
+            // Par
+            Column {
+                Text(
+                    text = "Par",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = currentHole?.par?.toString() ?: "---",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviousRoundsButton(
+    onClick: () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = Modifier.size(56.dp),
+        containerColor = MaterialTheme.colorScheme.primary
+    ) {
+        Icon(
+            imageVector = Icons.Default.List,
+            contentDescription = "Previous Rounds",
+            tint = MaterialTheme.colorScheme.onPrimary
+        )
+    }
+}
+
+@Composable
+private fun LocationPermissionCard(
+    modifier: Modifier = Modifier,
+    isRequestingPermission: Boolean,
+    onRequestPermission: () -> Unit
+) {
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(dimensions.paddingLarge),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Location Permission Required",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                text = "This app needs location permission to track your location.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(vertical = dimensions.paddingSmall)
+            )
+            Button(
+                onClick = onRequestPermission,
+                enabled = !isRequestingPermission
+            ) {
+                Text(
+                    if (isRequestingPermission) "Requesting..."
+                    else "Grant Permission"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HoleNavigationCard(
+    modifier: Modifier = Modifier,
+    currentHoleNumber: Int,
+    maxHoles: Int,
+    onPreviousHole: () -> Unit,
+    onNextHole: () -> Unit,
+    onClick: () -> Unit
+) {
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = MaterialTheme.shapes.extraLarge,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = dimensions.paddingLarge,
+                    vertical = dimensions.paddingMedium
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Left Arrow
+            IconButton(
+                onClick = onPreviousHole,
+                modifier = Modifier.size(dimensions.iconButtonSize),
+                enabled = currentHoleNumber > 1
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowLeft,
+                    contentDescription = "Previous hole",
+                    tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
+                )
+            }
+
+            // Edit Hole text and number
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Hole $currentHoleNumber",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.Black
+                )
+
+                // Hole number box
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Black.copy(alpha = 0.1f)
+                    ),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = currentHoleNumber.toString(),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = Color.Black,
+                        modifier = Modifier.padding(
+                            horizontal = dimensions.paddingLarge,
+                            vertical = dimensions.paddingSmall
+                        )
+                    )
+                }
+            }
+
+            // Right Arrow
+            IconButton(
+                onClick = onNextHole,
+                modifier = Modifier.size(dimensions.iconButtonSize),
+                enabled = currentHoleNumber < maxHoles
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowRight,
+                    contentDescription = "Next hole",
+                    tint = if (currentHoleNumber < maxHoles) Color.Black else Color.Gray
+                )
+            }
         }
     }
 }

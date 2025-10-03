@@ -21,7 +21,7 @@ fun App() {
             startDestination = Route.GOLF_HOME
         ) {
             composable(Route.GOLF_HOME) {
-                GolfHomeScreen()
+                GolfHomeScreen(navController = navController)
             }
             composable(Route.ROUND_OF_GOLF) {
                 RoundOfGolf()
