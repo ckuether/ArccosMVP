@@ -283,7 +283,10 @@ class RoundOfGolfViewModel(
         viewModelScope.launch {
             try {
                 val hasPermission = checkLocationPermissionUseCase()
-                _locationState.value = _locationState.value.copy(hasPermission = hasPermission)
+                _locationState.value = _locationState.value.copy(
+                    hasPermission = hasPermission,
+                    isRequestingPermission = false // Reset requesting flag
+                )
                 
                 // Automatically start location tracking if permission is granted
                 if (hasPermission && !_locationState.value.isTracking) {
@@ -292,6 +295,7 @@ class RoundOfGolfViewModel(
                 }
             } catch (e: Exception) {
                 _locationState.value = _locationState.value.copy(
+                    isRequestingPermission = false, // Reset requesting flag on error too
                     error = e.message ?: "Error checking permission"
                 )
             }

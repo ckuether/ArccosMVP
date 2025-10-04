@@ -8,12 +8,7 @@ import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
 import com.example.shared.domain.usecase.CalculateBearingUseCase
 import platform.CoreLocation.CLLocationCoordinate2DMake
-import platform.MapKit.MKCoordinateRegionMake
-import platform.MapKit.MKCoordinateRegionMakeWithDistance
-import platform.MapKit.MKCoordinateSpanMake
-import platform.MapKit.MKMapView
-import platform.MapKit.MKPointAnnotation
-import platform.MapKit.MKMapCamera
+import platform.MapKit.*
 import org.koin.compose.koinInject
 
 @OptIn(ExperimentalForeignApi::class)
@@ -42,7 +37,7 @@ actual fun MapView(
             mapView.setZoomEnabled(true)
             mapView.setScrollEnabled(true)
             mapView.setRotateEnabled(true)
-            
+
             mapView
         },
         update = { mapView ->
@@ -64,6 +59,7 @@ actual fun MapView(
                 annotation.setSubtitle(when (location.markerType) {
                     MarkerType.GOLF_BALL -> "⛳ Tee Area"
                     MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
+                    MarkerType.TARGET_CIRCLE -> "🎯 Target Shot"
                     MarkerType.DEFAULT -> null
                 })
                 

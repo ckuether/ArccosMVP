@@ -68,6 +68,7 @@ fun RoundOfGolf(
     var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
     var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
     var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
+    var targetShotLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
     
@@ -107,6 +108,8 @@ fun RoundOfGolf(
     LaunchedEffect(golfCourse, currentHoleNumber) {
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
+            // Clear target shot when changing holes
+            targetShotLocation = null
 
 
             // Set up map bounds for this hole (fallback)
@@ -153,12 +156,21 @@ fun RoundOfGolf(
                 holeStartLocation?.let { add(it) }
                 // Add current hole end location with golf flag icon
                 holeEndLocation?.let { add(it) }
+                // Add target shot location if set
+                targetShotLocation?.let { add(it) }
             },
             centerLocation = null,
             initialBounds = initialBounds, // Only center when hole changes
             currentHole = currentHole,
             hasLocationPermission = locationState.hasPermission == true,
-            onMapClick = { resetUITimer() }
+            onMapClick = { mapLocation ->
+                resetUITimer()
+                // Place target shot circle at clicked location
+                targetShotLocation = mapLocation.copy(
+                    title = "Target Shot",
+                    markerType = MarkerType.TARGET_CIRCLE
+                )
+            }
         )
 
         // Top overlay - Hole info bar
