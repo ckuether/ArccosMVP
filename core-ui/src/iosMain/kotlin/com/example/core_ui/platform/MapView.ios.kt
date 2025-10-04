@@ -7,11 +7,21 @@ import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
 import com.example.shared.domain.usecase.CalculateBearingUseCase
+import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.CValue
 import platform.CoreLocation.CLLocationCoordinate2DMake
+import platform.CoreLocation.CLLocationCoordinate2D
 import platform.MapKit.*
 import org.koin.compose.koinInject
+import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.useContents
+import platform.objc.sel_registerName
+import platform.darwin.NSObject
+import platform.UIKit.UITapGestureRecognizer
+import platform.UIKit.UIGestureRecognizerStateBegan
+import platform.UIKit.UIGestureRecognizerStateEnded
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
 actual fun MapView(
     modifier: Modifier,
@@ -37,6 +47,36 @@ actual fun MapView(
             mapView.setZoomEnabled(true)
             mapView.setScrollEnabled(true)
             mapView.setRotateEnabled(true)
+
+            // Add tap gesture recognizer for map clicks
+            onMapClick?.let { clickHandler ->
+                val tapGesture = UITapGestureRecognizer()
+                
+                // Create a custom class to handle the tap
+                val tapHandler = object : NSObject() {
+                    @ObjCAction
+                    fun handleTap(recognizer: UITapGestureRecognizer) {
+                        if (recognizer.state == UIGestureRecognizerStateEnded) {
+                            val point = recognizer.locationInView(mapView)
+                            val coordinate: CValue<CLLocationCoordinate2D> = mapView.convertPoint(point, toCoordinateFromView = mapView)
+
+                            coordinate.useContents {
+                                clickHandler(MapLocation(
+                                    latitude = this.latitude,
+                                    longitude = this.longitude
+                                ))
+                            }
+                        }
+                    }
+                }
+                
+                tapGesture.addTarget(
+                    target = tapHandler,
+                    action = sel_registerName("handleTap:")
+                )
+                
+                mapView.addGestureRecognizer(tapGesture)
+            }
 
             mapView
         },
