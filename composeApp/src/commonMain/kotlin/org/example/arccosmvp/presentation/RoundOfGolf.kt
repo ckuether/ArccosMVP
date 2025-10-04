@@ -165,7 +165,7 @@ fun RoundOfGolf(
             hasLocationPermission = locationState.hasPermission == true,
             onMapClick = { mapLocation ->
                 resetUITimer()
-                // Place target shot circle at clicked location
+                // Always set/replace target shot at clicked location
                 targetShotLocation = mapLocation.copy(
                     title = "Target Shot",
                     markerType = MarkerType.TARGET_CIRCLE
