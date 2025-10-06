@@ -13,14 +13,9 @@ import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import platform.CoreLocation.CLLocationCoordinate2DMake
 import platform.CoreLocation.CLLocationCoordinate2D
-import platform.MapKit.*
-import org.koin.compose.koinInject
-import kotlinx.cinterop.ObjCAction
+import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
-import platform.objc.sel_registerName
 import platform.darwin.NSObject
-import platform.UIKit.UITapGestureRecognizer
-import platform.MapKit.MKMapViewDelegateProtocol
 import kotlinx.cinterop.ObjCSignatureOverride
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
@@ -34,213 +29,168 @@ actual fun MapView(
     hasLocationPermission: Boolean,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
-    // Create use case for bearing calculation
     val calculateBearingUseCase = remember { CalculateBearingUseCase() }
-    
-    // Store click handler in a mutable state that can be updated
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
+    val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
     
-    // Inject drawable provider (not used on iOS currently, but available for future use)
-    val drawableProvider: DrawableProvider = koinInject()
     UIKitView(
         modifier = modifier,
         factory = {
-            val mapView = MKMapView()
-            
-            // Configure map settings
-            mapView.setShowsUserLocation(hasLocationPermission)
-            mapView.setZoomEnabled(true)
-            mapView.setScrollEnabled(true)
-            mapView.setRotateEnabled(true)
-
-            // Set up map delegate for annotation handling
-            val mapDelegate = object : NSObject(), MKMapViewDelegateProtocol {
-                @ObjCSignatureOverride
-                override fun mapView(mapView: MKMapView, didSelectAnnotationView: MKAnnotationView) {
-                    NSLog("MapView: Annotation selected, deselecting to allow map taps")
-                    // Deselect the annotation immediately to allow map taps
-                    mapView.deselectAnnotation(didSelectAnnotationView.annotation, false)
+            // Determine initial camera position
+            val initialCamera = when {
+                currentHole != null -> {
+                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
+                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
+                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
+                }
+                initialBounds != null -> {
+                    val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
+                    val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
+                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
+                }
+                centerLocation != null -> {
+                    GMSCameraPosition.cameraWithLatitude(centerLocation.latitude, centerLocation.longitude, 15.0f)
+                }
+                userLocations.isNotEmpty() -> {
+                    val firstLocation = userLocations.first()
+                    GMSCameraPosition.cameraWithLatitude(firstLocation.latitude, firstLocation.longitude, 15.0f)
+                }
+                else -> {
+                    // Default to Denver, CO
+                    GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
                 }
             }
-            
-            mapView.setDelegate(mapDelegate)
 
-            // Add gesture recognizer with higher priority to avoid conflicts
-            val tapGesture = UITapGestureRecognizer()
-            tapGesture.setNumberOfTapsRequired(1u)
-            tapGesture.setNumberOfTouchesRequired(1u)
-            
-            val tapHandler = object : NSObject() {
-                @ObjCAction
-                fun handleTap(recognizer: UITapGestureRecognizer) {
-                    NSLog("MapView: Map tap gesture triggered")
-                    
+            // Create the map view
+            val mapView = GMSMapView()
+            mapView.setCamera(initialCamera)
+
+            // Configure map settings
+            mapView.setMyLocationEnabled(hasLocationPermission)
+            mapView.settings.setZoomGestures(true)
+            mapView.settings.setScrollGestures(true)
+            mapView.settings.setRotateGestures(true)
+            mapView.settings.setTiltGestures(true)
+
+            // Create and set delegate for map interactions
+            val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
+                @ObjCSignatureOverride
+                override fun mapView(mapView: GMSMapView, didTapAtCoordinate: CValue<CLLocationCoordinate2D>) {
+                    NSLog("GoogleMaps: Map tapped")
+
                     clickHandlerState.value?.let { clickHandler ->
-                        NSLog("MapView: Click handler found, processing tap")
-                        val point = recognizer.locationInView(mapView)
-                        val coordinate: CValue<CLLocationCoordinate2D> = mapView.convertPoint(point, toCoordinateFromView = mapView)
-
-                        coordinate.useContents {
-                            NSLog("MapView: Converting coordinate to MapLocation: lat=${this.latitude}, lng=${this.longitude}")
+                        didTapAtCoordinate.useContents {
+                            NSLog("GoogleMaps: Converting coordinate to MapLocation: lat=${this.latitude}, lng=${this.longitude}")
                             clickHandler(MapLocation(
                                 latitude = this.latitude,
                                 longitude = this.longitude
                             ))
                         }
                     } ?: run {
-                        NSLog("MapView: No click handler available")
+                        NSLog("GoogleMaps: No click handler available")
                     }
                 }
             }
-            
-            tapGesture.addTarget(
-                target = tapHandler,
-                action = sel_registerName("handleTap:")
-            )
-            
-            mapView.addGestureRecognizer(tapGesture)
 
+            mapView.setDelegate(mapDelegate)
             mapView
         },
         update = { mapView ->
-            // Only update click handler if it changed
-            if (clickHandlerState.value != onMapClick) {
-                clickHandlerState.value = onMapClick
+            // Update click handler
+            clickHandlerState.value = onMapClick
+
+            // Clear existing markers
+            markersRef.value.forEach { marker ->
+                marker.setMap(null)
             }
-            
-            // Clear existing annotations
-            mapView.removeAnnotations(mapView.annotations)
-            
-            // Add new annotations for locations
-            userLocations.forEach { location ->
-                val annotation = MKPointAnnotation()
-                annotation.setCoordinate(
-                    CLLocationCoordinate2DMake(
-                        location.latitude,
-                        location.longitude
-                    )
-                )
-                annotation.setTitle(location.title ?: "Location")
-                
-                // Set subtitle for golf markers
-                annotation.setSubtitle(when (location.markerType) {
-                    MarkerType.GOLF_BALL -> "⛳ Tee Area"
-                    MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
-                    MarkerType.TARGET_CIRCLE -> "🎯 Target Shot"
+
+            // Add new markers for user locations
+            val newMarkers = userLocations.map { location ->
+                val marker = GMSMarker()
+                val coordinate = CLLocationCoordinate2DMake(location.latitude, location.longitude)
+                marker.setPosition(coordinate)
+                marker.setTitle(location.title ?: "Location")
+
+                // Set snippet based on marker type
+                marker.setSnippet(when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "� Tee Area"
+                    MarkerType.GOLF_FLAG -> "<� Pin/Hole"
+                    MarkerType.TARGET_CIRCLE -> "<� Target Shot"
                     MarkerType.DEFAULT -> null
                 })
-                
-                mapView.addAnnotation(annotation)
+
+                marker.setMap(mapView)
+                marker
             }
-            
-            // Set map region
+
+            markersRef.value = newMarkers
+
+            // Update camera position based on priority
             when {
                 currentHole != null -> {
-                    // Use hole bounds with bearing calculation like Android
                     val startLat = currentHole.teeLocation.lat
                     val startLng = currentHole.teeLocation.long
                     val endLat = currentHole.flagLocation.lat
                     val endLng = currentHole.flagLocation.long
-                    
-                    val minLat = minOf(startLat, endLat)
-                    val maxLat = maxOf(startLat, endLat)
-                    val minLng = minOf(startLng, endLng)
-                    val maxLng = maxOf(startLng, endLng)
-                    
-                    val centerLat = (minLat + maxLat) / 2
-                    val centerLng = (minLng + maxLng) / 2
-                    // Much tighter zoom - only add small padding and cap maximum zoom out
-                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
-                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
-                    
+
+                    val centerLat = (startLat + endLat) / 2
+                    val centerLng = (startLng + endLng) / 2
+
                     // Calculate bearing for orientation
                     val bearing = calculateBearingUseCase(currentHole.teeLocation, currentHole.flagLocation)
-                    
-                    // First set the region
-                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
-                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
-                    val region = MKCoordinateRegionMake(center, span)
-                    mapView.setRegion(region, true)
-                    
-                    // Then set the camera with bearing (rotation)
-                    val camera = MKMapCamera()
-                    camera.setCenterCoordinate(center)
-                    camera.setHeading(bearing) // Set the bearing/rotation
-                    // Calculate altitude for the zoom level - approximate conversion
-                    val altitude = (latDelta * 111000.0 * 2.0) // Convert lat delta to meters and set altitude
-                    camera.setAltitude(altitude)
-                    mapView.setCamera(camera, true)
+
+                    // Create camera with bearing
+                    val camera = GMSCameraPosition.cameraWithLatitude(
+                        centerLat,
+                        centerLng,
+                        16.0f,
+                        bearing.toDouble(),
+                        0.0
+                    )
+
+                    mapView.animateToCameraPosition(camera)
                 }
                 initialBounds != null -> {
-                    // Use initial bounds (highest priority)
-                    val startLat = initialBounds.first.latitude
-                    val startLng = initialBounds.first.longitude
-                    val endLat = initialBounds.second.latitude
-                    val endLng = initialBounds.second.longitude
-                    
-                    val minLat = minOf(startLat, endLat)
-                    val maxLat = maxOf(startLat, endLat)
-                    val minLng = minOf(startLng, endLng)
-                    val maxLng = maxOf(startLng, endLng)
-                    
-                    val centerLat = (minLat + maxLat) / 2
-                    val centerLng = (minLng + maxLng) / 2
-                    // Much tighter zoom - only add small padding and cap maximum zoom out
-                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
-                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
-                    
-                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
-                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
-                    val region = MKCoordinateRegionMake(center, span)
-                    mapView.setRegion(region, true)
+                    val startCoord = CLLocationCoordinate2DMake(initialBounds.first.latitude, initialBounds.first.longitude)
+                    val endCoord = CLLocationCoordinate2DMake(initialBounds.second.latitude, initialBounds.second.longitude)
+
+                    val bounds = GMSCoordinateBounds()
+                    bounds.includingCoordinate(startCoord)
+                    bounds.includingCoordinate(endCoord)
+
+                    val update = GMSCameraUpdate.fitBounds(bounds, 50.0) // 50 points padding
+                    mapView.animateWithCameraUpdate(update)
                 }
                 centerLocation != null -> {
-                    val coordinate = CLLocationCoordinate2DMake(
+                    val camera = GMSCameraPosition.cameraWithLatitude(
                         centerLocation.latitude,
-                        centerLocation.longitude
+                        centerLocation.longitude,
+                        15.0f
                     )
-                    val region = MKCoordinateRegionMakeWithDistance(
-                        coordinate,
-                        1000.0, // 1km span
-                        1000.0
-                    )
-                    mapView.setRegion(region, true)
+                    mapView.animateToCameraPosition(camera)
                 }
                 userLocations.isNotEmpty() -> {
-                    // Calculate bounds for all locations
-                    val firstLocation = userLocations.first()
-                    var minLat = firstLocation.latitude
-                    var maxLat = firstLocation.latitude
-                    var minLng = firstLocation.longitude
-                    var maxLng = firstLocation.longitude
-                    
-                    userLocations.forEach { location ->
-                        minLat = minOf(minLat, location.latitude)
-                        maxLat = maxOf(maxLat, location.latitude)
-                        minLng = minOf(minLng, location.longitude)
-                        maxLng = maxOf(maxLng, location.longitude)
+                    if (userLocations.size == 1) {
+                        val location = userLocations.first()
+                        val camera = GMSCameraPosition.cameraWithLatitude(
+                            location.latitude,
+                            location.longitude,
+                            15.0f
+                        )
+                        mapView.animateToCameraPosition(camera)
+                    } else {
+                        val bounds = GMSCoordinateBounds()
+                        userLocations.forEach { location ->
+                            bounds.includingCoordinate(CLLocationCoordinate2DMake(location.latitude, location.longitude))
+                        }
+                        val update = GMSCameraUpdate.fitBounds(bounds, 50.0)
+                        mapView.animateWithCameraUpdate(update)
                     }
-                    
-                    val centerLat = (minLat + maxLat) / 2
-                    val centerLng = (minLng + maxLng) / 2
-                    // Much tighter zoom - only add small padding and cap maximum zoom out
-                    val latDelta = minOf(maxOf((maxLat - minLat) * 1.05, 0.002), 0.005) 
-                    val lngDelta = minOf(maxOf((maxLng - minLng) * 1.05, 0.002), 0.005)
-                    
-                    val center = CLLocationCoordinate2DMake(centerLat, centerLng)
-                    val span = MKCoordinateSpanMake(latDelta, lngDelta)
-                    val region = MKCoordinateRegionMake(center, span)
-                    mapView.setRegion(region, true)
                 }
                 else -> {
                     // Default to Denver, CO
-                    val coordinate = CLLocationCoordinate2DMake(39.7392, -104.9903)
-                    val region = MKCoordinateRegionMakeWithDistance(
-                        coordinate,
-                        10000.0, // 10km span
-                        10000.0
-                    )
-                    mapView.setRegion(region, true)
+                    val camera = GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
+                    mapView.animateToCameraPosition(camera)
                 }
             }
         }
