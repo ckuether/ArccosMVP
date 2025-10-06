@@ -9,10 +9,4 @@ interface LocationRepository {
     fun startLocationUpdates(intervalMs: Long): Flow<LocationResult>
     suspend fun stopLocationUpdates()
     suspend fun isLocationEnabled(): Boolean
-    
-    // Database operations
-    suspend fun saveLocation(location: Location, timestamp: Long)
-    fun getStoredLocations(): Flow<List<Location>>
-    suspend fun clearStoredLocations()
-    suspend fun getLocationCount(): Int
 }

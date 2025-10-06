@@ -23,3 +23,15 @@ fun formatTimestamp(timestamp: Long): String {
 
     return "$month, $day at ${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}:${second.toString().padStart(2, '0')}"
 }
+
+@OptIn(ExperimentalTime::class)
+fun formatDate(timestamp: Long): String {
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    
+    val month = localDateTime.monthNumber.toString().padStart(2, '0')
+    val day = localDateTime.dayOfMonth.toString().padStart(2, '0')
+    val year = localDateTime.year
+    
+    return "$month/$day/$year"
+}

@@ -6,15 +6,16 @@ import com.example.location.domain.usecase.LocationException
 import com.example.location.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.domain.usecase.SaveLocationEventUseCase
-import com.example.location.domain.usecase.GetLocationEventsUseCase
-import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.repository.GolfCourseRepository
-import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.model.GolfCourse
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
+import com.example.shared.platform.getCurrentTimeMillis
+import com.example.shared.domain.usecase.SaveScoreCardUseCase
+import com.example.shared.domain.usecase.LoadGolfCourseUseCase
+import com.example.shared.domain.usecase.LoadCurrentUserUseCase
+import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,12 +31,12 @@ import kotlinx.coroutines.IO
 class RoundOfGolfViewModel(
     private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
-    private val getLocationEventsUseCase: GetLocationEventsUseCase,
-    private val clearLocationEventsUseCase: ClearLocationEventsUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val golfCourseRepository: GolfCourseRepository,
-    private val userRepository: UserRepository,
+    private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
+    private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
+    private val saveScoreCardUseCase: SaveScoreCardUseCase,
+    private val getAllScoreCardsUseCase: GetAllScoreCardsUseCase,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -52,17 +53,15 @@ class RoundOfGolfViewModel(
     private val _currentPlayer = MutableStateFlow<Player?>(null)
     val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
 
-    private val _currentScoreCard = MutableStateFlow(
-        ScoreCard(
-            courseId = 0L,
-            playerId = 0L,
-            scorecard = emptyMap()
-        )
-    )
+    private val _currentScoreCard = MutableStateFlow(ScoreCard())
     val currentScoreCard: StateFlow<ScoreCard> = _currentScoreCard.asStateFlow()
+    
+    private val roundId: Long get() = _currentScoreCard.value.roundId
 
     // Flow of location events from database
-    val locationEvents = getLocationEventsUseCase()
+    
+    // Flow of all scorecards from database
+    val allScoreCards = getAllScoreCardsUseCase()
     
     private var trackingJob: Job? = null
 
@@ -74,33 +73,30 @@ class RoundOfGolfViewModel(
     
     private fun loadGolfCourse() {
         viewModelScope.launch {
-            try {
-                val course = golfCourseRepository.loadGolfCourse()
-                _golfCourse.value = course
-                logger.info(TAG, "Golf course loaded: ${course?.name}")
-            } catch (e: Exception) {
-                logger.error(TAG, "Failed to load golf course", e)
-            }
+            loadGolfCourseUseCase().fold(
+                onSuccess = { course ->
+                    _golfCourse.value = course
+                    logger.info(TAG, "Golf course loaded: ${course?.name}")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to load golf course", error)
+                }
+            )
         }
     }
     
     private fun loadCurrentUser() {
         viewModelScope.launch {
-            try {
-                val player = userRepository.getCurrentUser()
-                if (player != null) {
+            loadCurrentUserUseCase().fold(
+                onSuccess = { player ->
                     _currentPlayer.value = player
                     logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
-                } else {
-                    logger.warn(TAG, "No user data found, using default player")
-                    // Create a default player if none found
-                    _currentPlayer.value = Player(name = "Guest Player")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to load current user", error)
+                    _currentPlayer.value = Player(name = "Player")
                 }
-            } catch (e: Exception) {
-                logger.error(TAG, "Failed to load current user", e)
-                // Fallback to default player on error
-                _currentPlayer.value = Player(name = "Guest Player")
-            }
+            )
         }
     }
     
@@ -132,7 +128,7 @@ class RoundOfGolfViewModel(
                     .onEach { locationEvent ->
                         // Only save to database, no UI updates to prevent recomposition
                         launch(Dispatchers.IO) {
-                            saveLocationEventUseCase(locationEvent).fold(
+                            saveLocationEventUseCase(locationEvent.location, roundId).fold(
                                 onSuccess = { 
                                     // Location saved successfully - no UI update needed
                                 },
@@ -234,10 +230,23 @@ class RoundOfGolfViewModel(
         val updatedScorecard = currentCard.scorecard.toMutableMap()
         updatedScorecard[holeNumber] = score
         
-        _currentScoreCard.value = currentCard.copy(
-            scorecard = updatedScorecard
+        val updatedCard = currentCard.copy(
+            scorecard = updatedScorecard,
+            lastUpdatedTimestamp = getCurrentTimeMillis()
         )
-        logger.info(TAG, "Updated hole $holeNumber score to $score")
+        _currentScoreCard.value = updatedCard
+        
+        // Save to database using UseCase
+        viewModelScope.launch(Dispatchers.IO) {
+            saveScoreCardUseCase(updatedCard).fold(
+                onSuccess = {
+                    logger.info(TAG, "Updated hole $holeNumber score to $score and saved to database")
+                },
+                onFailure = { error ->
+                    logger.error(TAG, "Failed to save scorecard to database", error)
+                }
+            )
+        }
     }
     
     fun getHoleScore(holeNumber: Int): Int? {
@@ -246,11 +255,6 @@ class RoundOfGolfViewModel(
     
     fun getTotalScore(): Int {
         return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
-    }
-    
-    fun getTotalPar(): Int {
-        val course = _golfCourse.value ?: return 0
-        return course.holes.sumOf { it.par }
     }
     
     fun getCompletedHolesPar(): Int {
@@ -279,7 +283,10 @@ class RoundOfGolfViewModel(
         viewModelScope.launch {
             try {
                 val hasPermission = checkLocationPermissionUseCase()
-                _locationState.value = _locationState.value.copy(hasPermission = hasPermission)
+                _locationState.value = _locationState.value.copy(
+                    hasPermission = hasPermission,
+                    isRequestingPermission = false // Reset requesting flag
+                )
                 
                 // Automatically start location tracking if permission is granted
                 if (hasPermission && !_locationState.value.isTracking) {
@@ -288,29 +295,13 @@ class RoundOfGolfViewModel(
                 }
             } catch (e: Exception) {
                 _locationState.value = _locationState.value.copy(
+                    isRequestingPermission = false, // Reset requesting flag on error too
                     error = e.message ?: "Error checking permission"
                 )
             }
         }
     }
-    
-    fun clearLocations() {
-        viewModelScope.launch {
-            clearLocationEventsUseCase().fold(
-                onSuccess = {
-                    logger.info(TAG, "All location events cleared successfully")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to clear location events", error)
-                }
-            )
-        }
-    }
-    
-    fun clearError() {
-        _locationState.value = _locationState.value.copy(error = null)
-    }
-    
+
     override fun onCleared() {
         super.onCleared()
         stopLocationTracking()

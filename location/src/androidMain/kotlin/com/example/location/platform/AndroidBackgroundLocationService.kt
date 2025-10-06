@@ -6,7 +6,7 @@ import android.content.Intent
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.IBinder
-import com.example.shared.data.event.InPlayEvent
+import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.data.model.Location
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.channels.awaitClose
@@ -32,7 +32,7 @@ class AndroidBackgroundLocationService(
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager 
     }
     
-    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<InPlayEvent.LocationUpdated> {
+    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<RoundOfGolfEvent.LocationUpdated> {
         logger.info(TAG, "startBackgroundLocationTracking called with intervalMs: $intervalMs")
         return callbackFlow {
             if (_isBackgroundTrackingActive.value) {
@@ -75,7 +75,7 @@ class AndroidBackgroundLocationService(
             
             val locationListener = LocationListener { location ->
                 logger.debug(TAG, "Location received: lat=${location.latitude}, long=${location.longitude}")
-                val locationEvent = InPlayEvent.LocationUpdated(
+                val locationEvent = RoundOfGolfEvent.LocationUpdated(
                     Location(
                         lat = location.latitude,
                         long = location.longitude

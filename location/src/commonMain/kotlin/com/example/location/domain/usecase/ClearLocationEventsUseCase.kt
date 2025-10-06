@@ -1,11 +1,10 @@
 package com.example.location.domain.usecase
 
-import com.example.shared.data.dao.InPlayEventDao
+import com.example.shared.data.dao.LocationDao
 import com.example.shared.platform.Logger
-import kotlinx.coroutines.flow.collect
 
 class ClearLocationEventsUseCase(
-    private val inPlayEventDao: InPlayEventDao,
+    private val locationDao: LocationDao,
     private val logger: Logger
 ) {
     companion object {
@@ -14,12 +13,8 @@ class ClearLocationEventsUseCase(
     
     suspend operator fun invoke(): Result<Unit> {
         return try {
-            inPlayEventDao.getEventsByType("LocationUpdated").collect { events ->
-                events.forEach { event ->
-                    inPlayEventDao.deleteEvent(event)
-                }
-                logger.info(TAG, "All location events cleared from database")
-            }
+            locationDao.deleteAllLocations()
+            logger.info(TAG, "All location events cleared from database")
             Result.success(Unit)
         } catch (e: Exception) {
             logger.error(TAG, "Failed to clear location events", e)

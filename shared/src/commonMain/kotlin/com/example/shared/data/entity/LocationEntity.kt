@@ -3,27 +3,28 @@ package com.example.shared.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.shared.data.model.Location
+import com.example.shared.platform.getCurrentTimeMillis
 
 @Entity(tableName = "locations")
 data class LocationEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val latitude: Double,
-    val longitude: Double,
-    val timestamp: Long
-) {
-    fun toLocation(): Location {
-        return Location(
-            lat = latitude,
-            long = longitude
-        )
-    }
+    @PrimaryKey
+    val timestamp: Long = getCurrentTimeMillis(),
+    val roundId: Long,
+    val lat: Double,
+    val long: Double
+)
+
+fun LocationEntity.toLocation(): Location {
+    return Location(
+        lat = lat,
+        long = long
+    )
 }
 
-fun Location.toEntity(timestamp: Long): LocationEntity {
+fun Location.toEntity(roundId: Long): LocationEntity {
     return LocationEntity(
-        latitude = lat,
-        longitude = long,
-        timestamp = timestamp
+        roundId = roundId,
+        lat = lat,
+        long = long
     )
 }

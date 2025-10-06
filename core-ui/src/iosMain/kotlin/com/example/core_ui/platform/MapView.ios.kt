@@ -2,21 +2,28 @@ package com.example.core_ui.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import platform.Foundation.NSLog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
 import com.example.shared.domain.usecase.CalculateBearingUseCase
+import kotlinx.cinterop.BetaInteropApi
+import kotlinx.cinterop.CValue
 import platform.CoreLocation.CLLocationCoordinate2DMake
-import platform.MapKit.MKCoordinateRegionMake
-import platform.MapKit.MKCoordinateRegionMakeWithDistance
-import platform.MapKit.MKCoordinateSpanMake
-import platform.MapKit.MKMapView
-import platform.MapKit.MKPointAnnotation
-import platform.MapKit.MKMapCamera
+import platform.CoreLocation.CLLocationCoordinate2D
+import platform.MapKit.*
 import org.koin.compose.koinInject
+import kotlinx.cinterop.ObjCAction
+import kotlinx.cinterop.useContents
+import platform.objc.sel_registerName
+import platform.darwin.NSObject
+import platform.UIKit.UITapGestureRecognizer
+import platform.MapKit.MKMapViewDelegateProtocol
+import kotlinx.cinterop.ObjCSignatureOverride
 
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
 actual fun MapView(
     modifier: Modifier,
@@ -30,6 +37,9 @@ actual fun MapView(
     // Create use case for bearing calculation
     val calculateBearingUseCase = remember { CalculateBearingUseCase() }
     
+    // Store click handler in a mutable state that can be updated
+    val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
+    
     // Inject drawable provider (not used on iOS currently, but available for future use)
     val drawableProvider: DrawableProvider = koinInject()
     UIKitView(
@@ -42,10 +52,62 @@ actual fun MapView(
             mapView.setZoomEnabled(true)
             mapView.setScrollEnabled(true)
             mapView.setRotateEnabled(true)
+
+            // Set up map delegate for annotation handling
+            val mapDelegate = object : NSObject(), MKMapViewDelegateProtocol {
+                @ObjCSignatureOverride
+                override fun mapView(mapView: MKMapView, didSelectAnnotationView: MKAnnotationView) {
+                    NSLog("MapView: Annotation selected, deselecting to allow map taps")
+                    // Deselect the annotation immediately to allow map taps
+                    mapView.deselectAnnotation(didSelectAnnotationView.annotation, false)
+                }
+            }
             
+            mapView.setDelegate(mapDelegate)
+
+            // Add gesture recognizer with higher priority to avoid conflicts
+            val tapGesture = UITapGestureRecognizer()
+            tapGesture.setNumberOfTapsRequired(1u)
+            tapGesture.setNumberOfTouchesRequired(1u)
+            
+            val tapHandler = object : NSObject() {
+                @ObjCAction
+                fun handleTap(recognizer: UITapGestureRecognizer) {
+                    NSLog("MapView: Map tap gesture triggered")
+                    
+                    clickHandlerState.value?.let { clickHandler ->
+                        NSLog("MapView: Click handler found, processing tap")
+                        val point = recognizer.locationInView(mapView)
+                        val coordinate: CValue<CLLocationCoordinate2D> = mapView.convertPoint(point, toCoordinateFromView = mapView)
+
+                        coordinate.useContents {
+                            NSLog("MapView: Converting coordinate to MapLocation: lat=${this.latitude}, lng=${this.longitude}")
+                            clickHandler(MapLocation(
+                                latitude = this.latitude,
+                                longitude = this.longitude
+                            ))
+                        }
+                    } ?: run {
+                        NSLog("MapView: No click handler available")
+                    }
+                }
+            }
+            
+            tapGesture.addTarget(
+                target = tapHandler,
+                action = sel_registerName("handleTap:")
+            )
+            
+            mapView.addGestureRecognizer(tapGesture)
+
             mapView
         },
         update = { mapView ->
+            // Only update click handler if it changed
+            if (clickHandlerState.value != onMapClick) {
+                clickHandlerState.value = onMapClick
+            }
+            
             // Clear existing annotations
             mapView.removeAnnotations(mapView.annotations)
             
@@ -64,6 +126,7 @@ actual fun MapView(
                 annotation.setSubtitle(when (location.markerType) {
                     MarkerType.GOLF_BALL -> "⛳ Tee Area"
                     MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
+                    MarkerType.TARGET_CIRCLE -> "🎯 Target Shot"
                     MarkerType.DEFAULT -> null
                 })
                 

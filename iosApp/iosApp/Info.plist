@@ -8,5 +8,11 @@
 	<string>This app needs location permission to track your golf game and provide location-based features.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs location permission to track your golf game and provide location-based features.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs location permission to track your golf game and provide location-based features.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>

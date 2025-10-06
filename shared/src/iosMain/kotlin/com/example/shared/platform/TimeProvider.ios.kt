@@ -1,4 +1,4 @@
-package com.example.core_ui.platform
+package com.example.shared.platform
 
 import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSince1970

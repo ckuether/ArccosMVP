@@ -2,7 +2,6 @@ package com.example.location.data.repository
 
 import com.example.location.domain.repository.LocationRepository
 import com.example.location.domain.model.LocationResult
-import com.example.shared.data.dao.LocationDao
 import com.example.shared.data.entity.toEntity
 import com.example.shared.data.model.Location
 import kotlinx.coroutines.delay
@@ -11,8 +10,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 class LocationRepositoryImpl(
-    private val locationProvider: LocationProvider,
-    private val locationDao: LocationDao
+    private val locationProvider: LocationProvider
 ) : LocationRepository {
     
     private var isUpdating = false
@@ -45,24 +43,6 @@ class LocationRepositoryImpl(
         // This needs platform-specific implementation
         // For now, assume it's always enabled
         return true
-    }
-    
-    override suspend fun saveLocation(location: Location, timestamp: Long) {
-        locationDao.insertLocation(location.toEntity(timestamp))
-    }
-    
-    override fun getStoredLocations(): Flow<List<Location>> {
-        return locationDao.getAllLocations().map { entities ->
-            entities.map { it.toLocation() }
-        }
-    }
-    
-    override suspend fun clearStoredLocations() {
-        locationDao.deleteAllLocations()
-    }
-    
-    override suspend fun getLocationCount(): Int {
-        return locationDao.getLocationCount()
     }
 }
 

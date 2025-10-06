@@ -11,6 +11,7 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
+import com.example.core_ui.utils.BitmapUtils
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -41,6 +42,8 @@ actual fun MapView(
     // Get custom markers from the drawable provider
     val golfBallBitmap = drawableProvider.getGolfBallMarker() as? BitmapDescriptor
     val golfFlagBitmap = drawableProvider.getGolfFlagMarker() as? BitmapDescriptor
+    
+    // Target circle bitmap will be created lazily when needed
     
     // Default to Denver, CO if no center location provided
     val defaultLocation = LatLng(39.7392, -104.9903)
@@ -175,6 +178,15 @@ actual fun MapView(
                         // Use custom golf flag bitmap if available, fallback to green marker
                         golfFlagBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
                     }
+                    MarkerType.TARGET_CIRCLE -> {
+                        // Create target circle bitmap when GoogleMap is ready
+                        try {
+                            BitmapUtils.createTargetCircleBitmap()
+                        } catch (e: Exception) {
+                            // Fallback to default marker if bitmap creation fails
+                            BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
+                        }
+                    }
                     MarkerType.DEFAULT -> {
                         // Default red marker for regular location points
                         BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
@@ -183,6 +195,7 @@ actual fun MapView(
                 snippet = when (location.markerType) {
                     MarkerType.GOLF_BALL -> "⛳ Tee Area"
                     MarkerType.GOLF_FLAG -> "🏌️ Pin/Hole"
+                    MarkerType.TARGET_CIRCLE -> "🎯 Target Shot"
                     MarkerType.DEFAULT -> null
                 }
             )

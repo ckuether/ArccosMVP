@@ -15,7 +15,7 @@ val databaseModule = module {
         val builder = get<RoomDatabase.Builder<AppDatabase>>()
         getRoomDatabase(builder)
     }
-    
+
     single { get<AppDatabase>().locationDao() }
-    single { get<AppDatabase>().inPlayEventDao() }
+    single { get<AppDatabase>().scoreCardDao() }
 }

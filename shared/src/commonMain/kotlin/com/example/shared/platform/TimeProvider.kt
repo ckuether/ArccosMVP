@@ -1,3 +1,3 @@
-package com.example.core_ui.platform
+package com.example.shared.platform
 
 expect fun getCurrentTimeMillis(): Long
