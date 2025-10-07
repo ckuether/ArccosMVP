@@ -103,7 +103,8 @@ kotlin {
 
         iosMain {
             dependencies {
-
+                // Koin Compose dependencies for iOS (excluding viewmodel which has Android deps)
+                implementation(libs.koin.compose)
             }
         }
     }

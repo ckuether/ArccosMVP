@@ -3,6 +3,7 @@ package com.example.core_ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import platform.Foundation.NSLog
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
@@ -17,6 +18,8 @@ import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
 import kotlinx.cinterop.ObjCSignatureOverride
+import platform.UIKit.UIImage
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -32,105 +35,18 @@ actual fun MapView(
     val calculateBearingUseCase = remember { CalculateBearingUseCase() }
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
+    val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
     
-    UIKitView(
-        modifier = modifier,
-        interactive = true,
-        factory = {
-            // Determine initial camera position
-            val initialCamera = when {
-                currentHole != null -> {
-                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
-                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
-                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
-                }
-                initialBounds != null -> {
-                    val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
-                    val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
-                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
-                }
-                centerLocation != null -> {
-                    GMSCameraPosition.cameraWithLatitude(centerLocation.latitude, centerLocation.longitude, 15.0f)
-                }
-                userLocations.isNotEmpty() -> {
-                    val firstLocation = userLocations.first()
-                    GMSCameraPosition.cameraWithLatitude(firstLocation.latitude, firstLocation.longitude, 15.0f)
-                }
-                else -> {
-                    // Default to Denver, CO
-                    GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
-                }
-            }
+    // Inject drawable provider (same as Android)
+    val drawableProvider: DrawableProvider = koinInject()
+    
+    // Get custom markers from the drawable provider
+    val golfBallIcon = remember { drawableProvider.getGolfBallMarker() as? UIImage }
+    val golfFlagIcon = remember { drawableProvider.getGolfFlagMarker() as? UIImage }
 
-            // Create the map view
-            val mapView = GMSMapView()
-            mapView.setCamera(initialCamera)
-
-            // Configure map settings
-            mapView.setMapType(kGMSTypeHybrid)
-            mapView.setMyLocationEnabled(hasLocationPermission)
-            mapView.settings.setZoomGestures(true)
-            mapView.settings.setScrollGestures(true)
-            mapView.settings.setRotateGestures(true)
-            mapView.settings.setTiltGestures(true)
-            
-            // Ensure user interaction is enabled
-            mapView.setUserInteractionEnabled(true)
-
-            // Create and set delegate for map interactions
-            val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
-                @ObjCSignatureOverride
-                override fun mapView(mapView: GMSMapView, didTapAtCoordinate: CValue<CLLocationCoordinate2D>) {
-                    NSLog("GoogleMaps: Map tapped")
-
-                    clickHandlerState.value?.let { clickHandler ->
-                        didTapAtCoordinate.useContents {
-                            NSLog("GoogleMaps: Converting coordinate to MapLocation: lat=${this.latitude}, lng=${this.longitude}")
-                            clickHandler(MapLocation(
-                                latitude = this.latitude,
-                                longitude = this.longitude
-                            ))
-                        }
-                    } ?: run {
-                        NSLog("GoogleMaps: No click handler available")
-                    }
-                }
-            }
-
-            mapView.setDelegate(mapDelegate)
-            mapView
-        },
-        update = { mapView ->
-            // Update click handler
-            clickHandlerState.value = onMapClick
-
-            // Clear existing markers
-            markersRef.value.forEach { marker ->
-                marker.setMap(null)
-            }
-
-            // Add new markers for user locations
-            val newMarkers = userLocations.map { location ->
-                val marker = GMSMarker()
-                val coordinate = CLLocationCoordinate2DMake(location.latitude, location.longitude)
-                marker.setPosition(coordinate)
-                marker.setTitle(location.title ?: "Location")
-
-                // Set snippet based on marker type
-                marker.setSnippet(when (location.markerType) {
-                    MarkerType.GOLF_BALL -> "� Tee Area"
-                    MarkerType.GOLF_FLAG -> "<� Pin/Hole"
-                    MarkerType.TARGET_CIRCLE -> "<� Target Shot"
-                    MarkerType.DEFAULT -> null
-                })
-
-                marker.setMap(mapView)
-                marker
-            }
-
-            markersRef.value = newMarkers
-
-            // Update camera position based on priority
+    // Handle MapView updates with LaunchedEffect to avoid interference with user interactions
+    LaunchedEffect(currentHole, initialBounds, centerLocation, userLocations) {
+        mapViewRef.value?.let { mapView ->
             when {
                 currentHole != null -> {
                     val startLat = currentHole.teeLocation.lat
@@ -198,6 +114,123 @@ actual fun MapView(
                     mapView.animateToCameraPosition(camera)
                 }
             }
+        }
+    }
+    
+    UIKitView(
+        modifier = modifier,
+        interactive = true,
+        factory = {
+            // Determine initial camera position
+            val initialCamera = when {
+                currentHole != null -> {
+                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
+                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
+                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
+                }
+                initialBounds != null -> {
+                    val centerLat = (initialBounds.first.latitude + initialBounds.second.latitude) / 2
+                    val centerLng = (initialBounds.first.longitude + initialBounds.second.longitude) / 2
+                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
+                }
+                centerLocation != null -> {
+                    GMSCameraPosition.cameraWithLatitude(centerLocation.latitude, centerLocation.longitude, 15.0f)
+                }
+                userLocations.isNotEmpty() -> {
+                    val firstLocation = userLocations.first()
+                    GMSCameraPosition.cameraWithLatitude(firstLocation.latitude, firstLocation.longitude, 15.0f)
+                }
+                else -> {
+                    // Default to Denver, CO
+                    GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
+                }
+            }
+
+            // Create the map view
+            val mapView = GMSMapView()
+            mapView.setCamera(initialCamera)
+
+            // Configure map settings
+            mapView.setMapType(kGMSTypeHybrid)
+            mapView.setMyLocationEnabled(hasLocationPermission)
+            mapView.settings.setAllGesturesEnabled(true)
+            
+            // Ensure user interaction is enabled
+            mapView.setUserInteractionEnabled(true)
+
+            // Create and set delegate for map interactions
+            val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
+                @ObjCSignatureOverride
+                override fun mapView(mapView: GMSMapView, didTapAtCoordinate: CValue<CLLocationCoordinate2D>) {
+                    NSLog("GoogleMaps: Map tapped")
+
+                    clickHandlerState.value?.let { clickHandler ->
+                        didTapAtCoordinate.useContents {
+                            NSLog("GoogleMaps: Converting coordinate to MapLocation: lat=${this.latitude}, lng=${this.longitude}")
+                            clickHandler(MapLocation(
+                                latitude = this.latitude,
+                                longitude = this.longitude
+                            ))
+                        }
+                    } ?: run {
+                        NSLog("GoogleMaps: No click handler available")
+                    }
+                }
+            }
+
+            mapView.setDelegate(mapDelegate)
+            mapViewRef.value = mapView
+            mapView
+        },
+        update = { mapView ->
+            // Update click handler
+            clickHandlerState.value = onMapClick
+
+            // Clear existing markers
+            markersRef.value.forEach { marker ->
+                marker.setMap(null)
+            }
+
+            // Add new markers for user locations
+            val newMarkers = userLocations.map { location ->
+                val marker = GMSMarker()
+                val coordinate = CLLocationCoordinate2DMake(location.latitude, location.longitude)
+                marker.setPosition(coordinate)
+                marker.setTitle(location.title ?: "Location")
+
+                // Set snippet based on marker type
+                marker.setSnippet(when (location.markerType) {
+                    MarkerType.GOLF_BALL -> "� Tee Area"
+                    MarkerType.GOLF_FLAG -> "<� Pin/Hole"
+                    MarkerType.TARGET_CIRCLE -> "<� Target Shot"
+                    MarkerType.DEFAULT -> null
+                })
+
+                // Set custom icon based on marker type
+                when (location.markerType) {
+                    MarkerType.GOLF_BALL -> {
+                        golfBallIcon?.let { icon ->
+                            marker.setIcon(icon)
+                        }
+                    }
+                    MarkerType.GOLF_FLAG -> {
+                        golfFlagIcon?.let { icon ->
+                            marker.setIcon(icon)
+                        }
+                    }
+                    MarkerType.TARGET_CIRCLE -> {
+                        // TODO: Implement target circle icon
+                    }
+                    MarkerType.DEFAULT -> {
+                        // Use default marker (no custom icon needed)
+                    }
+                }
+
+                marker.setMap(mapView)
+                marker
+            }
+
+            markersRef.value = newMarkers
         }
     )
 }
