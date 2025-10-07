@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
-import com.example.shared.data.model.Location
 import com.example.shared.domain.usecase.CalculateBearingUseCase
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
@@ -17,7 +16,6 @@ import platform.CoreLocation.CLLocationCoordinate2D
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
-import org.koin.compose.koinInject
 import com.example.core_ui.components.createGolfMapMarker
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
@@ -32,6 +30,7 @@ actual fun MapView(
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
     val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
+    val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
 
     // Handle camera updates when hole changes
     LaunchedEffect(currentHole) {
@@ -85,6 +84,12 @@ actual fun MapView(
         }
     }
     
+    // Debug LaunchedEffect to track click handler changes
+    LaunchedEffect(onMapClick) {
+        NSLog("GoogleMaps: onMapClick parameter changed - is ${if (onMapClick != null) "not null" else "null"}")
+        clickHandlerState.value = onMapClick
+    }
+    
     UIKitView(
         modifier = modifier,
         interactive = true,
@@ -123,7 +128,7 @@ actual fun MapView(
                     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
                     didTapAtCoordinate: CValue<CLLocationCoordinate2D>
                 ) {
-                    NSLog("GoogleMaps: didTapAtCoordinate called - map was tapped!")
+                    NSLog("GoogleMaps: didTapAtCoordinate called - map was tapped! Delegate is still active.")
 
                     clickHandlerState.value?.let { clickHandler ->
                         didTapAtCoordinate.useContents {
@@ -140,6 +145,8 @@ actual fun MapView(
                 }
             }
 
+            // Store delegate reference to prevent deallocation
+            delegateRef.value = mapDelegate
             mapView.setDelegate(mapDelegate)
             mapViewRef.value = mapView
             
@@ -152,7 +159,9 @@ actual fun MapView(
         update = { mapView ->
             // Update click handler and ensure it's properly set
             clickHandlerState.value = onMapClick
-            NSLog("GoogleMaps: Click handler updated, onMapClick is ${if (onMapClick != null) "not null" else "null"}")
+            NSLog("GoogleMaps: UIKitView update called, onMapClick is ${if (onMapClick != null) "not null" else "null"}")
+            NSLog("GoogleMaps: Delegate is ${if (delegateRef.value != null) "still retained" else "null"}")
+            NSLog("GoogleMaps: MapView delegate is ${if (mapView.delegate != null) "set" else "null"}")
         }
     )
 }
