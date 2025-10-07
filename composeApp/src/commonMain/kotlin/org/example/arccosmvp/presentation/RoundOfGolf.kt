@@ -65,10 +65,6 @@ fun RoundOfGolf(
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember { mutableStateOf<Hole?>(null) }
-    var initialBounds by remember { mutableStateOf<Pair<MapLocation, MapLocation>?>(null) }
-    var holeStartLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var holeEndLocation by remember { mutableStateOf<MapLocation?>(null) }
-    var targetShotLocation by remember { mutableStateOf<MapLocation?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
     
@@ -81,7 +77,9 @@ fun RoundOfGolf(
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
+        println("DEBUG RoundOfGolf: Auto-hide timer started, lastTouchTime=$lastTouchTime")
         delay(5000) // 5 seconds
+        println("DEBUG RoundOfGolf: Auto-hide timer expired, setting isUIVisible=false")
         isUIVisible = false
     }
 
@@ -108,33 +106,6 @@ fun RoundOfGolf(
     LaunchedEffect(golfCourse, currentHoleNumber) {
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
-            // Clear target shot when changing holes
-            targetShotLocation = null
-
-
-            // Set up map bounds for this hole (fallback)
-            initialBounds = Pair(
-                hole.teeLocation.toMapLocation("Hole $currentHoleNumber Start"),
-                hole.flagLocation.toMapLocation("Hole $currentHoleNumber End")
-            )
-
-            // Create hole start location with golf ball icon
-            holeStartLocation = MapLocation(
-                latitude = hole.teeLocation.lat,
-                longitude = hole.teeLocation.long,
-                title = "Hole $currentHoleNumber Tee",
-                icon = golfBallIcon,
-                markerType = MarkerType.GOLF_BALL
-            )
-
-            // Create hole end location with golf flag icon
-            holeEndLocation = MapLocation(
-                latitude = hole.flagLocation.lat,
-                longitude = hole.flagLocation.long,
-                title = "Hole $currentHoleNumber Pin",
-                icon = golfBallIcon, // Will use different marker type
-                markerType = MarkerType.GOLF_FLAG
-            )
         }
     }
 
@@ -150,26 +121,11 @@ fun RoundOfGolf(
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
-            userLocations = buildList {
-                // Only show hole markers, no location tracking points
-                // Add current hole start location with golf ball icon
-                holeStartLocation?.let { add(it) }
-                // Add current hole end location with golf flag icon
-                holeEndLocation?.let { add(it) }
-                // Add target shot location if set
-                targetShotLocation?.let { add(it) }
-            },
-            centerLocation = null,
-            initialBounds = initialBounds, // Only center when hole changes
             currentHole = currentHole,
             hasLocationPermission = locationState.hasPermission == true,
             onMapClick = { mapLocation ->
                 resetUITimer()
                 // Always set/replace target shot at clicked location
-                targetShotLocation = mapLocation.copy(
-                    title = "Target Shot",
-                    markerType = MarkerType.TARGET_CIRCLE
-                )
             }
         )
 
