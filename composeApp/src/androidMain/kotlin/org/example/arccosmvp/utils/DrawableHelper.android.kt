@@ -1,18 +1,27 @@
 package org.example.arccosmvp.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import org.example.arccosmvp.R
 import androidx.core.graphics.createBitmap
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import arccosmvp.composeapp.generated.resources.Res
+import kotlinx.coroutines.runBlocking
+import androidx.core.graphics.scale
 
 /**
  * Android-specific helper for creating map markers using VectorDrawable to Bitmap approach
  */
 class AndroidDrawableHelper(private val context: Context) {
+
+    companion object {
+        private const val MARKER_SIZE = 24
+    }
     
     /**
      * Creates a BitmapDescriptor for Google Maps markers using the VectorDrawable approach
@@ -45,38 +54,47 @@ class AndroidDrawableHelper(private val context: Context) {
     }
     
     /**
-     * Creates a golf ball bitmap using your PNG asset and VectorDrawable approach
+     * Creates a golf ball bitmap using Compose resources
      */
+    @OptIn(ExperimentalResourceApi::class)
     private fun getBitmapFromGolfBallDrawable(): Bitmap? {
-        return createBitmapFromDrawable(R.drawable.golf_ball)
+        return try {
+            runBlocking {
+                val imageData = Res.readBytes("drawable/golf_ball.png")
+                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                resizeBitmap(bitmap, MARKER_SIZE)
+            }
+        } catch (e: Exception) {
+            println("Error loading golf ball from Compose resources: ${e.message}")
+            null
+        }
     }
     
     /**
-     * Creates a golf flag bitmap using your PNG asset and VectorDrawable approach
+     * Creates a golf flag bitmap using Compose resources
      */
+    @OptIn(ExperimentalResourceApi::class)
     private fun getBitmapFromGolfFlagDrawable(): Bitmap? {
-        return createBitmapFromDrawable(R.drawable.golf_flag)
+        return try {
+            runBlocking {
+                val imageData = Res.readBytes("drawable/golf_flag.png")
+                val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
+                resizeBitmap(bitmap, MARKER_SIZE)
+            }
+        } catch (e: Exception) {
+            println("Error loading golf flag from Compose resources: ${e.message}")
+            null
+        }
     }
     
     /**
-     * Generic function to create bitmap from drawable resource using VectorDrawable approach
+     * Resize bitmap to specified dp size
      */
-    private fun createBitmapFromDrawable(drawableResId: Int, sizeDp: Int = 18): Bitmap? {
-        // Get the drawable from resource
-        val drawable = ContextCompat.getDrawable(context, drawableResId) ?: return null
-
-        // Calculate size for map marker
+    @SuppressLint("UseKtx")
+    private fun resizeBitmap(bitmap: Bitmap, sizeDp: Int): Bitmap {
         val density = context.resources.displayMetrics.density
         val sizePx = (sizeDp * density).toInt()
-
-        // Create bitmap following VectorDrawable pattern
-        val bitmap = createBitmap(sizePx, sizePx)
-        val canvas = Canvas(bitmap)
         
-        // Set bounds and draw - exactly your pattern
-        drawable.setBounds(0, 0, canvas.width, canvas.height)
-        drawable.draw(canvas)
-
-        return bitmap
+        return bitmap.scale(sizePx, sizePx)
     }
 }

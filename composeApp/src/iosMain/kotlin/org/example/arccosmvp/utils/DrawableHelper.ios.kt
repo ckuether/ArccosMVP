@@ -22,8 +22,7 @@ import kotlinx.coroutines.runBlocking
 class IOSDrawableHelper {
     
     companion object {
-        // Standard marker size for Google Maps (similar to Android 18dp)
-        private const val MARKER_SIZE = 24.0 // Points (equivalent to ~18dp at 2x)
+        private const val MARKER_SIZE = 24.0
     }
     
     /**
