@@ -35,6 +35,7 @@ actual fun MapView(
     
     UIKitView(
         modifier = modifier,
+        interactive = true,
         factory = {
             // Determine initial camera position
             val initialCamera = when {
@@ -66,11 +67,15 @@ actual fun MapView(
             mapView.setCamera(initialCamera)
 
             // Configure map settings
+            mapView.setMapType(kGMSTypeHybrid)
             mapView.setMyLocationEnabled(hasLocationPermission)
             mapView.settings.setZoomGestures(true)
             mapView.settings.setScrollGestures(true)
             mapView.settings.setRotateGestures(true)
             mapView.settings.setTiltGestures(true)
+            
+            // Ensure user interaction is enabled
+            mapView.setUserInteractionEnabled(true)
 
             // Create and set delegate for map interactions
             val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
