@@ -23,3 +23,5 @@ node_modules/
 Pods/
 *.xcworkspace
 Podfile.lock
+# Auto-generated podspec files from KMP CocoaPods plugin
+**/*.podspec
