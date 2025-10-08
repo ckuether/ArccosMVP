@@ -1,7 +1,7 @@
 package com.example.core_ui.platform
 
 import com.example.shared.data.model.Hole
-import com.example.shared.usecase.MapCameraPosition
+import com.example.shared.data.model.MapCameraPosition
 
 /**
  * Platform-specific camera controller for handling map camera positioning.
