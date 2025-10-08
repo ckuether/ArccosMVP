@@ -1,7 +1,7 @@
 package com.example.core_ui.platform
 
 import com.example.shared.data.model.Hole
-import com.example.shared.usecase.CameraPosition
+import com.example.shared.usecase.MapCameraPosition
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreLocation.CLLocationCoordinate2DMake
@@ -20,7 +20,7 @@ actual class MapCameraController(
         private const val MAP_PADDING = 32.0
     }
     
-    actual suspend fun applyHoleCameraPosition(hole: Hole, cameraPosition: CameraPosition) {
+    actual suspend fun applyHoleCameraPosition(hole: Hole, mapCameraPosition: MapCameraPosition) {
         try {
             // Create bounds similar to Android's LatLngBounds
             val teeLoc = CLLocationCoordinate2DMake(hole.teeLocation.lat, hole.teeLocation.long)
@@ -33,10 +33,10 @@ actual class MapCameraController(
             if (boundsCamera != null) {
                 // Create final camera with bounds zoom but add bearing rotation
                 val finalCamera = GMSCameraPosition.cameraWithLatitude(
-                    cameraPosition.centerLat,
-                    cameraPosition.centerLng,
+                    mapCameraPosition.centerLat,
+                    mapCameraPosition.centerLng,
                     boundsCamera.zoom,
-                    cameraPosition.bearing.toDouble(),
+                    mapCameraPosition.bearing.toDouble(),
                     0.0
                 )
                 
@@ -44,10 +44,10 @@ actual class MapCameraController(
             } else {
                 // Fallback if bounds calculation fails
                 val fallbackCamera = GMSCameraPosition.cameraWithLatitude(
-                    cameraPosition.centerLat,
-                    cameraPosition.centerLng,
+                    mapCameraPosition.centerLat,
+                    mapCameraPosition.centerLng,
                     16.0f,
-                    cameraPosition.bearing.toDouble(),
+                    mapCameraPosition.bearing.toDouble(),
                     0.0
                 )
                 
@@ -57,10 +57,10 @@ actual class MapCameraController(
         } catch (e: Exception) {
             // Fallback to fixed zoom with bearing
             val camera = GMSCameraPosition.cameraWithLatitude(
-                cameraPosition.centerLat,
-                cameraPosition.centerLng,
+                mapCameraPosition.centerLat,
+                mapCameraPosition.centerLng,
                 15.0f,
-                cameraPosition.bearing.toDouble(),
+                mapCameraPosition.bearing.toDouble(),
                 0.0
             )
             

@@ -1,7 +1,8 @@
 package com.example.core_ui.platform
 
 import com.example.shared.data.model.Hole
-import com.example.shared.usecase.CameraPosition
+import com.example.shared.usecase.MapCameraPosition
+import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
@@ -14,7 +15,7 @@ actual class MapCameraController(
     private val cameraPositionState: CameraPositionState
 ) {
     
-    actual suspend fun applyHoleCameraPosition(hole: Hole, cameraPosition: CameraPosition) {
+    actual suspend fun applyHoleCameraPosition(hole: Hole, mapCameraPosition: MapCameraPosition) {
         val teeLatLng = LatLng(hole.teeLocation.lat, hole.teeLocation.long)
         val flagLatLng = LatLng(hole.flagLocation.lat, hole.flagLocation.long)
         val bounds = LatLngBounds.builder().apply {
@@ -32,10 +33,10 @@ actual class MapCameraController(
 
             cameraPositionState.animate(
                 CameraUpdateFactory.newCameraPosition(
-                    com.google.android.gms.maps.model.CameraPosition.Builder()
-                        .target(LatLng(cameraPosition.centerLat, cameraPosition.centerLng))
+                    CameraPosition.Builder()
+                        .target(LatLng(mapCameraPosition.centerLat, mapCameraPosition.centerLng))
                         .zoom(currentZoom)
-                        .bearing(cameraPosition.bearing)
+                        .bearing(mapCameraPosition.bearing)
                         .build()
                 )
             )
@@ -43,10 +44,10 @@ actual class MapCameraController(
             // Fallback to center between the two points with bearing
             cameraPositionState.animate(
                 CameraUpdateFactory.newCameraPosition(
-                    com.google.android.gms.maps.model.CameraPosition.Builder()
-                        .target(LatLng(cameraPosition.centerLat, cameraPosition.centerLng))
+                    CameraPosition.Builder()
+                        .target(LatLng(mapCameraPosition.centerLat, mapCameraPosition.centerLng))
                         .zoom(15f)
-                        .bearing(cameraPosition.bearing)
+                        .bearing(mapCameraPosition.bearing)
                         .build()
                 )
             )
