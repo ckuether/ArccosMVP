@@ -18,3 +18,10 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# CocoaPods
+Pods/
+*.xcworkspace
+Podfile.lock
+# Auto-generated podspec files from KMP CocoaPods plugin
+**/*.podspec

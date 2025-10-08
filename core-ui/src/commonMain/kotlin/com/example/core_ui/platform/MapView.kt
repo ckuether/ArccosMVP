@@ -24,11 +24,8 @@ enum class MarkerType {
 @Composable
 expect fun MapView(
     modifier: Modifier = Modifier,
-    userLocations: List<MapLocation> = emptyList(),
-    centerLocation: MapLocation? = null,
-    initialBounds: Pair<MapLocation, MapLocation>? = null,
-    currentHole: Hole? = null,
-    hasLocationPermission: Boolean = false,
+    currentHole: Hole?,
+    hasLocationPermission: Boolean,
     onMapClick: ((MapLocation) -> Unit)? = null
 )
 

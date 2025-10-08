@@ -13,6 +13,8 @@ import com.example.location.domain.usecase.GetLocationEventsUseCase
 import com.example.location.domain.usecase.ClearLocationEventsUseCase
 import com.example.shared.platform.Logger
 import com.example.shared.platform.createLogger
+import com.example.shared.usecase.CalculateMapCameraPositionUseCase
+import com.example.shared.domain.usecase.CalculateBearingUseCase
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -32,6 +34,8 @@ val locationModule = module {
     factoryOf(::SaveLocationEventUseCase)
     factoryOf(::GetLocationEventsUseCase)
     factoryOf(::ClearLocationEventsUseCase)
+    factoryOf(::CalculateBearingUseCase)
+    factoryOf(::CalculateMapCameraPositionUseCase)
     
     // Services
     single<LocationTrackingService> {

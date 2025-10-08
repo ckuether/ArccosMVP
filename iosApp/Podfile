@@ -1,0 +1,5 @@
+target 'iosApp' do
+  use_frameworks!
+  platform :ios, '15.4'
+  pod 'GoogleMaps', '8.4.0'
+end
