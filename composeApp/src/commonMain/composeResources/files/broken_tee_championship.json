@@ -12,6 +12,10 @@
       "flagLocation": {
         "lat": 39.64618,
         "long": -105.01283
+      },
+      "initialTarget": {
+        "lat": 39.645533,
+        "long": -105.012809
       }
     },
     {
@@ -23,6 +27,10 @@
       },
       "flagLocation": {
         "lat": 39.649451,
+        "long": -105.010411
+      },
+      "initialTarget": {
+        "lat": 39.648251,
         "long": -105.010411
       }
     },
@@ -36,6 +44,10 @@
       "flagLocation": {
         "lat": 39.646633,
         "long": -105.011736
+      },
+      "initialTarget": {
+        "lat": 39.647740,
+        "long": -105.011238
       }
     },
     {
@@ -48,6 +60,10 @@
       "flagLocation": {
         "lat": 39.649003,
         "long": -105.011853
+      },
+      "initialTarget": {
+        "lat": 39.648372,
+        "long": -105.012381
       }
     },
     {
@@ -58,6 +74,10 @@
         "long": -105.012707
       },
       "flagLocation": {
+        "lat": 39.647098,
+        "long": -105.012901
+      },
+      "initialTarget": {
         "lat": 39.647098,
         "long": -105.012901
       }
@@ -72,6 +92,10 @@
       "flagLocation": {
         "lat": 39.643915,
         "long": -105.013731
+      },
+      "initialTarget": {
+        "lat": 39.645904,
+        "long": -105.013910
       }
     },
     {
@@ -82,6 +106,10 @@
         "long": -105.015767
       },
       "flagLocation": {
+        "lat": 39.646107,
+        "long": -105.015590
+      },
+      "initialTarget": {
         "lat": 39.646107,
         "long": -105.015590
       }
@@ -96,6 +124,10 @@
       "flagLocation": {
         "lat": 39.649842,
         "long": -105.014861
+      },
+      "initialTarget": {
+        "lat": 39.648630,
+        "long": -105.015275
       }
     },
     {
@@ -108,6 +140,10 @@
       "flagLocation": {
         "lat": 39.645894,
         "long": -105.016170
+      },
+      "initialTarget": {
+        "lat": 39.647745,
+        "long": -105.016225
       }
     }
   ]
