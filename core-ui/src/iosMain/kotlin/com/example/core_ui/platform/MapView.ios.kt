@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.interop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import com.example.shared.data.model.Hole
-import com.example.shared.domain.usecase.CalculateBearingUseCase
+import org.koin.compose.koinInject
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import platform.CoreLocation.CLLocationCoordinate2D
@@ -17,6 +17,7 @@ import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
 import com.example.core_ui.components.createGolfMapMarker
+import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -26,59 +27,46 @@ actual fun MapView(
     hasLocationPermission: Boolean,
     onMapClick: ((MapLocation) -> Unit)?
 ) {
-    val calculateBearingUseCase = remember { CalculateBearingUseCase() }
+    val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
     val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
+    val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
 
     // Handle camera updates when hole changes
     LaunchedEffect(currentHole) {
         mapViewRef.value?.let { mapView ->
-            NSLog("GoogleMaps: LaunchedEffect updating camera position")
-            when {
-                currentHole != null -> {
-                    val startLat = currentHole.teeLocation.lat
-                    val startLng = currentHole.teeLocation.long
-                    val endLat = currentHole.flagLocation.lat
-                    val endLng = currentHole.flagLocation.long
-
-                    val centerLat = (startLat + endLat) / 2
-                    val centerLng = (startLng + endLng) / 2
-
-                    // Calculate bearing for orientation
-                    val bearing = calculateBearingUseCase(currentHole.teeLocation, currentHole.flagLocation)
-
-                    // Create camera with bearing
-                    val camera = GMSCameraPosition.cameraWithLatitude(
-                        centerLat,
-                        centerLng,
-                        16.0f,
-                        bearing.toDouble(),
-                        0.0
-                    )
-
-                    mapView.animateToCameraPosition(camera)
-                    
-                    // Clear existing markers
-                    markersRef.value.forEach { marker ->
-                        marker.map = null
+            cameraControllerRef.value?.let { cameraController ->
+                NSLog("GoogleMaps: LaunchedEffect updating camera position")
+                when {
+                    currentHole != null -> {
+                        // Calculate camera position using shared use case
+                        val cameraPosition = calculateCameraPositionUseCase(currentHole)
+                        
+                        // Apply camera positioning using platform-specific controller
+                        cameraController.applyHoleCameraPosition(currentHole, cameraPosition)
+                        
+                        // Clear existing markers
+                        markersRef.value.forEach { marker ->
+                            marker.map = null
+                        }
+                        
+                        // Add new markers
+                        val newMarkers = mutableListOf<GMSMarker>()
+                        
+                        // Add tee marker
+                        val teeMarker = createGolfMapMarker(MarkerType.GOLF_BALL, currentHole.teeLocation) as GMSMarker
+                        teeMarker.map = mapView
+                        newMarkers.add(teeMarker)
+                        
+                        // Add flag marker  
+                        val flagMarker = createGolfMapMarker(MarkerType.GOLF_FLAG, currentHole.flagLocation) as GMSMarker
+                        flagMarker.map = mapView
+                        newMarkers.add(flagMarker)
+                        
+                        markersRef.value = newMarkers
                     }
-                    
-                    // Add new markers
-                    val newMarkers = mutableListOf<GMSMarker>()
-                    
-                    // Add tee marker
-                    val teeMarker = createGolfMapMarker(MarkerType.GOLF_BALL, currentHole.teeLocation) as GMSMarker
-                    teeMarker.map = mapView
-                    newMarkers.add(teeMarker)
-                    
-                    // Add flag marker  
-                    val flagMarker = createGolfMapMarker(MarkerType.GOLF_FLAG, currentHole.flagLocation) as GMSMarker
-                    flagMarker.map = mapView
-                    newMarkers.add(flagMarker)
-                    
-                    markersRef.value = newMarkers
                 }
             }
         }
@@ -94,18 +82,8 @@ actual fun MapView(
         modifier = modifier,
         interactive = true,
         factory = {
-            // Determine initial camera position
-            val initialCamera = when {
-                currentHole != null -> {
-                    val centerLat = (currentHole.teeLocation.lat + currentHole.flagLocation.lat) / 2
-                    val centerLng = (currentHole.teeLocation.long + currentHole.flagLocation.long) / 2
-                    GMSCameraPosition.cameraWithLatitude(centerLat, centerLng, 16.0f)
-                }
-                else -> {
-                    // Default to Denver, CO
-                    GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
-                }
-            }
+            // Set default camera position (will be updated by camera controller if hole exists)
+            val initialCamera = GMSCameraPosition.cameraWithLatitude(39.7392, -104.9903, 10.0f)
 
             // Create the map view
             val mapView = GMSMapView()
@@ -149,6 +127,9 @@ actual fun MapView(
             delegateRef.value = mapDelegate
             mapView.setDelegate(mapDelegate)
             mapViewRef.value = mapView
+            
+            // Initialize camera controller
+            cameraControllerRef.value = MapCameraController(mapView)
             
             // Set initial click handler
             clickHandlerState.value = onMapClick
