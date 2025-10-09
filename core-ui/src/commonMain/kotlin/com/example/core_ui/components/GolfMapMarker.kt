@@ -8,11 +8,12 @@ import com.example.core_ui.platform.MarkerType
 @Composable
 expect fun GolfMapMarker(
     type: MarkerType,
-    location: Location
+    location: Location,
+    onLocationChanged: ((Location) -> Unit)? = null
 )
 
 // For iOS - returns a platform-specific marker object  
 expect fun createGolfMapMarker(
     type: MarkerType,
-    location: Location
+    location: Location,
 ): Any

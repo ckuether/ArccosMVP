@@ -3,8 +3,12 @@ package com.example.core_ui.platform
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.shared.data.model.Hole
+import com.example.shared.data.model.Location
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
@@ -28,6 +32,14 @@ actual fun MapView(
     
     // Create camera controller
     val cameraController = remember { MapCameraController(cameraPositionState) }
+    
+    // State for draggable target location
+    var targetLocation by remember { mutableStateOf<Location?>(currentHole?.initialTarget) }
+    
+    // Initialize target location from currentHole
+    LaunchedEffect(currentHole?.initialTarget) {
+        targetLocation = currentHole?.initialTarget
+    }
 
     // Target circle bitmap will be created lazily when needed
 
@@ -71,8 +83,21 @@ actual fun MapView(
             GolfMapMarker(MarkerType.GOLF_FLAG, it)
         }
 
-        currentHole?.initialTarget?.let {
-            GolfMapMarker(MarkerType.TARGET_CIRCLE, it)
+        // Use the updated target location (which can be dragged)
+        targetLocation?.let { location ->
+            GolfMapMarker(
+                type = MarkerType.TARGET_CIRCLE, 
+                location = location,
+                onLocationChanged = { newLocation ->
+                    targetLocation = newLocation
+                    onMapClick?.invoke(
+                        MapLocation(
+                            latitude = newLocation.lat,
+                            longitude = newLocation.long
+                        )
+                    )
+                }
+            )
         }
     }
 }

@@ -18,7 +18,11 @@ object GolfMapMarkerFactory : KoinComponent {
     private val drawableProvider: DrawableProvider by inject()
     
     @OptIn(ExperimentalForeignApi::class)
-    fun createMarker(type: MarkerType, location: Location): GMSMarker {
+    fun createMarker(
+        type: MarkerType, 
+        location: Location,
+        onLocationChanged: ((Location) -> Unit)? = null
+    ): GMSMarker {
         val golfBallMarker = drawableProvider.getGolfBallMarker()
         val golfFlagMarker = drawableProvider.getGolfFlagMarker()
         val targetCircleMarker = drawableProvider.getTargetCircleMarker()
@@ -32,18 +36,28 @@ object GolfMapMarkerFactory : KoinComponent {
         when (type) {
             MarkerType.GOLF_BALL -> {
                 golfBallMarker?.let { marker.icon = it as? UIImage }
-                marker.snippet = "⛳ Tee Area"
+                marker.title = "⛳ Tee Area"
+                marker.snippet = "Tee location"
+                marker.draggable = false
             }
             MarkerType.GOLF_FLAG -> {
                 golfFlagMarker?.let { marker.icon = it as? UIImage }
-                marker.snippet = "🏌️ Pin/Hole"
+                marker.title = "🏌️ Pin/Hole"
+                marker.snippet = "Pin location"
+                marker.draggable = false
             }
             MarkerType.TARGET_CIRCLE -> {
                 targetCircleMarker?.let { marker.icon = it as? UIImage }
-                marker.snippet = "🎯 Target Shot"
+                marker.draggable = true
+                marker.groundAnchor = cValue { x = 0.5; y = 0.5 } // Center anchor
+                
+                // Store callback in marker's userData (we'll use this in the map delegate)
+                // Note: This would need to be handled in the map view controller
             }
             MarkerType.DEFAULT -> {
+                marker.title = null
                 marker.snippet = null
+                marker.draggable = false
             }
         }
         
@@ -55,7 +69,8 @@ object GolfMapMarkerFactory : KoinComponent {
 @Composable
 actual fun GolfMapMarker(
     type: MarkerType,
-    location: Location
+    location: Location,
+    onLocationChanged: ((Location) -> Unit)?
 ) {
     // No-op for iOS as markers are handled imperatively
 }
@@ -66,4 +81,14 @@ actual fun createGolfMapMarker(
     location: Location
 ): Any {
     return GolfMapMarkerFactory.createMarker(type, location)
+}
+
+// Additional function for creating draggable markers with callbacks
+@OptIn(ExperimentalForeignApi::class)
+fun createDraggableGolfMapMarker(
+    type: MarkerType,
+    location: Location,
+    onLocationChanged: ((Location) -> Unit)? = null
+): GMSMarker {
+    return GolfMapMarkerFactory.createMarker(type, location, onLocationChanged)
 }

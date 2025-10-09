@@ -1,7 +1,6 @@
 package com.example.core_ui.components
 
 import kotlinx.cinterop.ExperimentalForeignApi
-import platform.UIKit.UIImage
 import platform.UIKit.UIGraphicsBeginImageContextWithOptions
 import platform.UIKit.UIGraphicsEndImageContext
 import platform.UIKit.UIGraphicsGetCurrentContext
@@ -33,24 +32,24 @@ actual fun createTargetCircleAsset(sizeDp: Float): Any? {
         CGContextSetStrokeColorWithColor(context, UIColor.whiteColor.CGColor)
         CGContextSetLineWidth(context, strokeWidth)
         
-        // Draw white circle outline with thicker stroke for visibility
-        val outerRect = CGRectMake(
-            center - radius, 
-            center - radius, 
-            radius * 2, 
+        // Draw circle outline
+        val circleRect = CGRectMake(
+            center - radius,
+            center - radius,
+            radius * 2,
             radius * 2
         )
-        CGContextStrokeEllipseInRect(context, outerRect)
+        CGContextStrokeEllipseInRect(context, circleRect)
         
-        // Draw center dot (solid circle) - 8.dp equivalent
-        CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor)
-        val dotRadius = 5.0
+        // Draw center dot (scaled to match Android)
+        val dotRadius = radius * 0.1
         val dotRect = CGRectMake(
             center - dotRadius,
             center - dotRadius,
             dotRadius * 2,
             dotRadius * 2
         )
+        CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor)
         CGContextFillEllipseInRect(context, dotRect)
         
         val image = UIGraphicsGetImageFromCurrentImageContext()

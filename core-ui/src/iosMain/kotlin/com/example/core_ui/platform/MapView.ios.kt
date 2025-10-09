@@ -17,7 +17,9 @@ import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
 import com.example.core_ui.components.createGolfMapMarker
+import com.example.core_ui.components.createDraggableGolfMapMarker
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
+import com.example.shared.data.model.Location
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -33,6 +35,7 @@ actual fun MapView(
     val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
+    val targetLocationState = remember { mutableStateOf<Location?>(null) }
 
     // Handle camera updates when hole changes
     LaunchedEffect(currentHole) {
@@ -65,8 +68,22 @@ actual fun MapView(
                         flagMarker.map = mapView
                         newMarkers.add(flagMarker)
                         
-                        // Add target marker
-                        val targetMarker = createGolfMapMarker(MarkerType.TARGET_CIRCLE, currentHole.initialTarget) as GMSMarker
+                        // Initialize target location state
+                        targetLocationState.value = currentHole.initialTarget
+                        
+                        // Add draggable target marker
+                        val targetMarker = createDraggableGolfMapMarker(
+                            MarkerType.TARGET_CIRCLE, 
+                            currentHole.initialTarget
+                        ) { newLocation ->
+                            targetLocationState.value = newLocation
+                            onMapClick?.invoke(
+                                MapLocation(
+                                    latitude = newLocation.lat,
+                                    longitude = newLocation.long
+                                )
+                            )
+                        }
                         targetMarker.map = mapView
                         newMarkers.add(targetMarker)
                         
@@ -124,6 +141,24 @@ actual fun MapView(
                         }
                     } ?: run {
                         NSLog("GoogleMaps: No click handler available - onMapClick is null")
+                    }
+                }
+                
+                override fun mapView(
+                    mapView: GMSMapView,
+                    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
+                    didEndDraggingMarker: GMSMarker
+                ) {
+                    // Handle marker drag end
+                    if (didEndDraggingMarker.title == "🎯 Target Shot") {
+                        didEndDraggingMarker.position.useContents {
+                            val newLocation = Location(
+                                lat = this.latitude,
+                                long = this.longitude
+                            )
+                            targetLocationState.value = newLocation
+                            NSLog("GoogleMaps: Target marker drag ended at lat=${newLocation.lat}, lng=${newLocation.long}")
+                        }
                     }
                 }
             }
