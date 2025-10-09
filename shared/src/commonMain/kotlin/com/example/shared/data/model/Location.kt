@@ -23,3 +23,9 @@ fun Location.distanceToInYards(other: Location): Double {
     val distanceMeters = earthRadiusMeters * c
     return distanceMeters * 1.09361 // Convert meters to yards
 }
+
+fun Location.midPoint(location: Location): Location {
+    val midLat = (this.lat + location.lat) / 2
+    val midLng = (this.long + location.long) / 2
+    return Location(midLat, midLng)
+}

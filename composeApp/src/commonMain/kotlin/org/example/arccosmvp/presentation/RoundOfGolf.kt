@@ -18,6 +18,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -40,44 +44,85 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.core_ui.platform.MapLocation
 import com.example.core_ui.platform.MapView
-import com.example.core_ui.platform.MarkerType
-import com.example.core_ui.platform.toMapLocation
+import com.example.core_ui.platform.MapCameraPosition
+import com.example.core_ui.components.YardageDisplay
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.shared.data.model.Hole
+import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
+import com.example.shared.data.model.midPoint
 import com.example.shared.platform.getCurrentTimeMillis
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
-import org.example.arccosmvp.utils.DrawableHelper
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.compose.koinInject
 
 @Composable
 fun RoundOfGolf(
     viewModel: RoundOfGolfViewModel = koinViewModel()
 ) {
+    val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
+    
+    // We'll use Google Maps projection directly instead of injected use case
+    var mapSize by remember { mutableStateOf<IntSize?>(null) }
+    var cameraPosition by remember { mutableStateOf<MapCameraPosition?>(null) }
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember { mutableStateOf<Hole?>(null) }
+    var targetLocation by remember { mutableStateOf<Location?>(null) }
     var showScoreCard by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
+    
+    // Map state for projection calculations
+    var googleMapInstance by remember { mutableStateOf<Any?>(null) }
+    val density = LocalDensity.current
+    
+    // Calculate yardage display position using Google Maps projection  
+    val yardageDisplayPosition by remember(currentHole, targetLocation, googleMapInstance, mapSize, cameraPosition) {
+        derivedStateOf {
+            // Only calculate if camera has moved from default (0,0) position
+            if (currentHole != null && targetLocation != null && googleMapInstance != null && mapSize != null && 
+                cameraPosition != null && (cameraPosition!!.latitude != 0.0 || cameraPosition!!.longitude != 0.0)) {
+                try {
+                    val teeLocation = currentHole!!.teeLocation
+                    val target = targetLocation!!
+                    
+                    // Calculate midpoint between tee and target
+                    val midPoint = teeLocation.midPoint(target)
+                    
+                    // Use Google Maps SDK projection for accurate positioning
+                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        // Ensure the position is within screen bounds
+                        val clampedX = pos.x.coerceIn(60, mapSize!!.width - 60) // Leave 60px margin
+                        val clampedY = pos.y.coerceIn(60, mapSize!!.height - 60) // Leave 60px margin
+                        val result = IntOffset(clampedX, clampedY)
+                        result
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    println("DEBUG: Exception in yardage positioning: ${e.message}")
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
     
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
     var lastTouchTime by remember { mutableStateOf(getCurrentTimeMillis()) }
 
-    // Get golf ball icon in composable context
-    val golfBallIcon = DrawableHelper.golfBall()
-
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
-        println("DEBUG RoundOfGolf: Auto-hide timer started, lastTouchTime=$lastTouchTime")
         delay(5000) // 5 seconds
         println("DEBUG RoundOfGolf: Auto-hide timer expired, setting isUIVisible=false")
         isUIVisible = false
@@ -106,6 +151,7 @@ fun RoundOfGolf(
     LaunchedEffect(golfCourse, currentHoleNumber) {
         golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
+            targetLocation = hole.initialTarget
         }
     }
 
@@ -122,12 +168,37 @@ fun RoundOfGolf(
         MapView(
             modifier = Modifier.fillMaxSize(),
             currentHole = currentHole,
+            targetLocation = targetLocation,
             hasLocationPermission = locationState.hasPermission == true,
             onMapClick = { mapLocation ->
                 resetUITimer()
                 // Always set/replace target shot at clicked location
+            },
+            onTargetLocationChanged = { newLocation ->
+                targetLocation = newLocation
+            },
+            onMapSizeChanged = { width, height ->
+                mapSize = IntSize(width, height)
+            },
+            onCameraPositionChanged = { newCameraPosition ->
+                cameraPosition = newCameraPosition
+            },
+            onMapReady = { mapInstance ->
+                googleMapInstance = mapInstance
             }
         )
+
+        // Yardage display overlay - hardcoded to 220y for now
+        if (currentHole != null && targetLocation != null && yardageDisplayPosition != IntOffset.Zero) {
+            YardageDisplay(
+                yardage = 220,
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { yardageDisplayPosition.x.toDp() - 30.dp }, // Subtract half width to center
+                        y = with(density) { yardageDisplayPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                    )
+            )
+        }
 
         // Top overlay - Hole info bar
         HoleInfoCard(

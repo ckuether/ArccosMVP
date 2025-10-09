@@ -28,8 +28,13 @@ import platform.UIKit.UIColor
 actual fun MapView(
     modifier: Modifier,
     currentHole: Hole?,
+    targetLocation: Location?,
     hasLocationPermission: Boolean,
-    onMapClick: ((MapLocation) -> Unit)?
+    onMapClick: ((MapLocation) -> Unit)?,
+    onTargetLocationChanged: ((Location) -> Unit)?,
+    onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
+    onCameraPositionChanged: ((MapCameraPosition) -> Unit)?,
+    onMapReady: ((Any) -> Unit)?
 ) {
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
@@ -39,7 +44,6 @@ actual fun MapView(
     val polylinesRef = remember { mutableStateOf<List<GMSPolyline>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
-    val targetLocationState = remember { mutableStateOf<Location?>(null) }
 
     // Handle camera updates when hole changes
     LaunchedEffect(currentHole) {
@@ -75,27 +79,26 @@ actual fun MapView(
                         flagMarker.map = mapView
                         newMarkers.add(flagMarker)
                         
-                        // Initialize target location state
-                        targetLocationState.value = currentHole.initialTarget
-                        
-                        // Add draggable target marker
-                        val targetMarker = createDraggableGolfMapMarker(
-                            MarkerType.TARGET_CIRCLE, 
-                            currentHole.initialTarget
-                        ) { newLocation ->
-                            targetLocationState.value = newLocation
-                            onMapClick?.invoke(
-                                MapLocation(
-                                    latitude = newLocation.lat,
-                                    longitude = newLocation.long
+                        // Add draggable target marker if targetLocation is provided
+                        targetLocation?.let { target ->
+                            val targetMarker = createDraggableGolfMapMarker(
+                                MarkerType.TARGET_CIRCLE, 
+                                target
+                            ) { newLocation ->
+                                onTargetLocationChanged?.invoke(newLocation)
+                                onMapClick?.invoke(
+                                    MapLocation(
+                                        latitude = newLocation.lat,
+                                        longitude = newLocation.long
+                                    )
                                 )
-                            )
+                            }
+                            targetMarker.map = mapView
+                            newMarkers.add(targetMarker)
+                            targetMarkerRef.value = targetMarker
                         }
-                        targetMarker.map = mapView
-                        newMarkers.add(targetMarker)
                         
                         markersRef.value = newMarkers
-                        targetMarkerRef.value = targetMarker
                     }
                 }
             }
@@ -103,9 +106,8 @@ actual fun MapView(
     }
     
     // Update polylines when target location changes
-    LaunchedEffect(targetLocationState.value) {
+    LaunchedEffect(targetLocation) {
         mapViewRef.value?.let { mapView ->
-            val targetLocation = targetLocationState.value
             if (currentHole != null && targetLocation != null) {
                 // Clear existing polylines
                 polylinesRef.value.forEach { polyline ->
@@ -217,7 +219,7 @@ actual fun MapView(
                                 lat = this.latitude,
                                 long = this.longitude
                             )
-                            targetLocationState.value = newLocation
+                            onTargetLocationChanged?.invoke(newLocation)
                         }
                     }
                 }
