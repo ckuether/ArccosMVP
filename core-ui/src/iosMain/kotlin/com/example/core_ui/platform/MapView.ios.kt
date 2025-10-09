@@ -12,6 +12,7 @@ import com.example.shared.data.model.Hole
 import org.koin.compose.koinInject
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
+import kotlinx.cinterop.cValue
 import platform.CoreLocation.CLLocationCoordinate2D
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
@@ -20,6 +21,7 @@ import com.example.core_ui.components.createGolfMapMarker
 import com.example.core_ui.components.createDraggableGolfMapMarker
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 import com.example.shared.data.model.Location
+import platform.UIKit.UIColor
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -33,6 +35,8 @@ actual fun MapView(
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
     val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
+    val targetMarkerRef = remember { mutableStateOf<GMSMarker?>(null) }
+    val polylinesRef = remember { mutableStateOf<List<GMSPolyline>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
     val targetLocationState = remember { mutableStateOf<Location?>(null) }
@@ -50,9 +54,12 @@ actual fun MapView(
                         // Apply camera positioning using platform-specific controller
                         cameraController.applyHoleCameraPosition(currentHole, cameraPosition)
                         
-                        // Clear existing markers
+                        // Clear existing markers and polylines
                         markersRef.value.forEach { marker ->
                             marker.map = null
+                        }
+                        polylinesRef.value.forEach { polyline ->
+                            polyline.map = null
                         }
                         
                         // Add new markers
@@ -88,18 +95,72 @@ actual fun MapView(
                         newMarkers.add(targetMarker)
                         
                         markersRef.value = newMarkers
+                        targetMarkerRef.value = targetMarker
                     }
                 }
             }
         }
     }
     
+    // Update polylines when target location changes
+    LaunchedEffect(targetLocationState.value) {
+        mapViewRef.value?.let { mapView ->
+            val targetLocation = targetLocationState.value
+            if (currentHole != null && targetLocation != null) {
+                // Clear existing polylines
+                polylinesRef.value.forEach { polyline ->
+                    polyline.map = null
+                }
+                
+                val newPolylines = mutableListOf<GMSPolyline>()
+                
+                // Polyline from tee to target
+                val teeToTargetPath = GMSMutablePath()
+                teeToTargetPath.addCoordinate(cValue<CLLocationCoordinate2D> {
+                    latitude = currentHole.teeLocation.lat
+                    longitude = currentHole.teeLocation.long
+                })
+                teeToTargetPath.addCoordinate(cValue<CLLocationCoordinate2D> {
+                    latitude = targetLocation.lat
+                    longitude = targetLocation.long
+                })
+                
+                val teeToTargetPolyline = GMSPolyline()
+                teeToTargetPolyline.path = teeToTargetPath
+                teeToTargetPolyline.strokeWidth = 1.0
+                teeToTargetPolyline.strokeColor = UIColor.whiteColor
+                teeToTargetPolyline.map = mapView
+                newPolylines.add(teeToTargetPolyline)
+                
+                // Polyline from target to hole
+                val targetToHolePath = GMSMutablePath()
+                targetToHolePath.addCoordinate(cValue<CLLocationCoordinate2D> {
+                    latitude = targetLocation.lat
+                    longitude = targetLocation.long
+                })
+                targetToHolePath.addCoordinate(cValue<CLLocationCoordinate2D> {
+                    latitude = currentHole.flagLocation.lat
+                    longitude = currentHole.flagLocation.long
+                })
+                
+                val targetToHolePolyline = GMSPolyline()
+                targetToHolePolyline.path = targetToHolePath
+                targetToHolePolyline.strokeWidth = 1.0
+                targetToHolePolyline.strokeColor = UIColor.whiteColor
+                targetToHolePolyline.map = mapView
+                newPolylines.add(targetToHolePolyline)
+                
+                polylinesRef.value = newPolylines
+            }
+        }
+    }
+
     // Debug LaunchedEffect to track click handler changes
     LaunchedEffect(onMapClick) {
         NSLog("GoogleMaps: onMapClick parameter changed - is ${if (onMapClick != null) "not null" else "null"}")
         clickHandlerState.value = onMapClick
     }
-    
+
     UIKitView(
         modifier = modifier,
         interactive = true,
@@ -114,15 +175,15 @@ actual fun MapView(
             // Configure map settings
             mapView.setMapType(kGMSTypeHybrid)
             mapView.setMyLocationEnabled(hasLocationPermission)
-            
+
             // Configure gestures - enable all and allow taps
             mapView.settings.setAllGesturesEnabled(true)
-            
+
             NSLog("GoogleMaps: Map view configured with individual gestures")
 
             // Create and set delegate for map interactions
             val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
-                
+
                 override fun mapView(
                     mapView: GMSMapView,
                     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
@@ -143,21 +204,20 @@ actual fun MapView(
                         NSLog("GoogleMaps: No click handler available - onMapClick is null")
                     }
                 }
-                
+
                 override fun mapView(
                     mapView: GMSMapView,
                     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
-                    didEndDraggingMarker: GMSMarker
+                    didDragMarker: GMSMarker
                 ) {
-                    // Handle marker drag end
-                    if (didEndDraggingMarker.title == "🎯 Target Shot") {
-                        didEndDraggingMarker.position.useContents {
+                    // Handle real-time marker dragging for polyline updates
+                    if (didDragMarker == targetMarkerRef.value) {
+                        didDragMarker.position.useContents {
                             val newLocation = Location(
                                 lat = this.latitude,
                                 long = this.longitude
                             )
                             targetLocationState.value = newLocation
-                            NSLog("GoogleMaps: Target marker drag ended at lat=${newLocation.lat}, lng=${newLocation.long}")
                         }
                     }
                 }
@@ -167,13 +227,13 @@ actual fun MapView(
             delegateRef.value = mapDelegate
             mapView.setDelegate(mapDelegate)
             mapViewRef.value = mapView
-            
+
             // Initialize camera controller
             cameraControllerRef.value = MapCameraController(mapView)
-            
+
             // Set initial click handler
             clickHandlerState.value = onMapClick
-            
+
             NSLog("GoogleMaps: Map view delegate set and configured, initial click handler set")
             mapView
         },

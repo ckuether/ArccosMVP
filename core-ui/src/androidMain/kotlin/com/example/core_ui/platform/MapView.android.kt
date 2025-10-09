@@ -13,7 +13,11 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.android.gms.maps.model.LatLng
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.GolfMapMarker
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 import org.koin.compose.koinInject
@@ -86,7 +90,7 @@ actual fun MapView(
         // Use the updated target location (which can be dragged)
         targetLocation?.let { location ->
             GolfMapMarker(
-                type = MarkerType.TARGET_CIRCLE, 
+                type = MarkerType.TARGET_CIRCLE,
                 location = location,
                 onLocationChanged = { newLocation ->
                     targetLocation = newLocation
@@ -97,6 +101,30 @@ actual fun MapView(
                         )
                     )
                 }
+            )
+        }
+        
+        // Draw line from tee to target location
+        if (currentHole?.teeLocation != null && targetLocation != null) {
+            Polyline(
+                points = listOf(
+                    LatLng(currentHole.teeLocation.lat, currentHole.teeLocation.long),
+                    LatLng(targetLocation!!.lat, targetLocation!!.long)
+                ),
+                color = Color.White,
+                width = 2.dp.value
+            )
+        }
+        
+        // Draw line from target to hole
+        if (currentHole?.flagLocation != null && targetLocation != null) {
+            Polyline(
+                points = listOf(
+                    LatLng(targetLocation!!.lat, targetLocation!!.long),
+                    LatLng(currentHole.flagLocation.lat, currentHole.flagLocation.long)
+                ),
+                color = Color.White,
+                width = 2.dp.value
             )
         }
     }
