@@ -9,7 +9,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import com.example.core_ui.utils.BitmapUtils
 import org.koin.compose.koinInject
 
 @Composable
@@ -21,6 +20,7 @@ actual fun GolfMapMarker(
     
     val golfBallBitmap = drawableProvider.getGolfBallMarker() as? BitmapDescriptor
     val golfFlagBitmap = drawableProvider.getGolfFlagMarker() as? BitmapDescriptor
+    val targetCircleBitmap = drawableProvider.getTargetCircleMarker() as? BitmapDescriptor
 
     Marker(
         state = MarkerState(
@@ -34,11 +34,7 @@ actual fun GolfMapMarker(
                 golfFlagBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)
             }
             MarkerType.TARGET_CIRCLE -> {
-                try {
-                    BitmapUtils.createTargetCircleBitmap()
-                } catch (e: Exception) {
-                    BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
-                }
+                targetCircleBitmap ?: BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)
             }
             MarkerType.DEFAULT -> {
                 BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)

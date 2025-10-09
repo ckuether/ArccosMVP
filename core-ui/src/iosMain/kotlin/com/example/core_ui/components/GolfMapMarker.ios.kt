@@ -21,6 +21,7 @@ object GolfMapMarkerFactory : KoinComponent {
     fun createMarker(type: MarkerType, location: Location): GMSMarker {
         val golfBallMarker = drawableProvider.getGolfBallMarker()
         val golfFlagMarker = drawableProvider.getGolfFlagMarker()
+        val targetCircleMarker = drawableProvider.getTargetCircleMarker()
 
         val marker = GMSMarker()
         marker.position = cValue<CLLocationCoordinate2D> {
@@ -38,6 +39,7 @@ object GolfMapMarkerFactory : KoinComponent {
                 marker.snippet = "🏌️ Pin/Hole"
             }
             MarkerType.TARGET_CIRCLE -> {
+                targetCircleMarker?.let { marker.icon = it as? UIImage }
                 marker.snippet = "🎯 Target Shot"
             }
             MarkerType.DEFAULT -> {

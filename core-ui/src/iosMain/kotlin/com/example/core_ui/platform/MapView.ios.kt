@@ -65,6 +65,11 @@ actual fun MapView(
                         flagMarker.map = mapView
                         newMarkers.add(flagMarker)
                         
+                        // Add target marker
+                        val targetMarker = createGolfMapMarker(MarkerType.TARGET_CIRCLE, currentHole.initialTarget) as GMSMarker
+                        targetMarker.map = mapView
+                        newMarkers.add(targetMarker)
+                        
                         markersRef.value = newMarkers
                     }
                 }

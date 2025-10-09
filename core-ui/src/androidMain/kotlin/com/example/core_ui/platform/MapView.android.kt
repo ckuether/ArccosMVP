@@ -70,6 +70,10 @@ actual fun MapView(
         currentHole?.flagLocation?.let {
             GolfMapMarker(MarkerType.GOLF_FLAG, it)
         }
+
+        currentHole?.initialTarget?.let {
+            GolfMapMarker(MarkerType.TARGET_CIRCLE, it)
+        }
     }
 }
 
