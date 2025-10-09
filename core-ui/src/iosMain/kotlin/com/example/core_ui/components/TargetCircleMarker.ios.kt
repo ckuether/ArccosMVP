@@ -18,15 +18,14 @@ import platform.CoreGraphics.CGSizeMake
 @OptIn(ExperimentalForeignApi::class)
 actual fun createTargetCircleAsset(sizeDp: Float): Any? {
     return try {
-        val density = 3.0 // Match Android density for consistency
-        val scaledSize = sizeDp.toDouble() * density
+        val scaledSize = sizeDp.toDouble()
         val size = CGSizeMake(scaledSize, scaledSize)
         
         UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
         val context = UIGraphicsGetCurrentContext() ?: return null
         
         // Match the DrawScope logic exactly - use same scaling as Android
-        val strokeWidth = 1.0 * density 
+        val strokeWidth = 1.0
         val center = scaledSize / 2
         val radius = center - strokeWidth / 2
         
@@ -45,7 +44,7 @@ actual fun createTargetCircleAsset(sizeDp: Float): Any? {
         
         // Draw center dot (solid circle) - 8.dp equivalent
         CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor)
-        val dotRadius = 4.0 * density
+        val dotRadius = 5.0
         val dotRect = CGRectMake(
             center - dotRadius,
             center - dotRadius,

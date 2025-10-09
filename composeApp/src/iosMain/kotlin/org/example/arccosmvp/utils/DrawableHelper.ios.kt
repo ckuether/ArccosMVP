@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import platform.CoreGraphics.*
 import platform.UIKit.UIGraphicsGetCurrentContext
+import com.example.core_ui.components.createTargetCircleAsset
 
 /**
  * iOS-specific helper for creating map markers from Compose resources
@@ -27,6 +28,7 @@ class IOSDrawableHelper {
     
     companion object {
         private const val MARKER_SIZE = 24.0
+        private const val TARGET_MARKER_SIZE = 56.0
     }
     
     /**
@@ -78,52 +80,15 @@ class IOSDrawableHelper {
     }
     
     /**
-     * Creates an iOS-specific UIImage marker for target circles using programmatic drawing
+     * Creates an iOS-specific UIImage marker for target circles using the shared core-ui function
      */
-    @OptIn(ExperimentalForeignApi::class)
     fun createTargetCircleMarker(): UIImage? {
         return try {
-            val size = CGSizeMake(MARKER_SIZE, MARKER_SIZE)
-            UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
-            
-            // Get the current graphics context
-            val context = UIGraphicsGetCurrentContext()
-            context?.let { ctx ->
-                // Draw target circle programmatically
-                drawTargetCircleInContext(ctx, MARKER_SIZE)
-            }
-            
-            val targetImage = UIGraphicsGetImageFromCurrentImageContext()
-            UIGraphicsEndImageContext()
-            
-            targetImage
+            createTargetCircleAsset(TARGET_MARKER_SIZE.toFloat()) as? UIImage
         } catch (e: Exception) {
             println("Error creating target circle marker: ${e.message}")
             null
         }
-    }
-    
-    /**
-     * Draws the target circle design matching the TargetCircleMarker component
-     */
-    @OptIn(ExperimentalForeignApi::class)
-    private fun drawTargetCircleInContext(context: CGContextRef, size: Double) {
-        val center = size / 2.0
-        val radius = size / 2.0 - 2.0
-        
-        // Set line cap to round to match TargetCircleMarker
-        CGContextSetLineCap(context, CGLineCap.kCGLineCapRound)
-        
-        // Draw outer circle (white stroke) - matching TargetCircleMarker style
-        CGContextSetRGBStrokeColor(context, 1.0, 1.0, 1.0, 1.0) // White
-        CGContextSetLineWidth(context, 2.0) // Scaled down from 12f
-        CGContextAddArc(context, center, center, radius, 0.0, 2.0 * kotlin.math.PI, 0)
-        CGContextStrokePath(context)
-        
-        // Draw center dot - matching TargetCircleMarker style
-        CGContextSetRGBFillColor(context, 1.0, 1.0, 1.0, 1.0) // White
-        CGContextAddArc(context, center, center, 3.0, 0.0, 2.0 * kotlin.math.PI, 0) // 6dp scaled down to 3dp for 24dp marker
-        CGContextFillPath(context)
     }
 
     /**
