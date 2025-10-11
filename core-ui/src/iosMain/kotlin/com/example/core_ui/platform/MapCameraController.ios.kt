@@ -1,7 +1,7 @@
 package com.example.core_ui.platform
 
 import com.example.shared.data.model.Hole
-import com.example.shared.usecase.MapCameraPosition
+import com.example.shared.data.model.MapCameraPosition
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.CoreLocation.CLLocationCoordinate2DMake

@@ -16,4 +16,8 @@ class IOSDrawableProvider(private val drawableHelper: IOSDrawableHelper) : Drawa
     override fun getGolfFlagMarker(): Any? {
         return drawableHelper.createGolfFlagMarker()
     }
+    
+    override fun getTargetCircleMarker(): Any? {
+        return drawableHelper.createTargetCircleMarker()
+    }
 }

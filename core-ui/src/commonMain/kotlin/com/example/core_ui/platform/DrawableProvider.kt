@@ -14,4 +14,9 @@ interface DrawableProvider {
      * Provides a BitmapDescriptor for golf flag markers
      */
     fun getGolfFlagMarker(): Any?
+
+    /**
+     * Provides a BitmapDescriptor for target circle markers
+     */
+    fun getTargetCircleMarker(): Any?
 }

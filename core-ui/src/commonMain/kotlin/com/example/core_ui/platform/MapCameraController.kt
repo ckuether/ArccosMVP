@@ -4,7 +4,7 @@ import com.example.shared.data.model.Hole
 import com.example.shared.data.model.MapCameraPosition
 
 /**
- * Platform-specific camera controller for handling map camera positioning.
+ * Platform-specific camera controller for handling map camera positioning and target interactions.
  * Implements bounds-based zoom and bearing logic per platform.
  */
 expect class MapCameraController {

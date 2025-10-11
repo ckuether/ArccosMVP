@@ -14,6 +14,11 @@ import platform.Foundation.dataWithBytes
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import arccosmvp.composeapp.generated.resources.Res
 import kotlinx.coroutines.runBlocking
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import platform.CoreGraphics.*
+import platform.UIKit.UIGraphicsGetCurrentContext
+import com.example.core_ui.components.createTargetCircleAsset
 
 /**
  * iOS-specific helper for creating map markers from Compose resources
@@ -23,6 +28,7 @@ class IOSDrawableHelper {
     
     companion object {
         private const val MARKER_SIZE = 24.0
+        private const val TARGET_MARKER_SIZE = 56.0
     }
     
     /**
@@ -73,6 +79,18 @@ class IOSDrawableHelper {
         }
     }
     
+    /**
+     * Creates an iOS-specific UIImage marker for target circles using the shared core-ui function
+     */
+    fun createTargetCircleMarker(): UIImage? {
+        return try {
+            createTargetCircleAsset(TARGET_MARKER_SIZE.toFloat()) as? UIImage
+        } catch (e: Exception) {
+            println("Error creating target circle marker: ${e.message}")
+            null
+        }
+    }
+
     /**
      * Resizes a UIImage to the specified width and height
      */

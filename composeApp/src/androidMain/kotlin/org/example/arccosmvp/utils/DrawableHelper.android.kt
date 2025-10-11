@@ -4,15 +4,14 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.dp
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import androidx.core.graphics.createBitmap
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import arccosmvp.composeapp.generated.resources.Res
 import kotlinx.coroutines.runBlocking
 import androidx.core.graphics.scale
+import com.example.core_ui.components.createTargetCircleAsset
 
 /**
  * Android-specific helper for creating map markers using VectorDrawable to Bitmap approach
@@ -20,9 +19,10 @@ import androidx.core.graphics.scale
 class AndroidDrawableHelper(private val context: Context) {
 
     companion object {
-        private const val MARKER_SIZE = 24
+        private val MARKER_SIZE = 24.dp
+        private val TARGET_MARKER_SIZE = 48.dp
     }
-    
+
     /**
      * Creates a BitmapDescriptor for Google Maps markers using the VectorDrawable approach
      */
@@ -37,7 +37,7 @@ class AndroidDrawableHelper(private val context: Context) {
             null
         }
     }
-    
+
     /**
      * Creates a BitmapDescriptor for Google Maps golf flag markers
      */
@@ -46,6 +46,20 @@ class AndroidDrawableHelper(private val context: Context) {
             // Create a golf flag bitmap using the VectorDrawable pattern
             getBitmapFromGolfFlagDrawable()?.let { bitmap ->
                 BitmapDescriptorFactory.fromBitmap(bitmap)
+            }
+        } catch (e: Exception) {
+            // Fallback to default marker
+            null
+        }
+    }
+
+    /**
+     * Creates a BitmapDescriptor for Google Maps target circle markers
+     */
+    fun createTargetCircleMarker(): BitmapDescriptor? {
+        return try {
+            createTargetCircleAsset(TARGET_MARKER_SIZE.value)?.let { bitmap ->
+                BitmapDescriptorFactory.fromBitmap(bitmap as Bitmap)
             }
         } catch (e: Exception) {
             // Fallback to default marker
@@ -62,7 +76,7 @@ class AndroidDrawableHelper(private val context: Context) {
             runBlocking {
                 val imageData = Res.readBytes("drawable/golf_ball.png")
                 val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-                resizeBitmap(bitmap, MARKER_SIZE)
+                resizeBitmap(bitmap, MARKER_SIZE.value.toInt())
             }
         } catch (e: Exception) {
             println("Error loading golf ball from Compose resources: ${e.message}")
@@ -79,7 +93,7 @@ class AndroidDrawableHelper(private val context: Context) {
             runBlocking {
                 val imageData = Res.readBytes("drawable/golf_flag.png")
                 val bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.size)
-                resizeBitmap(bitmap, MARKER_SIZE)
+                resizeBitmap(bitmap, MARKER_SIZE.value.toInt())
             }
         } catch (e: Exception) {
             println("Error loading golf flag from Compose resources: ${e.message}")

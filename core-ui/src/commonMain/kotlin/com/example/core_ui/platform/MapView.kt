@@ -25,8 +25,19 @@ enum class MarkerType {
 expect fun MapView(
     modifier: Modifier = Modifier,
     currentHole: Hole?,
+    targetLocation: Location?,
     hasLocationPermission: Boolean,
-    onMapClick: ((MapLocation) -> Unit)? = null
+    onMapClick: ((MapLocation) -> Unit)? = null,
+    onTargetLocationChanged: ((Location) -> Unit)? = null,
+    onMapSizeChanged: ((width: Int, height: Int) -> Unit)? = null,
+    onCameraPositionChanged: ((MapCameraPosition) -> Unit)? = null,
+    onMapReady: ((Any) -> Unit)? = null // Any to be platform-agnostic
+)
+
+data class MapCameraPosition(
+    val latitude: Double,
+    val longitude: Double,
+    val zoom: Float
 )
 
 // Extension function to convert our Location to MapLocation

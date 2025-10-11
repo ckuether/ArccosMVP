@@ -16,4 +16,8 @@ class AndroidDrawableProvider(private val drawableHelper: AndroidDrawableHelper)
     override fun getGolfFlagMarker(): Any? {
         return drawableHelper.createGolfFlagMarker()
     }
+
+    override fun getTargetCircleMarker(): Any? {
+        return drawableHelper.createTargetCircleMarker()
+    }
 }
