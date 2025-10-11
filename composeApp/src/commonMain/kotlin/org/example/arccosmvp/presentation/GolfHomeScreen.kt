@@ -25,17 +25,16 @@ import androidx.navigation.NavController
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.navigation.Route
-import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
+import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.DrawableHelper
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun GolfHomeScreen(
     navController: NavController,
-    viewModel: RoundOfGolfViewModel = koinViewModel()
+    appViewModel: AppViewModel
 ) {
     val dimensions = LocalDimensionResources.current
-    val allScoreCards by viewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
+    val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
     var showPreviousRounds by remember { mutableStateOf(false) }
     
     Box(modifier = Modifier.fillMaxSize()) {

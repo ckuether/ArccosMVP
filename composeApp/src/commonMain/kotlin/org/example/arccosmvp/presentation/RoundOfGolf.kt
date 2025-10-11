@@ -66,7 +66,10 @@ fun RoundOfGolf(
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
-    val golfCourse by viewModel.golfCourse.collectAsStateWithLifecycle()
+
+    //TODO: Pass GolfCourse into the constructor
+    val golfCourse by viewModel.course.collectAsStateWithLifecycle()
+    //TODO: Move currentPlayer to AppViewModel and pass through the constructor
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
     
@@ -310,7 +313,7 @@ fun RoundOfGolf(
         // Full ScoreCard Bottom Sheet
         if (showFullScoreCard) {
             ScoreCardBottomSheet(
-                golfCourse = golfCourse,
+                course = golfCourse,
                 currentPlayer = currentPlayer,
                 currentScoreCard = currentScoreCard,
                 onDismiss = { showFullScoreCard = false }

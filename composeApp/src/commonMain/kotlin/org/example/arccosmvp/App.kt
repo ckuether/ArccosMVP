@@ -9,19 +9,25 @@ import com.example.core_ui.theme.GolfAppTheme
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.GolfHomeScreen
 import org.example.arccosmvp.presentation.RoundOfGolf
+import org.example.arccosmvp.presentation.viewmodel.AppViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
 fun App() {
     GolfAppTheme {
         val navController = rememberNavController()
+        val appViewModel: AppViewModel = koinViewModel()
         
         NavHost(
             navController = navController,
             startDestination = Route.GOLF_HOME
         ) {
             composable(Route.GOLF_HOME) {
-                GolfHomeScreen(navController = navController)
+                GolfHomeScreen(
+                    navController = navController,
+                    appViewModel = appViewModel
+                )
             }
             composable(Route.ROUND_OF_GOLF) {
                 RoundOfGolf()

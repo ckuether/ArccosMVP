@@ -9,6 +9,7 @@ import com.example.shared.domain.usecase.LoadCurrentUserUseCase
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
 import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
+import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.ComposeResourceReader
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
@@ -26,4 +27,5 @@ val appModule = module {
     factoryOf(::GetAllScoreCardsUseCase)
     
     viewModelOf(::RoundOfGolfViewModel)
+    viewModelOf(::AppViewModel)
 }
