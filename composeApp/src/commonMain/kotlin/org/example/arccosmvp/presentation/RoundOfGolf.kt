@@ -54,6 +54,7 @@ import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
 import com.example.shared.platform.getCurrentTimeMillis
+import com.example.shared.utils.TimeMillis
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
@@ -132,7 +133,7 @@ fun RoundOfGolf(
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
-        delay(5000) // 5 seconds
+        delay(TimeMillis.FIVE_SECONDS)
         println("DEBUG RoundOfGolf: Auto-hide timer expired, setting isUIVisible=false")
         isUIVisible = false
     }
@@ -140,7 +141,7 @@ fun RoundOfGolf(
     // Animation values for smooth slide transitions
     val topOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else -200f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
         label = "topOffset"
     )
     
