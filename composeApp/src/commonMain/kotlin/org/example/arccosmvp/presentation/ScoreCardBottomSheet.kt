@@ -15,13 +15,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.shared.data.model.GolfCourse
+import com.example.shared.data.model.Course
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
 
 @Composable
 fun ScoreCardBottomSheet(
-    golfCourse: GolfCourse?,
+    course: Course?,
     currentPlayer: Player?,
     currentScoreCard: ScoreCard?,
     onDismiss: () -> Unit
@@ -31,7 +31,7 @@ fun ScoreCardBottomSheet(
         fillMaxHeight = null // Let it wrap content
     ) {
         ScoreCardContent(
-            golfCourse = golfCourse,
+            course = course,
             currentPlayer = currentPlayer,
             currentScoreCard = currentScoreCard
         )
@@ -40,7 +40,7 @@ fun ScoreCardBottomSheet(
 
 @Composable
 private fun ScoreCardContent(
-    golfCourse: GolfCourse?,
+    course: Course?,
     currentPlayer: Player?,
     currentScoreCard: ScoreCard?
 ) {
@@ -61,7 +61,7 @@ private fun ScoreCardContent(
                         .padding(top = dimensions.paddingMedium)
                 ) {
                     Text(
-                        text = golfCourse?.name ?: "Golf Course",
+                        text = course?.name ?: "Golf Course",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -92,7 +92,7 @@ private fun ScoreCardContent(
                         modifier = Modifier.padding(dimensions.paddingLarge)
                     ) {
                         val scrollState = rememberScrollState()
-                        val allHoles = golfCourse?.holes ?: (1..18).map { null }
+                        val allHoles = course?.holes ?: (1..18).map { null }
                         
                         // Calculate total par
                         var totalPar = 0

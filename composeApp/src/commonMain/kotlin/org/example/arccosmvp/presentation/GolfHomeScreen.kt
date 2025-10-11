@@ -20,22 +20,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.navigation.Route
-import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
+import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.DrawableHelper
-import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun GolfHomeScreen(
     navController: NavController,
-    viewModel: RoundOfGolfViewModel = koinViewModel()
+    appViewModel: AppViewModel
 ) {
     val dimensions = LocalDimensionResources.current
-    val allScoreCards by viewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
+    val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
+    val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
     
     Box(modifier = Modifier.fillMaxSize()) {
@@ -60,12 +59,13 @@ fun GolfHomeScreen(
                 color = MaterialTheme.colorScheme.onPrimary
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimensions.spacingXLarge))
             
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = "Start Round",
+                text = if (course == null) "Loading Course..." else "Start Round",
+                enabled = course != null,
                 onClick = {
                     navController.navigate(Route.ROUND_OF_GOLF)
                 }

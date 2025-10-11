@@ -8,14 +8,10 @@ import com.example.location.domain.usecase.RequestLocationPermissionUseCase
 import com.example.location.domain.usecase.SaveLocationEventUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
-import com.example.shared.data.model.GolfCourse
-import com.example.shared.data.model.Player
+import com.example.shared.data.model.Course
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
-import com.example.shared.domain.usecase.LoadGolfCourseUseCase
-import com.example.shared.domain.usecase.LoadCurrentUserUseCase
-import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,14 +25,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
 class RoundOfGolfViewModel(
+    private val course: Course,
     private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
-    private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
-    private val getAllScoreCardsUseCase: GetAllScoreCardsUseCase,
     private val logger: Logger
 ) : ViewModel() {
     
@@ -47,58 +41,17 @@ class RoundOfGolfViewModel(
     private val _locationState = MutableStateFlow(LocationTrackingUiState())
     val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
-    private val _golfCourse = MutableStateFlow<GolfCourse?>(null)
-    val golfCourse: StateFlow<GolfCourse?> = _golfCourse.asStateFlow()
-
-    private val _currentPlayer = MutableStateFlow<Player?>(null)
-    val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
-
     private val _currentScoreCard = MutableStateFlow(ScoreCard())
     val currentScoreCard: StateFlow<ScoreCard> = _currentScoreCard.asStateFlow()
     
     private val roundId: Long get() = _currentScoreCard.value.roundId
 
-    // Flow of location events from database
-    
-    // Flow of all scorecards from database
-    val allScoreCards = getAllScoreCardsUseCase()
-    
     private var trackingJob: Job? = null
 
     init {
-        loadGolfCourse()
-        loadCurrentUser()
         checkPermissionStatus()
     }
     
-    private fun loadGolfCourse() {
-        viewModelScope.launch {
-            loadGolfCourseUseCase().fold(
-                onSuccess = { course ->
-                    _golfCourse.value = course
-                    logger.info(TAG, "Golf course loaded: ${course?.name}")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to load golf course", error)
-                }
-            )
-        }
-    }
-    
-    private fun loadCurrentUser() {
-        viewModelScope.launch {
-            loadCurrentUserUseCase().fold(
-                onSuccess = { player ->
-                    _currentPlayer.value = player
-                    logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to load current user", error)
-                    _currentPlayer.value = Player(name = "Player")
-                }
-            )
-        }
-    }
     
     fun startLocationTracking() {
         logger.info(TAG, "startLocationTracking() called")
@@ -257,8 +210,9 @@ class RoundOfGolfViewModel(
         return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
     }
     
+    
+    
     fun getCompletedHolesPar(): Int {
-        val course = _golfCourse.value ?: return 0
         val completedHoles = _currentScoreCard.value.scorecard.keys
         return course.holes.filter { it.id in completedHoles }.sumOf { it.par }
     }

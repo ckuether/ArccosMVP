@@ -1,6 +1,7 @@
 package org.example.arccosmvp
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -9,22 +10,35 @@ import com.example.core_ui.theme.GolfAppTheme
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.GolfHomeScreen
 import org.example.arccosmvp.presentation.RoundOfGolf
+import org.example.arccosmvp.presentation.viewmodel.AppViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 @Preview
 fun App() {
     GolfAppTheme {
         val navController = rememberNavController()
+        val appViewModel: AppViewModel = koinViewModel()
         
         NavHost(
             navController = navController,
             startDestination = Route.GOLF_HOME
         ) {
             composable(Route.GOLF_HOME) {
-                GolfHomeScreen(navController = navController)
+                GolfHomeScreen(
+                    navController = navController,
+                    appViewModel = appViewModel
+                )
             }
             composable(Route.ROUND_OF_GOLF) {
-                RoundOfGolf()
+                val course by appViewModel.course.collectAsStateWithLifecycle()
+                val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
+                if (course != null && currentPlayer != null) {
+                    RoundOfGolf(
+                        currentPlayer = currentPlayer!!,
+                        golfCourse = course!!
+                    )
+                }
             }
         }
     }
