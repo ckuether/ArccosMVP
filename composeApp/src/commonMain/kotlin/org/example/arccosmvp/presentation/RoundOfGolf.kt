@@ -51,7 +51,6 @@ import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Hole
-import com.example.shared.data.model.Location
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
@@ -68,42 +67,47 @@ fun RoundOfGolf(
     golfCourse: Course,
     viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse) }
 ) {
-    val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
+
+    val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
+
+    val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
-    
-    // We'll use Google Maps projection directly instead of injected use case
-    var mapSize by remember { mutableStateOf<IntSize?>(null) }
-    var cameraPosition by remember { mutableStateOf<MapCameraPosition?>(null) }
 
     // Golf course and hole state
     var currentHoleNumber by remember { mutableStateOf(1) }
-    var currentHole by remember { mutableStateOf<Hole?>(null) }
-    var targetLocation by remember { mutableStateOf<Location?>(null) }
+    var currentHole by remember {
+        mutableStateOf(
+            golfCourse.holes.find { it.id == currentHoleNumber } 
+                ?: golfCourse.holes.first()
+        )
+    }
+    var targetLocation by remember { mutableStateOf(currentHole.initialTarget) }
+
+    // We'll use Google Maps projection directly instead of injected use case
+    var googleMapInstance by remember { mutableStateOf<Any?>(null) }
+    var mapSize by remember { mutableStateOf<IntSize?>(null) }
+    var cameraPosition by remember {
+        val teeLocation = currentHole.teeLocation
+        mutableStateOf(MapCameraPosition(teeLocation.lat, teeLocation.long, 15f))
+    }
+
     var showHoleStats by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
     
-    // Map state for projection calculations
-    var googleMapInstance by remember { mutableStateOf<Any?>(null) }
-    val density = LocalDensity.current
-    
     // Calculate yardage display position using Google Maps projection  
-    val yardageDisplayPosition by remember(currentHole, targetLocation, googleMapInstance, mapSize, cameraPosition) {
+    val yardageDisplayPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
         derivedStateOf {
             // Only calculate if camera has moved from default (0,0) position
-            if (currentHole != null && targetLocation != null && googleMapInstance != null && mapSize != null &&
-                cameraPosition != null && (cameraPosition!!.latitude != 0.0 || cameraPosition!!.longitude != 0.0)) {
-                
+            if (googleMapInstance != null && mapSize != null) {
                 println("DEBUG YardageDisplay: All conditions met, proceeding with calculation")
-                
                 try {
-                    val teeLocation = currentHole!!.teeLocation
-                    val target = targetLocation!!
+                    val teeLocation = currentHole.teeLocation
                     
                     // Calculate midpoint between tee and target
-                    val midPoint = teeLocation.midPoint(target)
+                    val midPoint = teeLocation.midPoint(targetLocation)
                     
                     // Use Google Maps SDK projection for accurate positioning
                     val screenPos = calculateScreenPosition(midPoint, googleMapInstance!!)
@@ -151,7 +155,7 @@ fun RoundOfGolf(
     
     val bottomOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else 200f,
-        animationSpec = tween(durationMillis = 500),
+        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
         label = "bottomOffset"
     )
 
@@ -162,7 +166,7 @@ fun RoundOfGolf(
     }
 
     // Update current hole when golf course loads or hole number changes
-    LaunchedEffect(golfCourse, currentHoleNumber) {
+    LaunchedEffect(currentHoleNumber) {
         golfCourse.holes.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
             targetLocation = hole.initialTarget
@@ -203,7 +207,7 @@ fun RoundOfGolf(
         )
 
         // Yardage display overlay - hardcoded to 220y for now
-        if (currentHole != null && targetLocation != null && yardageDisplayPosition != IntOffset.Zero) {
+        if (yardageDisplayPosition != IntOffset.Zero) {
             YardageDisplay(
                 yardage = 220,
                 modifier = Modifier
@@ -328,7 +332,7 @@ fun RoundOfGolf(
 private fun HoleInfoCard(
     modifier: Modifier = Modifier,
     currentHoleNumber: Int,
-    currentHole: Hole?
+    currentHole: Hole
 ) {
     val dimensions = LocalDimensionResources.current
     
@@ -367,10 +371,10 @@ private fun HoleInfoCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = currentHole?.let { hole ->
+                    text = currentHole.let { hole ->
                         val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
                         "${distanceYards.toInt()}yds"
-                    } ?: "---yds",
+                    },
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -392,7 +396,7 @@ private fun HoleInfoCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = currentHole?.par?.toString() ?: "---",
+                    text = currentHole.par.toString(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
