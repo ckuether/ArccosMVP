@@ -52,6 +52,7 @@ import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.Location
+import com.example.shared.data.model.Player
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
 import com.example.shared.platform.getCurrentTimeMillis
@@ -63,6 +64,7 @@ import org.koin.core.parameter.parametersOf
 
 @Composable
 fun RoundOfGolf(
+    currentPlayer: Player,
     golfCourse: Course,
     viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse) }
 ) {
@@ -70,10 +72,6 @@ fun RoundOfGolf(
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
-    //TODO: Pass GolfCourse into the constructor
-//    val golfCourse by viewModel.course.collectAsStateWithLifecycle()
-    //TODO: Move currentPlayer to AppViewModel and pass through the constructor
-    val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
     
     // We'll use Google Maps projection directly instead of injected use case
@@ -84,7 +82,7 @@ fun RoundOfGolf(
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember { mutableStateOf<Hole?>(null) }
     var targetLocation by remember { mutableStateOf<Location?>(null) }
-    var showScoreCard by remember { mutableStateOf(false) }
+    var showHoleStats by remember { mutableStateOf(false) }
     var showFullScoreCard by remember { mutableStateOf(false) }
     
     // Map state for projection calculations
@@ -165,7 +163,7 @@ fun RoundOfGolf(
 
     // Update current hole when golf course loads or hole number changes
     LaunchedEffect(golfCourse, currentHoleNumber) {
-        golfCourse?.holes?.find { it.id == currentHoleNumber }?.let { hole ->
+        golfCourse.holes.find { it.id == currentHoleNumber }?.let { hole ->
             currentHole = hole
             targetLocation = hole.initialTarget
         }
@@ -263,7 +261,7 @@ fun RoundOfGolf(
             HoleNavigationCard(
                 modifier = Modifier.weight(1f),
                 currentHoleNumber = currentHoleNumber,
-                maxHoles = golfCourse?.holes?.size ?: 9,
+                maxHoles = golfCourse.holes.size,
                 onPreviousHole = {
                     resetUITimer()
                     if (currentHoleNumber > 1) {
@@ -272,14 +270,14 @@ fun RoundOfGolf(
                 },
                 onNextHole = {
                     resetUITimer()
-                    val maxHoles = golfCourse?.holes?.size ?: 9
+                    val maxHoles = golfCourse.holes.size
                     if (currentHoleNumber < maxHoles) {
                         currentHoleNumber = currentHoleNumber + 1
                     }
                 },
                 onClick = { 
                     resetUITimer()
-                    showScoreCard = true 
+                    showHoleStats = true
                 }
             )
 
@@ -287,28 +285,28 @@ fun RoundOfGolf(
         }
 
         // Score Card Bottom Sheet
-        if (showScoreCard) {
+        if (showHoleStats) {
             HoleStatsBottomSheet(
                 currentHole = currentHole,
                 currentHoleNumber = currentHoleNumber,
-                totalHoles = golfCourse?.holes?.size ?: 9,
+                totalHoles = golfCourse.holes.size,
                 existingScore = viewModel.getHoleScore(currentHoleNumber),
-                onDismiss = { showScoreCard = false },
+                onDismiss = { showHoleStats = false },
                 onFinishHole = { score, putts ->
                     // Handle score submission
                     viewModel.updateHoleScore(currentHoleNumber, score)
                     println("DEBUG: Hole $currentHoleNumber finished with score: $score, putts: $putts")
-                    showScoreCard = false
+                    showHoleStats = false
 
                     // Navigate to next hole (equivalent to hitting next button)
-                    val maxHoles = golfCourse?.holes?.size ?: 9
+                    val maxHoles = golfCourse.holes.size
                     if (currentHoleNumber < maxHoles) {
                         currentHoleNumber = currentHoleNumber + 1
                     }
                 },
                 onNavigateToHole = { holeNumber ->
                     currentHoleNumber = holeNumber
-                    showScoreCard = false
+                    showHoleStats = false
                 }
             )
         }

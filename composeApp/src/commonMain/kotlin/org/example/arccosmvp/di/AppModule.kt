@@ -34,7 +34,6 @@ val appModule = module {
             saveLocationEventUseCase = get(),
             checkLocationPermissionUseCase = get(),
             requestLocationPermissionUseCase = get(),
-            loadCurrentUserUseCase = get(),
             saveScoreCardUseCase = get(),
             logger = get()
         )

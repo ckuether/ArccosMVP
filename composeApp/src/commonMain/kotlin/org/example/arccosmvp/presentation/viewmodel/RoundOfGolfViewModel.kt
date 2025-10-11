@@ -9,11 +9,9 @@ import com.example.location.domain.usecase.SaveLocationEventUseCase
 import com.example.location.domain.usecase.PermissionResult
 import com.example.location.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
-import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
-import com.example.shared.domain.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +30,6 @@ class RoundOfGolfViewModel(
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
     private val logger: Logger
 ) : ViewModel() {
@@ -44,14 +41,6 @@ class RoundOfGolfViewModel(
     private val _locationState = MutableStateFlow(LocationTrackingUiState())
     val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
-    //TODO: Move course to AppViewModel
-//    private val _course = MutableStateFlow<Course?>(null)
-//    val course: StateFlow<Course?> = _course.asStateFlow()
-
-    //TODO: Move currentPlayer to AppViewModel
-    private val _currentPlayer = MutableStateFlow<Player?>(null)
-    val currentPlayer: StateFlow<Player?> = _currentPlayer.asStateFlow()
-
     private val _currentScoreCard = MutableStateFlow(ScoreCard())
     val currentScoreCard: StateFlow<ScoreCard> = _currentScoreCard.asStateFlow()
     
@@ -60,7 +49,6 @@ class RoundOfGolfViewModel(
     private var trackingJob: Job? = null
 
     init {
-        loadCurrentUser()
         checkPermissionStatus()
     }
     
@@ -223,20 +211,6 @@ class RoundOfGolfViewModel(
     }
     
     
-    private fun loadCurrentUser() {
-        viewModelScope.launch {
-            loadCurrentUserUseCase().fold(
-                onSuccess = { player ->
-                    _currentPlayer.value = player
-                    logger.info(TAG, "Current player loaded: ${player.name} (ID: ${player.id})")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to load current user", error)
-                    _currentPlayer.value = Player(name = "Player")
-                }
-            )
-        }
-    }
     
     fun getCompletedHolesPar(): Int {
         val completedHoles = _currentScoreCard.value.scorecard.keys

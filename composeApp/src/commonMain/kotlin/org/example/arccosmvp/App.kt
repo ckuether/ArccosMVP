@@ -32,8 +32,12 @@ fun App() {
             }
             composable(Route.ROUND_OF_GOLF) {
                 val course by appViewModel.course.collectAsStateWithLifecycle()
-                course?.let { nonNullCourse ->
-                    RoundOfGolf(golfCourse = nonNullCourse)
+                val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
+                if (course != null && currentPlayer != null) {
+                    RoundOfGolf(
+                        currentPlayer = currentPlayer!!,
+                        golfCourse = course!!
+                    )
                 }
             }
         }
