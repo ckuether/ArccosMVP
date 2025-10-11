@@ -36,6 +36,10 @@ actual fun MapView(
     onCameraPositionChanged: ((MapCameraPosition) -> Unit)?,
     onMapReady: ((Any) -> Unit)?
 ) {
+
+    // Get the actual device scale factor for points-to-pixels conversion
+    val deviceScale = remember { platform.UIKit.UIScreen.mainScreen.scale.toInt() }
+    NSLog("GoogleMaps: Scale TEST $deviceScale")
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
@@ -44,6 +48,15 @@ actual fun MapView(
     val polylinesRef = remember { mutableStateOf<List<GMSPolyline>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
+    val currentCameraPosition = remember { mutableStateOf<MapCameraPosition?>(null) }
+    val mapSizeReported = remember { mutableStateOf(false) }
+
+    // Track camera position changes
+    LaunchedEffect(currentCameraPosition.value) {
+        currentCameraPosition.value?.let { position ->
+            onCameraPositionChanged?.invoke(position)
+        }
+    }
 
     // Handle camera updates when hole changes
     LaunchedEffect(currentHole) {
@@ -223,6 +236,35 @@ actual fun MapView(
                         }
                     }
                 }
+
+                override fun mapView(
+                    mapView: GMSMapView,
+                    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
+                    didChangeCameraPosition: GMSCameraPosition
+                ) {
+                    // Track camera position changes
+                    didChangeCameraPosition.target.useContents {
+                        val position = MapCameraPosition(
+                            latitude = this.latitude,
+                            longitude = this.longitude,
+                            zoom = didChangeCameraPosition.zoom
+                        )
+                        currentCameraPosition.value = position
+                        NSLog("GoogleMaps: Camera position updated - lat=${this.latitude}, lng=${this.longitude}, zoom=${didChangeCameraPosition.zoom}")
+                    }
+                    
+                    // Report map size once when camera moves (indicating map is ready)
+                    if (!mapSizeReported.value) {
+                        val bounds = mapView.bounds
+                        val width = bounds.useContents { size.width.toInt() } * deviceScale
+                        val height = bounds.useContents { size.height.toInt() } * deviceScale
+                        if (width > 0 && height > 0) {
+                            onMapSizeChanged?.invoke(width, height)
+                            mapSizeReported.value = true
+                            NSLog("GoogleMaps: Map size reported from camera delegate: ${width}x${height}")
+                        }
+                    }
+                }
             }
 
             // Store delegate reference to prevent deallocation
@@ -236,12 +278,29 @@ actual fun MapView(
             // Set initial click handler
             clickHandlerState.value = onMapClick
 
+            // Trigger initial camera position callback (similar to Android's onMapLoaded)
+            mapView.camera.target.useContents {
+                val initialPosition = MapCameraPosition(
+                    latitude = this.latitude,
+                    longitude = this.longitude,
+                    zoom = mapView.camera.zoom
+                )
+                currentCameraPosition.value = initialPosition
+                NSLog("GoogleMaps: Initial camera position set - lat=${this.latitude}, lng=${this.longitude}, zoom=${mapView.camera.zoom}")
+            }
+
+            // Trigger onMapReady callback with the map instance
+            onMapReady?.invoke(mapView)
+            NSLog("GoogleMaps: onMapReady callback invoked with mapView instance")
+
+
             NSLog("GoogleMaps: Map view delegate set and configured, initial click handler set")
             mapView
         },
         update = { mapView ->
             // Update click handler and ensure it's properly set
             clickHandlerState.value = onMapClick
+            
             NSLog("GoogleMaps: UIKitView update called, onMapClick is ${if (onMapClick != null) "not null" else "null"}")
             NSLog("GoogleMaps: Delegate is ${if (delegateRef.value != null) "still retained" else "null"}")
             NSLog("GoogleMaps: MapView delegate is ${if (mapView.delegate != null) "set" else "null"}")

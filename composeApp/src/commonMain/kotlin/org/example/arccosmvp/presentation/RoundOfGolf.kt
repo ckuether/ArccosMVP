@@ -88,8 +88,11 @@ fun RoundOfGolf(
     val yardageDisplayPosition by remember(currentHole, targetLocation, googleMapInstance, mapSize, cameraPosition) {
         derivedStateOf {
             // Only calculate if camera has moved from default (0,0) position
-            if (currentHole != null && targetLocation != null && googleMapInstance != null && mapSize != null && 
+            if (currentHole != null && targetLocation != null && googleMapInstance != null && mapSize != null &&
                 cameraPosition != null && (cameraPosition!!.latitude != 0.0 || cameraPosition!!.longitude != 0.0)) {
+                
+                println("DEBUG YardageDisplay: All conditions met, proceeding with calculation")
+                
                 try {
                     val teeLocation = currentHole!!.teeLocation
                     val target = targetLocation!!
@@ -105,13 +108,19 @@ fun RoundOfGolf(
                         val clampedX = pos.x.coerceIn(60, mapSize!!.width - 60) // Leave 60px margin
                         val clampedY = pos.y.coerceIn(60, mapSize!!.height - 60) // Leave 60px margin
                         val result = IntOffset(clampedX, clampedY)
+                        println("DEBUG YardageDisplay: Final result: x=${result.x}, y=${result.y}")
                         result
-                    } ?: IntOffset.Zero
+                    } ?: run {
+                        println("DEBUG YardageDisplay: screenPos was null, returning IntOffset.Zero")
+                        IntOffset.Zero
+                    }
                 } catch (e: Exception) {
-                    println("DEBUG: Exception in yardage positioning: ${e.message}")
+                    println("DEBUG YardageDisplay: Exception in yardage positioning: ${e.message}")
+                    e.printStackTrace()
                     IntOffset.Zero
                 }
             } else {
+                println("DEBUG YardageDisplay: Conditions not met, returning IntOffset.Zero")
                 IntOffset.Zero
             }
         }
