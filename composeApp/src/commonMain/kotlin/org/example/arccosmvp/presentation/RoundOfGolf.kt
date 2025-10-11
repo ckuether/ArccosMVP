@@ -49,6 +49,7 @@ import com.example.core_ui.platform.MapCameraPosition
 import com.example.core_ui.components.YardageDisplay
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
+import com.example.shared.data.model.Course
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
@@ -58,17 +59,19 @@ import com.example.shared.utils.TimeMillis
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun RoundOfGolf(
-    viewModel: RoundOfGolfViewModel = koinViewModel()
+    golfCourse: Course,
+    viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse) }
 ) {
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val dimensions = LocalDimensionResources.current
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
     //TODO: Pass GolfCourse into the constructor
-    val golfCourse by viewModel.course.collectAsStateWithLifecycle()
+//    val golfCourse by viewModel.course.collectAsStateWithLifecycle()
     //TODO: Move currentPlayer to AppViewModel and pass through the constructor
     val currentPlayer by viewModel.currentPlayer.collectAsStateWithLifecycle()
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()

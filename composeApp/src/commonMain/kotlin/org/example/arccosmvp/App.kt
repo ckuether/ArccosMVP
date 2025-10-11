@@ -1,6 +1,7 @@
 package org.example.arccosmvp
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,7 +31,10 @@ fun App() {
                 )
             }
             composable(Route.ROUND_OF_GOLF) {
-                RoundOfGolf()
+                val course by appViewModel.course.collectAsStateWithLifecycle()
+                course?.let { nonNullCourse ->
+                    RoundOfGolf(golfCourse = nonNullCourse)
+                }
             }
         }
     }

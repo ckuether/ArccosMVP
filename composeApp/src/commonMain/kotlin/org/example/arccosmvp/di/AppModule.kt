@@ -1,5 +1,6 @@
 package org.example.arccosmvp.di
 
+import com.example.shared.data.model.Course
 import com.example.shared.data.repository.GolfCourseRepository
 import com.example.shared.data.repository.ResourceReader
 import com.example.shared.data.repository.UserRepository
@@ -26,6 +27,17 @@ val appModule = module {
     factoryOf(::SaveScoreCardUseCase)
     factoryOf(::GetAllScoreCardsUseCase)
     
-    viewModelOf(::RoundOfGolfViewModel)
+    factory { (course: Course) ->
+        RoundOfGolfViewModel(
+            course = course,
+            locationTrackingService = get(),
+            saveLocationEventUseCase = get(),
+            checkLocationPermissionUseCase = get(),
+            requestLocationPermissionUseCase = get(),
+            loadCurrentUserUseCase = get(),
+            saveScoreCardUseCase = get(),
+            logger = get()
+        )
+    }
     viewModelOf(::AppViewModel)
 }

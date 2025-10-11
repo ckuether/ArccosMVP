@@ -35,6 +35,7 @@ fun GolfHomeScreen(
 ) {
     val dimensions = LocalDimensionResources.current
     val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
+    val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
     
     Box(modifier = Modifier.fillMaxSize()) {
@@ -64,7 +65,8 @@ fun GolfHomeScreen(
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = "Start Round",
+                text = if (course == null) "Loading Course..." else "Start Round",
+                enabled = course != null,
                 onClick = {
                     navController.navigate(Route.ROUND_OF_GOLF)
                 }

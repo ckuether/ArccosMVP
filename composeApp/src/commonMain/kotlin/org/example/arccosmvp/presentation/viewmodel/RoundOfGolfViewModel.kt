@@ -13,7 +13,6 @@ import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
-import com.example.shared.domain.usecase.LoadGolfCourseUseCase
 import com.example.shared.domain.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,11 +27,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
 class RoundOfGolfViewModel(
+    private val course: Course,
     private val locationTrackingService: LocationTrackingService,
     private val saveLocationEventUseCase: SaveLocationEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
-    private val loadGolfCourseUseCase: LoadGolfCourseUseCase,
     private val loadCurrentUserUseCase: LoadCurrentUserUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
     private val logger: Logger
@@ -46,8 +45,8 @@ class RoundOfGolfViewModel(
     val locationState: StateFlow<LocationTrackingUiState> = _locationState.asStateFlow()
 
     //TODO: Move course to AppViewModel
-    private val _course = MutableStateFlow<Course?>(null)
-    val course: StateFlow<Course?> = _course.asStateFlow()
+//    private val _course = MutableStateFlow<Course?>(null)
+//    val course: StateFlow<Course?> = _course.asStateFlow()
 
     //TODO: Move currentPlayer to AppViewModel
     private val _currentPlayer = MutableStateFlow<Player?>(null)
@@ -61,7 +60,6 @@ class RoundOfGolfViewModel(
     private var trackingJob: Job? = null
 
     init {
-        loadGolfCourse()
         loadCurrentUser()
         checkPermissionStatus()
     }
@@ -224,19 +222,6 @@ class RoundOfGolfViewModel(
         return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
     }
     
-    private fun loadGolfCourse() {
-        viewModelScope.launch {
-            loadGolfCourseUseCase().fold(
-                onSuccess = { course ->
-                    _course.value = course
-                    logger.info(TAG, "Golf course loaded: ${course?.name}")
-                },
-                onFailure = { error ->
-                    logger.error(TAG, "Failed to load golf course", error)
-                }
-            )
-        }
-    }
     
     private fun loadCurrentUser() {
         viewModelScope.launch {
@@ -254,7 +239,6 @@ class RoundOfGolfViewModel(
     }
     
     fun getCompletedHolesPar(): Int {
-        val course = _course.value ?: return 0
         val completedHoles = _currentScoreCard.value.scorecard.keys
         return course.holes.filter { it.id in completedHoles }.sumOf { it.par }
     }
