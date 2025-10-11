@@ -140,6 +140,47 @@ fun RoundOfGolf(
             currentHole.teeLocation.distanceToInYards(targetLocation)
         }
     }
+
+    val yardageTargetToFlagScreenPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            // Only calculate if camera has moved from default (0,0) position
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val flagLocation = currentHole.flagLocation
+
+                    // Calculate midpoint between tee and target
+                    val midPoint = flagLocation.midPoint(targetLocation)
+
+                    // Use Google Maps SDK projection for accurate positioning
+                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance!!)
+
+                    screenPos?.let { pos ->
+                        // Ensure the position is within screen bounds
+                        val clampedX = pos.x.coerceIn(60, mapSize!!.width - 60) // Leave 60px margin
+                        val clampedY = pos.y.coerceIn(60, mapSize!!.height - 60) // Leave 60px margin
+                        val result = IntOffset(clampedX, clampedY)
+                        result
+                    } ?: run {
+                        println("DEBUG YardageDisplay: screenPos was null, returning IntOffset.Zero")
+                        IntOffset.Zero
+                    }
+                } catch (e: Exception) {
+                    println("DEBUG YardageDisplay: Exception in yardage positioning: ${e.message}")
+                    e.printStackTrace()
+                    IntOffset.Zero
+                }
+            } else {
+                println("DEBUG YardageDisplay: Conditions not met, returning IntOffset.Zero")
+                IntOffset.Zero
+            }
+        }
+    }
+
+    val yardageTargetToFlagText by remember(currentHole, targetLocation) {
+        derivedStateOf {
+            currentHole.flagLocation.distanceToInYards(targetLocation)
+        }
+    }
     
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
@@ -212,7 +253,6 @@ fun RoundOfGolf(
             }
         )
 
-        // Yardage display overlay - hardcoded to 220y for now
         if (yardageToTargetScreenPosition != IntOffset.Zero) {
             YardageDisplay(
                 yardage = yardageToTargetText,
@@ -220,6 +260,17 @@ fun RoundOfGolf(
                     .offset(
                         x = with(density) { yardageToTargetScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
                         y = with(density) { yardageToTargetScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                    )
+            )
+        }
+
+        if (yardageTargetToFlagScreenPosition != IntOffset.Zero) {
+            YardageDisplay(
+                yardage = yardageTargetToFlagText,
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
+                        y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
                     )
             )
         }
@@ -377,10 +428,7 @@ private fun HoleInfoCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = currentHole.let { hole ->
-                        val distanceYards = hole.teeLocation.distanceToInYards(hole.flagLocation)
-                        "${distanceYards.toInt()}yds"
-                    },
+                    text = "${currentHole.teeLocation.distanceToInYards(currentHole.flagLocation)}yds",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )
