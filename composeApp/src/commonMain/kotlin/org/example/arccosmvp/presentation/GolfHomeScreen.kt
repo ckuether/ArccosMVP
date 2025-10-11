@@ -20,7 +20,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
@@ -60,7 +59,7 @@ fun GolfHomeScreen(
                 color = MaterialTheme.colorScheme.onPrimary
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(dimensions.spacingXLarge))
             
             RoundedButton(
                 modifier = Modifier
