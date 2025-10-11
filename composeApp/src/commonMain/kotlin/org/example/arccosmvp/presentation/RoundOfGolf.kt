@@ -98,7 +98,7 @@ fun RoundOfGolf(
     var showFullScoreCard by remember { mutableStateOf(false) }
     
     // Calculate yardage display position using Google Maps projection  
-    val yardageDisplayPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+    val yardageToTargetScreenPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
         derivedStateOf {
             // Only calculate if camera has moved from default (0,0) position
             if (googleMapInstance != null && mapSize != null) {
@@ -132,6 +132,12 @@ fun RoundOfGolf(
                 println("DEBUG YardageDisplay: Conditions not met, returning IntOffset.Zero")
                 IntOffset.Zero
             }
+        }
+    }
+
+    val yardageToTargetText by remember(currentHole, targetLocation) {
+        derivedStateOf {
+            currentHole.teeLocation.distanceToInYards(targetLocation)
         }
     }
     
@@ -207,13 +213,13 @@ fun RoundOfGolf(
         )
 
         // Yardage display overlay - hardcoded to 220y for now
-        if (yardageDisplayPosition != IntOffset.Zero) {
+        if (yardageToTargetScreenPosition != IntOffset.Zero) {
             YardageDisplay(
-                yardage = 220,
+                yardage = yardageToTargetText,
                 modifier = Modifier
                     .offset(
-                        x = with(density) { yardageDisplayPosition.x.toDp() - 30.dp }, // Subtract half width to center
-                        y = with(density) { yardageDisplayPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                        x = with(density) { yardageToTargetScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
+                        y = with(density) { yardageToTargetScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
                     )
             )
         }

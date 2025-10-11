@@ -9,7 +9,7 @@ data class Location(
     val long: Double
 )
 
-fun Location.distanceToInYards(other: Location): Double {
+fun Location.distanceToInYards(other: Location): Int {
     val earthRadiusMeters = 6371000.0
     val lat1Rad = this.lat * PI / 180.0
     val lat2Rad = other.lat * PI / 180.0
@@ -21,7 +21,7 @@ fun Location.distanceToInYards(other: Location): Double {
     val c = 2 * atan2(sqrt(a), sqrt(1 - a))
     
     val distanceMeters = earthRadiusMeters * c
-    return distanceMeters * 1.09361 // Convert meters to yards
+    return (distanceMeters * 1.09361).toInt() // Convert meters to yards
 }
 
 fun Location.midPoint(location: Location): Location {
