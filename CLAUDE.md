@@ -16,6 +16,9 @@ This is a Kotlin Multiplatform project targeting Android and iOS using Compose M
 # Build release APK  
 ./gradlew :composeApp:assembleRelease
 
+# Install debug APK to connected device
+./gradlew :composeApp:installDebug
+
 # Run tests
 ./gradlew :composeApp:testDebugUnitTest
 ./gradlew :shared:testDebugUnitTest
@@ -37,6 +40,11 @@ This is a Kotlin Multiplatform project targeting Android and iOS using Compose M
 # Run all tests
 ./gradlew test
 ```
+
+### Development Workflow
+- Main branch: `main`
+- Feature branches should be created from `main`
+- Current active branch: `target-shot` (feature development)
 
 ## Project Architecture
 
@@ -87,6 +95,12 @@ This is a Kotlin Multiplatform project targeting Android and iOS using Compose M
 - Configuration cache and build cache are enabled for faster builds
 - Room database schemas are stored in `shared/schemas/` directory
 - Google Maps API key is configured in `gradle.properties` and injected via manifest placeholders
+
+### Key Architectural Patterns
+- **MapView Integration**: Platform-specific map implementations with screen projection utilities for coordinate calculations
+- **Location Services**: Cross-platform location tracking with background service support
+- **Golf Course Features**: Target markers, yardage buttons, and hole visualization using map projections
+- **Data Persistence**: Room database with KSP for schema generation across platforms
 
 ## Testing Commands
 

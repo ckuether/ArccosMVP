@@ -196,13 +196,13 @@ fun RoundOfGolf(
     // Animation values for smooth slide transitions
     val topOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else -200f,
-        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
+        animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "topOffset"
     )
     
     val bottomOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else 200f,
-        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
+        animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "bottomOffset"
     )
 

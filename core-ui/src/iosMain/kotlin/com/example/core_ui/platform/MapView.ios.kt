@@ -39,7 +39,6 @@ actual fun MapView(
 
     // Get the actual device scale factor for points-to-pixels conversion
     val deviceScale = remember { platform.UIKit.UIScreen.mainScreen.scale.toInt() }
-    NSLog("GoogleMaps: Scale TEST $deviceScale")
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
