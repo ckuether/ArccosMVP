@@ -23,12 +23,11 @@ actual class CalculateMapPositionFromScreenUseCase {
             val deviceScale = platform.UIKit.UIScreen.mainScreen.scale.toInt()
 
             val screenPoint: CValue<CGPoint> = cValue {
-                x = screenX.toDouble() * deviceScale
-                y = screenY.toDouble() * deviceScale
+                x = screenX.toDouble() / deviceScale
+                y = screenY.toDouble() / deviceScale
             }
 
             val coordinate: CValue<CLLocationCoordinate2D> = mapView.projection.coordinateForPoint(screenPoint)
-
             coordinate.useContents {
                 Location(lat = this.latitude, long = this.longitude)
             }
