@@ -37,6 +37,8 @@ data class DimensionResources(
     val iconSmall: Dp = 16.dp,
     val iconMedium: Dp = 24.dp,
     val iconLarge: Dp = 32.dp,
+    val iconXLarge: Dp = 48.dp,
+    val iconXXLarge: Dp = 56.dp,
 
     // Border radius
     val cornerRadiusSmall: Dp = 8.dp,

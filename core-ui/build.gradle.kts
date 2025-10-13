@@ -70,6 +70,7 @@ kotlin {
 
                 // Koin for dependency injection
                 implementation(libs.koin.core)
+                implementation(libs.koin.compose)
             }
         }
 

@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,14 +42,25 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
 import com.example.core_ui.components.YardageDisplay
+import com.example.core_ui.components.YardageDisplayDefaults
+import com.example.core_ui.components.TeeMarker
+import com.example.core_ui.components.TeeMarkerDefaults
+import com.example.core_ui.components.FlagMarker
+import com.example.core_ui.components.FlagMarkerDefaults
+import com.example.core_ui.components.TargetMarker
+import com.example.core_ui.components.TargetMarkerDefaults
+import com.example.core_ui.components.PolylineComponent
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
+import com.example.core_ui.projection.CalculateMapPositionFromScreenUseCase
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.Player
@@ -72,6 +84,7 @@ fun RoundOfGolf(
     val dimensions = LocalDimensionResources.current
 
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
+    val calculateMapPosition: CalculateMapPositionFromScreenUseCase = koinInject()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
@@ -181,10 +194,127 @@ fun RoundOfGolf(
             currentHole.flagLocation.distanceToInYards(targetLocation)
         }
     }
+
+    // Calculate screen positions for golf markers using Google Maps projection
+    val teeMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val teeLocation = currentHole.teeLocation
+                    val screenPos = calculateScreenPosition(teeLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(12, mapSize!!.width - 12) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(12, mapSize!!.height - 12)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
+
+    val flagMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val flagLocation = currentHole.flagLocation
+                    val screenPos = calculateScreenPosition(flagLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(16, mapSize!!.width - 16) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(16, mapSize!!.height - 16)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
+
+    val targetMarkerScreenPosition by remember(targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val screenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(20, mapSize!!.width - 20) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(20, mapSize!!.height - 20)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
+
+    // Calculate polyline points using screen projection
+    val teeToTargetPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val teeScreenPos = calculateScreenPosition(currentHole.teeLocation, googleMapInstance!!)
+                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    
+                    if (teeScreenPos != null && targetScreenPos != null) {
+                        listOf(
+                            IntOffset(teeScreenPos.x, teeScreenPos.y),
+                            IntOffset(targetScreenPos.x, targetScreenPos.y)
+                        )
+                    } else {
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        }
+    }
+
+    val targetToFlagPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    val flagScreenPos = calculateScreenPosition(currentHole.flagLocation, googleMapInstance!!)
+                    
+                    if (targetScreenPos != null && flagScreenPos != null) {
+                        listOf(
+                            IntOffset(targetScreenPos.x, targetScreenPos.y),
+                            IntOffset(flagScreenPos.x, flagScreenPos.y)
+                        )
+                    } else {
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        }
+    }
     
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
     var lastTouchTime by remember { mutableStateOf(getCurrentTimeMillis()) }
+    var showClubSelection by remember { mutableStateOf(false) }
+    
+    // Target dragging state
+    var isDraggingTarget by remember { mutableStateOf(false) }
+    var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
@@ -196,13 +326,13 @@ fun RoundOfGolf(
     // Animation values for smooth slide transitions
     val topOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else -200f,
-        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
+        animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "topOffset"
     )
     
     val bottomOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else 200f,
-        animationSpec = tween(durationMillis = TimeMillis.HALF_SECOND.toInt()),
+        animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "bottomOffset"
     )
 
@@ -235,6 +365,7 @@ fun RoundOfGolf(
             currentHole = currentHole,
             targetLocation = targetLocation,
             hasLocationPermission = locationState.hasPermission == true,
+            gesturesEnabled = !isDraggingTarget,
             onMapClick = { mapLocation ->
                 resetUITimer()
                 // Always set/replace target shot at clicked location
@@ -253,25 +384,136 @@ fun RoundOfGolf(
             }
         )
 
+        // Polylines using screen projection
+        if (teeToTargetPolylinePoints.isNotEmpty()) {
+            PolylineComponent(
+                points = teeToTargetPolylinePoints,
+                modifier = Modifier.fillMaxSize(),
+                color = Color.White,
+                strokeWidth = 2f
+            )
+        }
+
+        if (targetToFlagPolylinePoints.isNotEmpty()) {
+            PolylineComponent(
+                points = targetToFlagPolylinePoints,
+                modifier = Modifier.fillMaxSize(),
+                color = Color.White,
+                strokeWidth = 2f
+            )
+        }
+
         if (yardageToTargetScreenPosition != IntOffset.Zero) {
+            val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageToTargetText,
                 modifier = Modifier
                     .offset(
-                        x = with(density) { yardageToTargetScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
-                        y = with(density) { yardageToTargetScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                        x = with(density) { yardageToTargetScreenPosition.x.toDp() - yardageSize / 2 },
+                        y = with(density) { yardageToTargetScreenPosition.y.toDp() - yardageSize / 2 }
                     )
             )
         }
 
         if (yardageTargetToFlagScreenPosition != IntOffset.Zero) {
+            val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageTargetToFlagText,
                 modifier = Modifier
                     .offset(
-                        x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
-                        y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                        x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - yardageSize / 2 },
+                        y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - yardageSize / 2 }
                     )
+            )
+        }
+
+        // Golf Markers using screen projection
+        if (teeMarkerScreenPosition != IntOffset.Zero) {
+            val teeSize = TeeMarkerDefaults.getSize()
+            TeeMarker(
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { teeMarkerScreenPosition.x.toDp() - teeSize / 2 },
+                        y = with(density) { teeMarkerScreenPosition.y.toDp() - teeSize / 2 }
+                    )
+            )
+        }
+
+        if (flagMarkerScreenPosition != IntOffset.Zero) {
+            val flagSize = FlagMarkerDefaults.getSize()
+            FlagMarker(
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { flagMarkerScreenPosition.x.toDp() - flagSize / 2 },
+                        y = with(density) { flagMarkerScreenPosition.y.toDp() - flagSize / 2 }
+                    )
+            )
+        }
+
+        if (targetMarkerScreenPosition != IntOffset.Zero) {
+            val targetSize = TargetMarkerDefaults.getSize()
+            
+            // Calculate final position: normal position + drag offset when dragging
+            val finalX = if (isDraggingTarget) {
+                with(density) { currentDragPosition.x.toDp() - targetSize / 2 }
+            } else {
+                with(density) { targetMarkerScreenPosition.x.toDp() - targetSize / 2 }
+            }
+            
+            val finalY = if (isDraggingTarget) {
+                with(density) { currentDragPosition.y.toDp() - targetSize / 2 }
+            } else {
+                with(density) { targetMarkerScreenPosition.y.toDp() - targetSize / 2 }
+            }
+
+            val targetMarkerSize = TargetMarkerDefaults.getSize()
+            
+            TargetMarker(
+                modifier = Modifier
+                    .offset(x = finalX, y = finalY)
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { pointerOffset ->
+                                // Start from the global screen position of the target marker
+                                isDraggingTarget = true
+
+                                // Initialize at the *center* of the marker, in screen coordinates
+                                currentDragPosition = targetMarkerScreenPosition.asOffset()
+
+                                resetUITimer()
+                            },
+                            onDrag = { change, dragAmount ->
+                                if (isDraggingTarget) {
+                                    // Update current position in screen coordinates
+                                    currentDragPosition += dragAmount
+
+                                    // Clamp to map bounds
+                                    mapSize?.let { size ->
+                                        val half = with(density) { targetMarkerSize.toPx() / 2 }
+                                        currentDragPosition = Offset(
+                                            currentDragPosition.x.coerceIn(half, size.width - half),
+                                            currentDragPosition.y.coerceIn(half, size.height - half)
+                                        )
+                                    }
+
+                                    // Convert back to map coordinates in real-time (optional)
+                                    if (googleMapInstance != null) {
+                                        val cx = currentDragPosition.x.toInt()
+                                        val cy = currentDragPosition.y.toInt()
+                                        calculateMapPosition(cx, cy, googleMapInstance!!)?.let { newLocation ->
+                                            targetLocation = newLocation
+                                        }
+                                    }
+
+                                    change.consume()
+                                }
+                            },
+                            onDragEnd = {
+                                isDraggingTarget = false
+                            }
+                        )
+                    }
+
             )
         }
 
@@ -298,51 +540,79 @@ fun RoundOfGolf(
             )
         }
 
-        // Bottom components row
-        Row(
+        // Bottom components column
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(y = bottomOffset.dp)
                 .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(bottom = dimensions.paddingLarge),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-            verticalAlignment = Alignment.Bottom
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
         ) {
-            // To Par Scorecard - Bottom Left
-            MiniScorecard(
-                scoreToPar = viewModel.getScoreToPar(),
-                onScoreCardClick = { 
-                    resetUITimer()
-                    showFullScoreCard = true 
-                }
-            )
-
-            // Edit Hole component - fills available space
-            HoleNavigationCard(
-                modifier = Modifier.weight(1f),
-                currentHoleNumber = currentHoleNumber,
-                maxHoles = golfCourse.holes.size,
-                onPreviousHole = {
-                    resetUITimer()
-                    if (currentHoleNumber > 1) {
-                        currentHoleNumber = currentHoleNumber - 1
+            // Track Shot button - same layout as bottom row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // Empty space to match MiniScorecard width
+                Spacer(modifier = Modifier.width(72.dp)) // Approximate width of MiniScorecard
+                
+                // Track Shot button - fills available space like HoleNavigationCard
+                TrackShotCard(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        resetUITimer()
+                        showClubSelection = true
                     }
-                },
-                onNextHole = {
-                    resetUITimer()
-                    val maxHoles = golfCourse.holes.size
-                    if (currentHoleNumber < maxHoles) {
-                        currentHoleNumber = currentHoleNumber + 1
-                    }
-                },
-                onClick = { 
-                    resetUITimer()
-                    showHoleStats = true
-                }
-            )
+                )
 
-            Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+                // Empty space to match the spacer on the right
+                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+            }
+
+            // Bottom components row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // To Par Scorecard - Bottom Left
+                MiniScorecard(
+                    scoreToPar = viewModel.getScoreToPar(),
+                    onScoreCardClick = { 
+                        resetUITimer()
+                        showFullScoreCard = true 
+                    }
+                )
+
+                // Edit Hole component - fills available space
+                HoleNavigationCard(
+                    modifier = Modifier.weight(1f),
+                    currentHoleNumber = currentHoleNumber,
+                    maxHoles = golfCourse.holes.size,
+                    onPreviousHole = {
+                        resetUITimer()
+                        if (currentHoleNumber > 1) {
+                            currentHoleNumber = currentHoleNumber - 1
+                        }
+                    },
+                    onNextHole = {
+                        resetUITimer()
+                        val maxHoles = golfCourse.holes.size
+                        if (currentHoleNumber < maxHoles) {
+                            currentHoleNumber = currentHoleNumber + 1
+                        }
+                    },
+                    onClick = { 
+                        resetUITimer()
+                        showHoleStats = true
+                    }
+                )
+
+                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+            }
         }
 
         // Score Card Bottom Sheet
@@ -379,6 +649,17 @@ fun RoundOfGolf(
                 currentPlayer = currentPlayer,
                 currentScoreCard = currentScoreCard,
                 onDismiss = { showFullScoreCard = false }
+            )
+        }
+
+        // Club Selection Dialog
+        if (showClubSelection) {
+            ClubSelectionDialog(
+                onClubSelected = { selectedClub ->
+                    // TODO: Implement track shot functionality with selected club
+                    println("DEBUG: Selected club: ${selectedClub.clubName}")
+                },
+                onDismiss = { showClubSelection = false }
             )
         }
 
@@ -503,6 +784,40 @@ private fun LocationPermissionCard(
 }
 
 @Composable
+private fun TrackShotCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = MaterialTheme.shapes.medium,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = dimensions.paddingLarge,
+                    vertical = dimensions.paddingMedium
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Track Shot",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
 private fun HoleNavigationCard(
     modifier: Modifier = Modifier,
     currentHoleNumber: Int,
@@ -518,7 +833,7 @@ private fun HoleNavigationCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.medium,
         onClick = onClick
     ) {
         Row(
@@ -588,3 +903,5 @@ private fun HoleNavigationCard(
         }
     }
 }
+
+private fun IntOffset.asOffset(): Offset = Offset(x.toFloat(), y.toFloat())
