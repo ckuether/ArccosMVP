@@ -22,6 +22,7 @@ actual fun MapView(
     currentHole: Hole?,
     targetLocation: Location?,
     hasLocationPermission: Boolean,
+    gesturesEnabled: Boolean,
     onMapClick: ((MapLocation) -> Unit)?,
     onTargetLocationChanged: ((Location) -> Unit)?,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
@@ -74,7 +75,11 @@ actual fun MapView(
         uiSettings = MapUiSettings(
             zoomControlsEnabled = false,
             compassEnabled = true,
-            myLocationButtonEnabled = false
+            myLocationButtonEnabled = false,
+            zoomGesturesEnabled = gesturesEnabled,
+            scrollGesturesEnabled = gesturesEnabled,
+            tiltGesturesEnabled = gesturesEnabled,
+            rotationGesturesEnabled = gesturesEnabled
         ),
         onMapClick = { latLng ->
             onMapClick?.invoke(

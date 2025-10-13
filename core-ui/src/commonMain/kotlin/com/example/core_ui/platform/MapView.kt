@@ -27,6 +27,7 @@ expect fun MapView(
     currentHole: Hole?,
     targetLocation: Location?,
     hasLocationPermission: Boolean,
+    gesturesEnabled: Boolean = true,
     onMapClick: ((MapLocation) -> Unit)? = null,
     onTargetLocationChanged: ((Location) -> Unit)? = null,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)? = null,

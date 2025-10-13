@@ -26,6 +26,7 @@ actual fun MapView(
     currentHole: Hole?,
     targetLocation: Location?,
     hasLocationPermission: Boolean,
+    gesturesEnabled: Boolean,
     onMapClick: ((MapLocation) -> Unit)?,
     onTargetLocationChanged: ((Location) -> Unit)?,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
@@ -90,8 +91,8 @@ actual fun MapView(
             mapView.setMapType(kGMSTypeHybrid)
             mapView.setMyLocationEnabled(hasLocationPermission)
 
-            // Configure gestures - enable all and allow taps
-            mapView.settings.setAllGesturesEnabled(true)
+            // Configure gestures - enable/disable based on dragging state
+            mapView.settings.setAllGesturesEnabled(gesturesEnabled)
 
             NSLog("GoogleMaps: Map view configured with individual gestures")
 
@@ -183,7 +184,11 @@ actual fun MapView(
             // Update click handler and ensure it's properly set
             clickHandlerState.value = onMapClick
             
+            // Update gesture settings dynamically
+            mapView.settings.setAllGesturesEnabled(gesturesEnabled)
+            
             NSLog("GoogleMaps: UIKitView update called, onMapClick is ${if (onMapClick != null) "not null" else "null"}")
+            NSLog("GoogleMaps: Gestures enabled: $gesturesEnabled")
             NSLog("GoogleMaps: Delegate is ${if (delegateRef.value != null) "still retained" else "null"}")
             NSLog("GoogleMaps: MapView delegate is ${if (mapView.delegate != null) "set" else "null"}")
         }
