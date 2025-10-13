@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
@@ -25,16 +24,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +42,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
@@ -66,7 +58,6 @@ import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.core_ui.projection.CalculateMapPositionFromScreenUseCase
 import com.example.shared.data.model.Course
-import com.example.shared.data.model.Hole
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Location
@@ -377,7 +368,7 @@ fun RoundOfGolf(
             // Calculate final position: use drag position when dragging, otherwise use calculated screen position
             val isDraggingTarget = isDraggingMapComponent && draggedComponent == DraggedComponent.TARGET
             val currentPosition = if (isDraggingTarget) currentDragPosition else targetMarkerScreenPosition.asOffset()
-            
+
             val finalX = with(density) { currentPosition.x.toDp() - targetSize / 2 }
             val finalY = with(density) { currentPosition.y.toDp() - targetSize / 2 }
 
