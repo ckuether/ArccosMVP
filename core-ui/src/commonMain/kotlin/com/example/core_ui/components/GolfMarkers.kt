@@ -13,23 +13,48 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.platform.DrawableProvider
 import com.example.core_ui.resources.LocalDimensionResources
 import org.koin.compose.koinInject
+
+object TeeMarkerDefaults {
+    @Composable
+    fun getSize(): Dp {
+        val dimensions = LocalDimensionResources.current
+        return dimensions.iconMedium
+    }
+}
+
+object FlagMarkerDefaults {
+    @Composable
+    fun getSize(): Dp {
+        val dimensions = LocalDimensionResources.current
+        return dimensions.iconSmall
+    }
+}
+
+object TargetMarkerDefaults {
+    @Composable
+    fun getSize(): Dp {
+        val dimensions = LocalDimensionResources.current
+        return dimensions.iconXXLarge
+    }
+}
 
 @Composable
 fun TeeMarker(
     modifier: Modifier = Modifier
 ) {
     val drawableProvider: DrawableProvider = koinInject()
-    val dimensions = LocalDimensionResources.current
+    val teeSize = TeeMarkerDefaults.getSize()
 
     Image(
         painter = drawableProvider.getGolfBallPainter(),
         contentDescription = "Golf Ball Tee",
         modifier = modifier
-            .size(dimensions.iconMedium)
+            .size(teeSize)
     )
 }
 
@@ -37,17 +62,17 @@ fun TeeMarker(
 fun FlagMarker(
     modifier: Modifier = Modifier
 ) {
-    val dimensions = LocalDimensionResources.current
+    val flagSize = FlagMarkerDefaults.getSize()
 
     Box(
         modifier = modifier
-            .size(dimensions.iconSmall),
+            .size(flagSize),
         contentAlignment = Alignment.Center
     ) {
         // Outer circle (white outline)
         Box(
             modifier = Modifier
-                .size(dimensions.iconSmall)
+                .size(flagSize)
                 .clip(CircleShape)
                 .background(Color.White.copy(alpha = .5f))
         )
@@ -67,18 +92,18 @@ fun TargetMarker(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null
 ) {
-    val dimensions = LocalDimensionResources.current
+    val targetSize = TargetMarkerDefaults.getSize()
     
     Box(
         modifier = modifier
-            .size(dimensions.iconXLarge)
+            .size(targetSize)
             .clickable { onClick?.invoke() },
         contentAlignment = Alignment.Center
     ) {
         // Outer circle (white outline)
         Box(
             modifier = Modifier
-                .size(dimensions.iconXLarge)
+                .size(targetSize)
                 .clip(CircleShape)
                 .border(1.dp, Color.White, CircleShape)
         )

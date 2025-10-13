@@ -47,9 +47,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
 import com.example.core_ui.components.YardageDisplay
+import com.example.core_ui.components.YardageDisplayDefaults
 import com.example.core_ui.components.TeeMarker
+import com.example.core_ui.components.TeeMarkerDefaults
 import com.example.core_ui.components.FlagMarker
+import com.example.core_ui.components.FlagMarkerDefaults
 import com.example.core_ui.components.TargetMarker
+import com.example.core_ui.components.TargetMarkerDefaults
 import com.example.core_ui.components.PolylineComponent
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
@@ -252,7 +256,7 @@ fun RoundOfGolf(
     // Calculate polyline points using screen projection
     val teeToTargetPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
         derivedStateOf {
-            if (googleMapInstance != null && mapSize != null && currentHole != null && targetLocation != null) {
+            if (googleMapInstance != null && mapSize != null) {
                 try {
                     val teeScreenPos = calculateScreenPosition(currentHole.teeLocation, googleMapInstance!!)
                     val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
@@ -276,7 +280,7 @@ fun RoundOfGolf(
 
     val targetToFlagPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
         derivedStateOf {
-            if (googleMapInstance != null && mapSize != null && currentHole != null && targetLocation != null) {
+            if (googleMapInstance != null && mapSize != null) {
                 try {
                     val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
                     val flagScreenPos = calculateScreenPosition(currentHole.flagLocation, googleMapInstance!!)
@@ -390,54 +394,59 @@ fun RoundOfGolf(
         }
 
         if (yardageToTargetScreenPosition != IntOffset.Zero) {
+            val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageToTargetText,
                 modifier = Modifier
                     .offset(
-                        x = with(density) { yardageToTargetScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
-                        y = with(density) { yardageToTargetScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                        x = with(density) { yardageToTargetScreenPosition.x.toDp() - yardageSize / 2 },
+                        y = with(density) { yardageToTargetScreenPosition.y.toDp() - yardageSize / 2 }
                     )
             )
         }
 
         if (yardageTargetToFlagScreenPosition != IntOffset.Zero) {
+            val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageTargetToFlagText,
                 modifier = Modifier
                     .offset(
-                        x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
-                        y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
+                        x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - yardageSize / 2 },
+                        y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - yardageSize / 2 }
                     )
             )
         }
 
         // Golf Markers using screen projection
         if (teeMarkerScreenPosition != IntOffset.Zero) {
+            val teeSize = TeeMarkerDefaults.getSize()
             TeeMarker(
                 modifier = Modifier
                     .offset(
-                        x = with(density) { teeMarkerScreenPosition.x.toDp() - (dimensions.iconMedium / 2) },
-                        y = with(density) { teeMarkerScreenPosition.y.toDp() - (dimensions.iconMedium / 2) }
+                        x = with(density) { teeMarkerScreenPosition.x.toDp() - teeSize / 2 },
+                        y = with(density) { teeMarkerScreenPosition.y.toDp() - teeSize / 2 }
                     )
             )
         }
 
         if (flagMarkerScreenPosition != IntOffset.Zero) {
+            val flagSize = FlagMarkerDefaults.getSize()
             FlagMarker(
                 modifier = Modifier
                     .offset(
-                        x = with(density) { flagMarkerScreenPosition.x.toDp() - (dimensions.iconSmall / 2) },
-                        y = with(density) { flagMarkerScreenPosition.y.toDp() - (dimensions.iconSmall / 2) }
+                        x = with(density) { flagMarkerScreenPosition.x.toDp() - flagSize / 2 },
+                        y = with(density) { flagMarkerScreenPosition.y.toDp() - flagSize / 2 }
                     )
             )
         }
 
         if (targetMarkerScreenPosition != IntOffset.Zero) {
+            val targetSize = TargetMarkerDefaults.getSize()
             TargetMarker(
                 modifier = Modifier
                     .offset(
-                        x = with(density) { targetMarkerScreenPosition.x.toDp() - (dimensions.iconXLarge / 2) },
-                        y = with(density) { targetMarkerScreenPosition.y.toDp() - (dimensions.iconXLarge / 2) }
+                        x = with(density) { targetMarkerScreenPosition.x.toDp() - targetSize / 2 },
+                        y = with(density) { targetMarkerScreenPosition.y.toDp() - targetSize / 2 }
                     ),
                 onClick = {
                     // Allow moving the target by clicking on it
