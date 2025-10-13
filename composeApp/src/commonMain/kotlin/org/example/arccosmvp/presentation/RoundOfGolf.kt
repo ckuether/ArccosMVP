@@ -185,6 +185,7 @@ fun RoundOfGolf(
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
     var lastTouchTime by remember { mutableStateOf(getCurrentTimeMillis()) }
+    var showClubSelection by remember { mutableStateOf(false) }
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
@@ -298,51 +299,79 @@ fun RoundOfGolf(
             )
         }
 
-        // Bottom components row
-        Row(
+        // Bottom components column
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(y = bottomOffset.dp)
                 .fillMaxWidth()
                 .padding(horizontal = dimensions.paddingLarge)
                 .padding(bottom = dimensions.paddingLarge),
-            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-            verticalAlignment = Alignment.Bottom
+            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
         ) {
-            // To Par Scorecard - Bottom Left
-            MiniScorecard(
-                scoreToPar = viewModel.getScoreToPar(),
-                onScoreCardClick = { 
-                    resetUITimer()
-                    showFullScoreCard = true 
-                }
-            )
-
-            // Edit Hole component - fills available space
-            HoleNavigationCard(
-                modifier = Modifier.weight(1f),
-                currentHoleNumber = currentHoleNumber,
-                maxHoles = golfCourse.holes.size,
-                onPreviousHole = {
-                    resetUITimer()
-                    if (currentHoleNumber > 1) {
-                        currentHoleNumber = currentHoleNumber - 1
+            // Track Shot button - same layout as bottom row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // Empty space to match MiniScorecard width
+                Spacer(modifier = Modifier.width(72.dp)) // Approximate width of MiniScorecard
+                
+                // Track Shot button - fills available space like HoleNavigationCard
+                TrackShotCard(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        resetUITimer()
+                        showClubSelection = true
                     }
-                },
-                onNextHole = {
-                    resetUITimer()
-                    val maxHoles = golfCourse.holes.size
-                    if (currentHoleNumber < maxHoles) {
-                        currentHoleNumber = currentHoleNumber + 1
-                    }
-                },
-                onClick = { 
-                    resetUITimer()
-                    showHoleStats = true
-                }
-            )
+                )
 
-            Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+                // Empty space to match the spacer on the right
+                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+            }
+
+            // Bottom components row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                // To Par Scorecard - Bottom Left
+                MiniScorecard(
+                    scoreToPar = viewModel.getScoreToPar(),
+                    onScoreCardClick = { 
+                        resetUITimer()
+                        showFullScoreCard = true 
+                    }
+                )
+
+                // Edit Hole component - fills available space
+                HoleNavigationCard(
+                    modifier = Modifier.weight(1f),
+                    currentHoleNumber = currentHoleNumber,
+                    maxHoles = golfCourse.holes.size,
+                    onPreviousHole = {
+                        resetUITimer()
+                        if (currentHoleNumber > 1) {
+                            currentHoleNumber = currentHoleNumber - 1
+                        }
+                    },
+                    onNextHole = {
+                        resetUITimer()
+                        val maxHoles = golfCourse.holes.size
+                        if (currentHoleNumber < maxHoles) {
+                            currentHoleNumber = currentHoleNumber + 1
+                        }
+                    },
+                    onClick = { 
+                        resetUITimer()
+                        showHoleStats = true
+                    }
+                )
+
+                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+            }
         }
 
         // Score Card Bottom Sheet
@@ -379,6 +408,17 @@ fun RoundOfGolf(
                 currentPlayer = currentPlayer,
                 currentScoreCard = currentScoreCard,
                 onDismiss = { showFullScoreCard = false }
+            )
+        }
+
+        // Club Selection Dialog
+        if (showClubSelection) {
+            ClubSelectionDialog(
+                onClubSelected = { selectedClub ->
+                    // TODO: Implement track shot functionality with selected club
+                    println("DEBUG: Selected club: ${selectedClub.clubName}")
+                },
+                onDismiss = { showClubSelection = false }
             )
         }
 
@@ -503,6 +543,40 @@ private fun LocationPermissionCard(
 }
 
 @Composable
+private fun TrackShotCard(
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val dimensions = LocalDimensionResources.current
+    
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = MaterialTheme.shapes.medium,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = dimensions.paddingLarge,
+                    vertical = dimensions.paddingMedium
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Track Shot",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
 private fun HoleNavigationCard(
     modifier: Modifier = Modifier,
     currentHoleNumber: Int,
@@ -518,7 +592,7 @@ private fun HoleNavigationCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.medium,
         onClick = onClick
     ) {
         Row(

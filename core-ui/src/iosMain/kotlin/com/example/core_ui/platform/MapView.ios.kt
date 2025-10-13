@@ -290,8 +290,6 @@ actual fun MapView(
 
             // Trigger onMapReady callback with the map instance
             onMapReady?.invoke(mapView)
-            NSLog("GoogleMaps: onMapReady callback invoked with mapView instance")
-
 
             NSLog("GoogleMaps: Map view delegate set and configured, initial click handler set")
             mapView
