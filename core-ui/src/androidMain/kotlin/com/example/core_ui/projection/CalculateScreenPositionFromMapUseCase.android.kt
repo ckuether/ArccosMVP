@@ -15,18 +15,14 @@ actual class CalculateScreenPositionFromMapUseCase {
         location: Location,
         mapInstance: Any
     ): ScreenPosition? {
-        println("DEBUG CalculateScreenPosition: Called with location: lat=${location.lat}, lng=${location.long}")
         val googleMap = mapInstance as? GoogleMap ?: run {
-            println("DEBUG CalculateScreenPosition: mapInstance is not GoogleMap: $mapInstance")
             return null
         }
         return try {
             val latLng = LatLng(location.lat, location.long)
             val projection = googleMap.projection
-            println("DEBUG CalculateScreenPosition: Map center: ${googleMap.cameraPosition.target}, zoom: ${googleMap.cameraPosition.zoom}")
             val screenPoint: Point = projection.toScreenLocation(latLng)
             val result = ScreenPosition(screenPoint.x, screenPoint.y)
-            println("DEBUG CalculateScreenPosition: LatLng($latLng) -> ScreenPoint($screenPoint) -> Result($result)")
             result
         } catch (e: Exception) {
             println("DEBUG CalculateScreenPosition: Exception: ${e.message}")
