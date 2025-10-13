@@ -5,10 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerInputChange
-import androidx.compose.ui.input.pointer.changedToDown
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,8 +40,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -320,28 +314,7 @@ fun RoundOfGolf(
     
     // Target dragging state
     var isDraggingTarget by remember { mutableStateOf(false) }
-    var dragStartPosition by remember { mutableStateOf(Offset.Zero) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
-
-    val targetSize = TargetMarkerDefaults.getSize()
-    
-    // Helper function to check if touch point is within target marker bounds (smaller area for precise targeting)
-    val isPointInTargetMarker = { touchX: Float, touchY: Float ->
-        if (targetMarkerScreenPosition != IntOffset.Zero) {
-            val targetSizePx = with(density) { targetSize.toPx() }
-            val halfSize = targetSizePx / 3 // Make hit area smaller for precision
-            
-            val targetCenterX = targetMarkerScreenPosition.x.toFloat()
-            val targetCenterY = targetMarkerScreenPosition.y.toFloat()
-            
-            touchX >= (targetCenterX - halfSize) && 
-            touchX <= (targetCenterX + halfSize) &&
-            touchY >= (targetCenterY - halfSize) && 
-            touchY <= (targetCenterY + halfSize)
-        } else {
-            false
-        }
-    }
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
@@ -381,43 +354,6 @@ fun RoundOfGolf(
         modifier = Modifier
             .fillMaxSize()
             .safeContentPadding()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        val touchX = offset.x
-                        val touchY = offset.y
-
-                        if (isPointInTargetMarker(touchX, touchY)) {
-                            isDraggingTarget = true
-                            currentDragPosition = offset
-                        }
-                        resetUITimer()
-                    },
-                    onDrag = { change, dragAmount ->
-                        if (isDraggingTarget) {
-                            // Update current drag position for immediate visual feedback
-                            currentDragPosition += dragAmount
-
-                            if (googleMapInstance != null) {
-                                val dragX = currentDragPosition.x.toInt()
-                                val dragY = currentDragPosition.y.toInt()
-
-                                // Convert screen coordinates back to map coordinates
-                                calculateMapPosition(dragX, dragY, googleMapInstance!!)?.let { newLocation ->
-                                    targetLocation = newLocation
-                                }
-                            }
-                        }
-                    },
-                    onDragEnd = {
-                        if (isDraggingTarget) {
-                            isDraggingTarget = false
-                            dragStartPosition = Offset.Zero
-                            currentDragPosition = Offset.Zero
-                        }
-                    }
-                )
-            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -529,13 +465,55 @@ fun RoundOfGolf(
             } else {
                 with(density) { targetMarkerScreenPosition.y.toDp() - targetSize / 2 }
             }
+
+            val targetMarkerSize = TargetMarkerDefaults.getSize()
             
             TargetMarker(
-                modifier = Modifier.offset(x = finalX, y = finalY),
-                onClick = {
-                    // Allow moving the target by clicking on it
-                    resetUITimer()
-                }
+                modifier = Modifier
+                    .offset(x = finalX, y = finalY)
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { pointerOffset ->
+                                // Start from the global screen position of the target marker
+                                isDraggingTarget = true
+
+                                // Initialize at the *center* of the marker, in screen coordinates
+                                currentDragPosition = targetMarkerScreenPosition.asOffset()
+
+                                resetUITimer()
+                            },
+                            onDrag = { change, dragAmount ->
+                                if (isDraggingTarget) {
+                                    // Update current position in screen coordinates
+                                    currentDragPosition += dragAmount
+
+                                    // Clamp to map bounds
+                                    mapSize?.let { size ->
+                                        val half = with(density) { targetMarkerSize.toPx() / 2 }
+                                        currentDragPosition = Offset(
+                                            currentDragPosition.x.coerceIn(half, size.width - half),
+                                            currentDragPosition.y.coerceIn(half, size.height - half)
+                                        )
+                                    }
+
+                                    // Convert back to map coordinates in real-time (optional)
+                                    if (googleMapInstance != null) {
+                                        val cx = currentDragPosition.x.toInt()
+                                        val cy = currentDragPosition.y.toInt()
+                                        calculateMapPosition(cx, cy, googleMapInstance!!)?.let { newLocation ->
+                                            targetLocation = newLocation
+                                        }
+                                    }
+
+                                    change.consume()
+                                }
+                            },
+                            onDragEnd = {
+                                isDraggingTarget = false
+                            }
+                        )
+                    }
+
             )
         }
 
@@ -925,3 +903,5 @@ private fun HoleNavigationCard(
         }
     }
 }
+
+private fun IntOffset.asOffset(): Offset = Offset(x.toFloat(), y.toFloat())
