@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
@@ -375,55 +376,36 @@ fun RoundOfGolf(
             TargetMarker(
                 modifier = Modifier
                     .offset(x = finalX, y = finalY)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { pointerOffset ->
-                                // Start from the global screen position of the target marker
-                                isDraggingMapComponent = true
-                                draggedComponent = DraggedComponent.TARGET
-
-                                // Initialize at the *center* of the marker, in screen coordinates
-                                currentDragPosition = targetMarkerScreenPosition.asOffset()
-
-                                resetUITimer()
-                            },
-                            onDrag = { change, dragAmount ->
-                                if (isDraggingMapComponent && draggedComponent == DraggedComponent.TARGET) {
-                                    // Update current position in screen coordinates
-                                    currentDragPosition += dragAmount
-
-                                    // Clamp to map bounds
-                                    mapSize?.let { size ->
-                                        val half = with(density) { targetSize.toPx() / 2 }
-                                        currentDragPosition = Offset(
-                                            currentDragPosition.x.coerceIn(half, size.width - half),
-                                            currentDragPosition.y.coerceIn(half, size.height - half)
-                                        )
-                                    }
-
-                                    // Convert back to map coordinates in real-time (optional)
-                                    if (googleMapInstance != null) {
-                                        val cx = currentDragPosition.x.toInt()
-                                        val cy = currentDragPosition.y.toInt()
-                                        calculateMapPosition(
-                                            cx,
-                                            cy,
-                                            googleMapInstance!!
-                                        )?.let { newLocation ->
-                                            targetLocation = newLocation
-                                        }
-                                    }
-
-                                    change.consume()
-                                }
-                            },
-                            onDragEnd = {
-                                isDraggingMapComponent = false
-                                draggedComponent = null
-                            }
-                        )
-                    }
-
+                    .dragGestures(
+                        markerSize = targetSize,
+                        markerScreenPosition = targetMarkerScreenPosition,
+                        draggedComponent = DraggedComponent.TARGET,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TARGET
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { finalX.toPx() + (targetSize.toPx() / 2) }
+                            val visualCenterY = with(density) { finalY.toPx() + (targetSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            targetLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    )
             )
         }
 
@@ -751,3 +733,63 @@ private fun rememberPolylinePoints(
 }
 
 private fun IntOffset.asOffset(): Offset = Offset(x.toFloat(), y.toFloat())
+
+private fun Modifier.dragGestures(
+    markerSize: Dp,
+    markerScreenPosition: IntOffset,
+    draggedComponent: DraggedComponent,
+    density: androidx.compose.ui.unit.Density,
+    getCurrentDragState: () -> Pair<Boolean, DraggedComponent?>,
+    getCurrentDragPosition: () -> Offset,
+    onDragStart: () -> Unit,
+    onDragUpdate: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onLocationUpdate: (Location) -> Unit,
+    googleMapInstance: Any?,
+    calculateMapPosition: CalculateMapPositionFromScreenUseCase,
+    mapSize: IntSize?
+): Modifier = this.pointerInput(Unit) {
+    detectDragGestures(
+        onDragStart = { _ ->
+            onDragStart()
+        },
+        onDrag = { change, dragAmount ->
+            val (isDragging, currentComponent) = getCurrentDragState()
+            val currentPos = getCurrentDragPosition()
+            
+            if (isDragging && currentComponent == draggedComponent) {
+                // Update current position in screen coordinates
+                val newPosition = currentPos + dragAmount
+
+                // Clamp to map bounds
+                val clampedPosition = mapSize?.let { size ->
+                    val half = with(density) { markerSize.toPx() / 2 }
+                    Offset(
+                        newPosition.x.coerceIn(half, size.width - half),
+                        newPosition.y.coerceIn(half, size.height - half)
+                    )
+                } ?: newPosition
+
+                onDragUpdate(clampedPosition)
+
+                // Convert back to map coordinates in real-time
+                if (googleMapInstance != null) {
+                    val cx = clampedPosition.x.toInt()
+                    val cy = clampedPosition.y.toInt()
+                    calculateMapPosition(
+                        cx,
+                        cy,
+                        googleMapInstance
+                    )?.let { newLocation ->
+                        onLocationUpdate(newLocation)
+                    }
+                }
+
+                change.consume()
+            }
+        },
+        onDragEnd = {
+            onDragEnd()
+        }
+    )
+}
