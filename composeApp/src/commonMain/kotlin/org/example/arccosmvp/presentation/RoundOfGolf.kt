@@ -47,6 +47,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
 import com.example.core_ui.components.YardageDisplay
+import com.example.core_ui.components.TeeMarker
+import com.example.core_ui.components.FlagMarker
+import com.example.core_ui.components.TargetMarker
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.shared.data.model.Course
@@ -181,6 +184,69 @@ fun RoundOfGolf(
             currentHole.flagLocation.distanceToInYards(targetLocation)
         }
     }
+
+    // Calculate screen positions for golf markers using Google Maps projection
+    val teeMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val teeLocation = currentHole.teeLocation
+                    val screenPos = calculateScreenPosition(teeLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(12, mapSize!!.width - 12) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(12, mapSize!!.height - 12)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
+
+    val flagMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val flagLocation = currentHole.flagLocation
+                    val screenPos = calculateScreenPosition(flagLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(16, mapSize!!.width - 16) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(16, mapSize!!.height - 16)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
+
+    val targetMarkerScreenPosition by remember(targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val screenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(20, mapSize!!.width - 20) // Leave margin for marker size
+                        val clampedY = pos.y.coerceIn(20, mapSize!!.height - 20)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }
     
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
@@ -273,6 +339,41 @@ fun RoundOfGolf(
                         x = with(density) { yardageTargetToFlagScreenPosition.x.toDp() - 30.dp }, // Subtract half width to center
                         y = with(density) { yardageTargetToFlagScreenPosition.y.toDp() - 30.dp }  // Subtract half height to center
                     )
+            )
+        }
+
+        // Golf Markers using screen projection
+        if (teeMarkerScreenPosition != IntOffset.Zero) {
+            TeeMarker(
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { teeMarkerScreenPosition.x.toDp() - (dimensions.iconMedium / 2) },
+                        y = with(density) { teeMarkerScreenPosition.y.toDp() - (dimensions.iconMedium / 2) }
+                    )
+            )
+        }
+
+        if (flagMarkerScreenPosition != IntOffset.Zero) {
+            FlagMarker(
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { flagMarkerScreenPosition.x.toDp() - (dimensions.iconSmall / 2) },
+                        y = with(density) { flagMarkerScreenPosition.y.toDp() - (dimensions.iconSmall / 2) }
+                    )
+            )
+        }
+
+        if (targetMarkerScreenPosition != IntOffset.Zero) {
+            TargetMarker(
+                modifier = Modifier
+                    .offset(
+                        x = with(density) { targetMarkerScreenPosition.x.toDp() - (dimensions.iconXLarge / 2) },
+                        y = with(density) { targetMarkerScreenPosition.y.toDp() - (dimensions.iconXLarge / 2) }
+                    ),
+                onClick = {
+                    // Allow moving the target by clicking on it
+                    resetUITimer()
+                }
             )
         }
 

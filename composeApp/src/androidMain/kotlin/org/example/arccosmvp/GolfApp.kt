@@ -12,7 +12,6 @@ import com.example.core_ui.di.coreUIModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.example.arccosmvp.di.appModule
-import org.example.arccosmvp.di.platformModule
 
 class GolfApp : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
@@ -21,7 +20,7 @@ class GolfApp : Application(), SingletonImageLoader.Factory {
         // Initialize Koin
         startKoin {
             androidContext(this@GolfApp)
-            modules(locationModule, platformLocationModule, appModule, databaseModule, platformModule, coreUIModule)
+            modules(locationModule, platformLocationModule, appModule, databaseModule, coreUIModule)
         }
     }
     

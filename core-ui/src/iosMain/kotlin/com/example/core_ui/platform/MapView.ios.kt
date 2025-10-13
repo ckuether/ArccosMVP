@@ -17,8 +17,6 @@ import platform.CoreLocation.CLLocationCoordinate2D
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
-import com.example.core_ui.components.createGolfMapMarker
-import com.example.core_ui.components.createDraggableGolfMapMarker
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 import com.example.shared.data.model.Location
 import platform.UIKit.UIColor
@@ -70,47 +68,10 @@ actual fun MapView(
                         // Apply camera positioning using platform-specific controller
                         cameraController.applyHoleCameraPosition(currentHole, cameraPosition)
                         
-                        // Clear existing markers and polylines
-                        markersRef.value.forEach { marker ->
-                            marker.map = null
-                        }
+                        // Clear existing polylines only (markers are now handled by Compose components)
                         polylinesRef.value.forEach { polyline ->
                             polyline.map = null
                         }
-                        
-                        // Add new markers
-                        val newMarkers = mutableListOf<GMSMarker>()
-                        
-                        // Add tee marker
-                        val teeMarker = createGolfMapMarker(MarkerType.GOLF_BALL, currentHole.teeLocation) as GMSMarker
-                        teeMarker.map = mapView
-                        newMarkers.add(teeMarker)
-                        
-                        // Add flag marker  
-                        val flagMarker = createGolfMapMarker(MarkerType.GOLF_FLAG, currentHole.flagLocation) as GMSMarker
-                        flagMarker.map = mapView
-                        newMarkers.add(flagMarker)
-                        
-                        // Add draggable target marker if targetLocation is provided
-                        targetLocation?.let { target ->
-                            val targetMarker = createDraggableGolfMapMarker(
-                                MarkerType.TARGET_CIRCLE, 
-                                target
-                            ) { newLocation ->
-                                onTargetLocationChanged?.invoke(newLocation)
-                                onMapClick?.invoke(
-                                    MapLocation(
-                                        latitude = newLocation.lat,
-                                        longitude = newLocation.long
-                                    )
-                                )
-                            }
-                            targetMarker.map = mapView
-                            newMarkers.add(targetMarker)
-                            targetMarkerRef.value = targetMarker
-                        }
-                        
-                        markersRef.value = newMarkers
                     }
                 }
             }
@@ -219,22 +180,7 @@ actual fun MapView(
                     }
                 }
 
-                override fun mapView(
-                    mapView: GMSMapView,
-                    @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
-                    didDragMarker: GMSMarker
-                ) {
-                    // Handle real-time marker dragging for polyline updates
-                    if (didDragMarker == targetMarkerRef.value) {
-                        didDragMarker.position.useContents {
-                            val newLocation = Location(
-                                lat = this.latitude,
-                                long = this.longitude
-                            )
-                            onTargetLocationChanged?.invoke(newLocation)
-                        }
-                    }
-                }
+                // Marker dragging is now handled by Compose components
 
                 override fun mapView(
                     mapView: GMSMapView,

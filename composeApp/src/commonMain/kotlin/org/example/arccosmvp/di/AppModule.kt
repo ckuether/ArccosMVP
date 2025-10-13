@@ -9,9 +9,11 @@ import com.example.shared.domain.usecase.LoadGolfCourseUseCase
 import com.example.shared.domain.usecase.LoadCurrentUserUseCase
 import com.example.shared.domain.usecase.SaveScoreCardUseCase
 import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
+import com.example.core_ui.platform.DrawableProvider
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.ComposeResourceReader
+import org.example.arccosmvp.utils.AppDrawableProvider
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -20,6 +22,7 @@ val appModule = module {
     single<ResourceReader> { ComposeResourceReader() }
     single<GolfCourseRepository> { GolfCourseRepository(get()) }
     single<UserRepository> { UserRepositoryImpl(get()) }
+    single<DrawableProvider> { AppDrawableProvider() }
     
     // UseCases
     factoryOf(::LoadGolfCourseUseCase)

@@ -18,11 +18,10 @@ object DrawableHelper {
     /**
      * Golf ball icon painter
      * Used for marking tee areas and golf-related locations on maps
-     * Uses Coil for SVG support on Android, falls back to painterResource on other platforms
      */
     @Composable
     fun golfBall(): Painter {
-        return getSvgPainter(Res.drawable.golf_ball)
+        return getPainterRes(Res.drawable.golf_ball)
     }
 
     /**

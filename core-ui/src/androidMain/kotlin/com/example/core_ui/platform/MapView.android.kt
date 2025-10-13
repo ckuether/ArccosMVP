@@ -20,7 +20,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.GoogleMap as GoogleMapInstance
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.core_ui.components.GolfMapMarker
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -39,8 +38,6 @@ actual fun MapView(
     onMapReady: ((Any) -> Unit)?
 ) {
     val cameraPositionState = rememberCameraPositionState()
-    val density = LocalDensity.current
-    var mapInstance by remember { mutableStateOf<GoogleMapInstance?>(null) }
     
     // Inject use case for camera position calculation
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
@@ -110,40 +107,16 @@ actual fun MapView(
         // Use MapEffect to access the GoogleMap instance
         MapEffect { googleMap ->
             println("DEBUG MapView: GoogleMap instance available: $googleMap")
-            mapInstance = googleMap
             onMapReady?.invoke(googleMap)
         }
-        currentHole?.teeLocation?.let {
-            GolfMapMarker(MarkerType.GOLF_BALL, it)
-        }
-
-        currentHole?.flagLocation?.let {
-            GolfMapMarker(MarkerType.GOLF_FLAG, it)
-        }
-
-        // Use the target location from props (which can be dragged)
-        targetLocation?.let { location ->
-            GolfMapMarker(
-                type = MarkerType.TARGET_CIRCLE,
-                location = location,
-                onLocationChanged = { newLocation ->
-                    onTargetLocationChanged?.invoke(newLocation)
-                    onMapClick?.invoke(
-                        MapLocation(
-                            latitude = newLocation.lat,
-                            longitude = newLocation.long
-                        )
-                    )
-                }
-            )
-        }
+        // Markers are now rendered using Compose components with screen projection in RoundOfGolf
         
         // Draw line from tee to target location
         if (currentHole?.teeLocation != null && targetLocation != null) {
             Polyline(
                 points = listOf(
                     LatLng(currentHole.teeLocation.lat, currentHole.teeLocation.long),
-                    LatLng(targetLocation!!.lat, targetLocation!!.long)
+                    LatLng(targetLocation.lat, targetLocation.long)
                 ),
                 color = Color.White,
                 width = 2.dp.value
