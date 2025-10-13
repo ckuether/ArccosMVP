@@ -12,14 +12,12 @@ import com.example.shared.data.model.Hole
 import org.koin.compose.koinInject
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
-import kotlinx.cinterop.cValue
 import platform.CoreLocation.CLLocationCoordinate2D
 import cocoapods.GoogleMaps.*
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
 import com.example.shared.usecase.CalculateMapCameraPositionUseCase
 import com.example.shared.data.model.Location
-import platform.UIKit.UIColor
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 @Composable
@@ -40,9 +38,6 @@ actual fun MapView(
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
     val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
-    val markersRef = remember { mutableStateOf<List<GMSMarker>>(emptyList()) }
-    val targetMarkerRef = remember { mutableStateOf<GMSMarker?>(null) }
-    val polylinesRef = remember { mutableStateOf<List<GMSPolyline>>(emptyList()) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
     val currentCameraPosition = remember { mutableStateOf<MapCameraPosition?>(null) }
@@ -67,68 +62,12 @@ actual fun MapView(
                         
                         // Apply camera positioning using platform-specific controller
                         cameraController.applyHoleCameraPosition(currentHole, cameraPosition)
-                        
-                        // Clear existing polylines only (markers are now handled by Compose components)
-                        polylinesRef.value.forEach { polyline ->
-                            polyline.map = null
-                        }
                     }
                 }
             }
         }
     }
     
-    // Update polylines when target location changes
-    LaunchedEffect(targetLocation) {
-        mapViewRef.value?.let { mapView ->
-            if (currentHole != null && targetLocation != null) {
-                // Clear existing polylines
-                polylinesRef.value.forEach { polyline ->
-                    polyline.map = null
-                }
-                
-                val newPolylines = mutableListOf<GMSPolyline>()
-                
-                // Polyline from tee to target
-                val teeToTargetPath = GMSMutablePath()
-                teeToTargetPath.addCoordinate(cValue<CLLocationCoordinate2D> {
-                    latitude = currentHole.teeLocation.lat
-                    longitude = currentHole.teeLocation.long
-                })
-                teeToTargetPath.addCoordinate(cValue<CLLocationCoordinate2D> {
-                    latitude = targetLocation.lat
-                    longitude = targetLocation.long
-                })
-                
-                val teeToTargetPolyline = GMSPolyline()
-                teeToTargetPolyline.path = teeToTargetPath
-                teeToTargetPolyline.strokeWidth = 1.0
-                teeToTargetPolyline.strokeColor = UIColor.whiteColor
-                teeToTargetPolyline.map = mapView
-                newPolylines.add(teeToTargetPolyline)
-                
-                // Polyline from target to hole
-                val targetToHolePath = GMSMutablePath()
-                targetToHolePath.addCoordinate(cValue<CLLocationCoordinate2D> {
-                    latitude = targetLocation.lat
-                    longitude = targetLocation.long
-                })
-                targetToHolePath.addCoordinate(cValue<CLLocationCoordinate2D> {
-                    latitude = currentHole.flagLocation.lat
-                    longitude = currentHole.flagLocation.long
-                })
-                
-                val targetToHolePolyline = GMSPolyline()
-                targetToHolePolyline.path = targetToHolePath
-                targetToHolePolyline.strokeWidth = 1.0
-                targetToHolePolyline.strokeColor = UIColor.whiteColor
-                targetToHolePolyline.map = mapView
-                newPolylines.add(targetToHolePolyline)
-                
-                polylinesRef.value = newPolylines
-            }
-        }
-    }
 
     // Debug LaunchedEffect to track click handler changes
     LaunchedEffect(onMapClick) {

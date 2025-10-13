@@ -50,6 +50,7 @@ import com.example.core_ui.components.YardageDisplay
 import com.example.core_ui.components.TeeMarker
 import com.example.core_ui.components.FlagMarker
 import com.example.core_ui.components.TargetMarker
+import com.example.core_ui.components.PolylineComponent
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.shared.data.model.Course
@@ -247,6 +248,55 @@ fun RoundOfGolf(
             }
         }
     }
+
+    // Calculate polyline points using screen projection
+    val teeToTargetPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null && currentHole != null && targetLocation != null) {
+                try {
+                    val teeScreenPos = calculateScreenPosition(currentHole.teeLocation, googleMapInstance!!)
+                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    
+                    if (teeScreenPos != null && targetScreenPos != null) {
+                        listOf(
+                            IntOffset(teeScreenPos.x, teeScreenPos.y),
+                            IntOffset(targetScreenPos.x, targetScreenPos.y)
+                        )
+                    } else {
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        }
+    }
+
+    val targetToFlagPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null && currentHole != null && targetLocation != null) {
+                try {
+                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
+                    val flagScreenPos = calculateScreenPosition(currentHole.flagLocation, googleMapInstance!!)
+                    
+                    if (targetScreenPos != null && flagScreenPos != null) {
+                        listOf(
+                            IntOffset(targetScreenPos.x, targetScreenPos.y),
+                            IntOffset(flagScreenPos.x, flagScreenPos.y)
+                        )
+                    } else {
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        }
+    }
     
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
@@ -319,6 +369,25 @@ fun RoundOfGolf(
                 googleMapInstance = mapInstance
             }
         )
+
+        // Polylines using screen projection
+        if (teeToTargetPolylinePoints.isNotEmpty()) {
+            PolylineComponent(
+                points = teeToTargetPolylinePoints,
+                modifier = Modifier.fillMaxSize(),
+                color = Color.White,
+                strokeWidth = 2f
+            )
+        }
+
+        if (targetToFlagPolylinePoints.isNotEmpty()) {
+            PolylineComponent(
+                points = targetToFlagPolylinePoints,
+                modifier = Modifier.fillMaxSize(),
+                color = Color.White,
+                strokeWidth = 2f
+            )
+        }
 
         if (yardageToTargetScreenPosition != IntOffset.Zero) {
             YardageDisplay(
