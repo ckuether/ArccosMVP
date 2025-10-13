@@ -27,10 +27,7 @@ actual class CalculateMapPositionFromScreenUseCase {
                 y = screenY.toDouble() / deviceScale
             }
 
-            println("DEBUG CalculateMapPositionFromScreenUseCase: X: ${screenPoint.useContents { x }}  Y: ${screenPoint.useContents { y }}")
-
             val coordinate: CValue<CLLocationCoordinate2D> = mapView.projection.coordinateForPoint(screenPoint)
-
             coordinate.useContents {
                 Location(lat = this.latitude, long = this.longitude)
             }
