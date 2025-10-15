@@ -341,7 +341,7 @@ fun RoundOfGolf(
         }
 
         // Golf Markers using screen projection
-        if (!trackShotModeEnabled && teeMarkerScreenPosition != IntOffset.Zero) {
+        if (teeMarkerScreenPosition != IntOffset.Zero) {
             val teeSize = TeeMarkerDefaults.getSize()
             TeeMarker(
                 modifier = Modifier
@@ -352,7 +352,7 @@ fun RoundOfGolf(
             )
         }
 
-        if (!trackShotModeEnabled && flagMarkerScreenPosition != IntOffset.Zero) {
+        if (flagMarkerScreenPosition != IntOffset.Zero) {
             val flagSize = FlagMarkerDefaults.getSize()
             FlagMarker(
                 modifier = Modifier
@@ -723,6 +723,7 @@ fun RoundOfGolf(
                 TrackShotCard(
                     modifier = Modifier.weight(1f),
                     onClick = {
+                        //TODO: Do Something
                         // Show toast message
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar("Track Shot feature coming soon!")

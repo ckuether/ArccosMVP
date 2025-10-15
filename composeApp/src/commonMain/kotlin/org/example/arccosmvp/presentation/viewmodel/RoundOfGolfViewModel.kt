@@ -210,8 +210,6 @@ class RoundOfGolfViewModel(
         return _currentScoreCard.value.scorecard.values.filterNotNull().sum()
     }
     
-    
-    
     fun getCompletedHolesPar(): Int {
         val completedHoles = _currentScoreCard.value.scorecard.keys
         return course.holes.filter { it.id in completedHoles }.sumOf { it.par }
