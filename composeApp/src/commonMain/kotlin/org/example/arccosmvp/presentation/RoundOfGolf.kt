@@ -366,16 +366,20 @@ fun RoundOfGolf(
         if (!trackShotModeEnabled && targetMarkerScreenPosition != IntOffset.Zero) {
             val targetSize = TargetMarkerDefaults.getSize()
 
-            // Calculate final position: use drag position when dragging, otherwise use calculated screen position
-            val isDraggingTarget = isDraggingMapComponent && draggedComponent == DraggedComponent.TARGET
-            val currentPosition = if (isDraggingTarget) currentDragPosition else targetMarkerScreenPosition.asOffset()
-
-            val finalX = with(density) { currentPosition.x.toDp() - targetSize / 2 }
-            val finalY = with(density) { currentPosition.y.toDp() - targetSize / 2 }
+            // Calculate final position using helper function
+            val (targetX, targetY) = calculateDraggableMarkerPosition(
+                markerSize = targetSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TARGET,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = targetMarkerScreenPosition,
+                density = density
+            )
 
             TargetMarker(
                 modifier = Modifier
-                    .offset(x = finalX, y = finalY)
+                    .offset(x = targetX, y = targetY)
                     .dragGestures(
                         markerSize = targetSize,
                         markerScreenPosition = targetMarkerScreenPosition,
@@ -387,8 +391,8 @@ fun RoundOfGolf(
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TARGET
                             // Set drag position to the actual visual center coordinates
-                            val visualCenterX = with(density) { finalX.toPx() + (targetSize.toPx() / 2) }
-                            val visualCenterY = with(density) { finalY.toPx() + (targetSize.toPx() / 2) }
+                            val visualCenterX = with(density) { targetX.toPx() + (targetSize.toPx() / 2) }
+                            val visualCenterY = with(density) { targetY.toPx() + (targetSize.toPx() / 2) }
                             currentDragPosition = Offset(visualCenterX, visualCenterY)
                             resetUITimer()
                         },
@@ -421,16 +425,109 @@ fun RoundOfGolf(
 
         // Track Shot Mode Markers - Generic markers for start and end positions
         if (trackShotModeEnabled) {
-            GenericMarker(
-                screenPosition = trackShotStartScreenPosition,
-                color = Color.Blue,
-                size = 24.dp
+            val markerSize = 36.dp
+
+            // Calculate tracking start marker position using helper function
+            val (trackingStartX, trackingStartY) = calculateDraggableMarkerPosition(
+                markerSize = markerSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TRACKING_START,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = trackShotStartScreenPosition,
+                density = density
             )
-            
-            GenericMarker(
-                screenPosition = trackShotEndScreenPosition,
+
+            DraggableMarker(
+                modifier = Modifier
+                    .offset(x = trackingStartX, y = trackingStartY)
+                    .dragGestures(
+                        markerSize = markerSize,
+                        markerScreenPosition = trackShotStartScreenPosition,
+                        draggedComponent = DraggedComponent.TRACKING_START,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            println("DEBUG: TRACKING_START drag started")
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TRACKING_START
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { trackingStartX.toPx() + (markerSize.toPx() / 2) }
+                            val visualCenterY = with(density) { trackingStartY.toPx() + (markerSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            println("DEBUG: TRACKING_START initial position: $currentDragPosition")
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            println("DEBUG: TRACKING_START drag update: $newPosition")
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            println("DEBUG: TRACKING_START drag ended")
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            trackShotStartLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    ),
+                color = Color.Blue,
+                size = markerSize
+            )
+
+            val (trackingEndX, trackingEndY) = calculateDraggableMarkerPosition(
+                markerSize = markerSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TRACKING_END,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = trackShotEndScreenPosition,
+                density = density
+            )
+
+            DraggableMarker(
+                modifier = Modifier
+                    .offset(x = trackingEndX, y = trackingEndY)
+                    .dragGestures(
+                        markerSize = markerSize,
+                        markerScreenPosition = trackShotEndScreenPosition,
+                        draggedComponent = DraggedComponent.TRACKING_END,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            println("DEBUG: TRACKING_END drag started")
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TRACKING_END
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { trackingEndX.toPx() + (markerSize.toPx() / 2) }
+                            val visualCenterY = with(density) { trackingEndY.toPx() + (markerSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            println("DEBUG: TRACKING_END initial position: $currentDragPosition")
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            println("DEBUG: TRACKING_END drag update: $newPosition")
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            println("DEBUG: TRACKING_END drag ended")
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            trackShotEndLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    ),
                 color = Color.Red,
-                size = 24.dp
+                size = markerSize
             )
         }
 
@@ -733,6 +830,25 @@ private fun rememberPolylinePoints(
 }
 
 private fun IntOffset.asOffset(): Offset = Offset(x.toFloat(), y.toFloat())
+
+@Composable
+private fun calculateDraggableMarkerPosition(
+    markerSize: Dp,
+    isDraggingMapComponent: Boolean,
+    draggedComponent: DraggedComponent?,
+    targetDraggedComponent: DraggedComponent,
+    currentDragPosition: Offset,
+    defaultScreenPosition: IntOffset,
+    density: androidx.compose.ui.unit.Density
+): Pair<Dp, Dp> {
+    val isDraggingThisComponent = isDraggingMapComponent && draggedComponent == targetDraggedComponent
+    val position = if (isDraggingThisComponent) currentDragPosition else defaultScreenPosition.asOffset()
+    
+    val finalX = with(density) { position.x.toDp() - markerSize / 2 }
+    val finalY = with(density) { position.y.toDp() - markerSize / 2 }
+    
+    return Pair(finalX, finalY)
+}
 
 private fun Modifier.dragGestures(
     markerSize: Dp,

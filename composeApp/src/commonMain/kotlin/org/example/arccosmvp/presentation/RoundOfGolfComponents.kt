@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.IntOffset
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Hole
@@ -334,38 +333,31 @@ fun TargetShotCard(
 }
 
 @Composable
-fun GenericMarker(
-    screenPosition: IntOffset,
+fun DraggableMarker(
+    modifier: Modifier = Modifier,
     color: Color,
-    size: Dp = 24.dp
+    size: Dp = 36.dp
 ) {
-    if (screenPosition != IntOffset.Zero) {
-        val density = LocalDensity.current
+    Box(
+        modifier = modifier
+            .size(size)
+            .background(
+                color = color,
+                shape = CircleShape
+            )
+            .background(
+                color = Color.White,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
+    ) {
         Box(
             modifier = Modifier
-                .offset(
-                    x = with(density) { screenPosition.x.toDp() - size / 2 },
-                    y = with(density) { screenPosition.y.toDp() - size / 2 }
-                )
-                .size(size)
+                .size(size * 0.7f)
                 .background(
                     color = color,
                     shape = CircleShape
                 )
-                .background(
-                    color = Color.White,
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(size * 0.7f)
-                    .background(
-                        color = color,
-                        shape = CircleShape
-                    )
-            )
-        }
+        )
     }
 }
