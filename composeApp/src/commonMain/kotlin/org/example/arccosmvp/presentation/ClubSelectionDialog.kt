@@ -73,11 +73,17 @@ fun ClubSelectionDialog(
         selectedIndex = currentSelectedIndex
     }
 
+    // Helper function to handle dismissal with selected club
+    val handleDismissWithSelection = {
+        onClubSelected(clubTypes[selectedIndex])
+        onDismiss()
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.5f))
-            .clickable { onDismiss() },
+            .clickable { handleDismissWithSelection() },
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -162,17 +168,14 @@ fun ClubSelectionDialog(
                     horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
                 ) {
                     OutlinedButton(
-                        onClick = onDismiss,
+                        onClick = handleDismissWithSelection,
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Cancel")
                     }
                     
                     Button(
-                        onClick = { 
-                            onClubSelected(clubTypes[selectedIndex])
-                            onDismiss()
-                        },
+                        onClick = handleDismissWithSelection,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary

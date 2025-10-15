@@ -1,5 +1,10 @@
 package org.example.arccosmvp
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -19,25 +24,33 @@ fun App() {
     GolfAppTheme {
         val navController = rememberNavController()
         val appViewModel: AppViewModel = koinViewModel()
+        val snackbarHostState = remember { SnackbarHostState() }
         
-        NavHost(
-            navController = navController,
-            startDestination = Route.GOLF_HOME
-        ) {
-            composable(Route.GOLF_HOME) {
-                GolfHomeScreen(
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
+            Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+                NavHost(
                     navController = navController,
-                    appViewModel = appViewModel
-                )
-            }
-            composable(Route.ROUND_OF_GOLF) {
-                val course by appViewModel.course.collectAsStateWithLifecycle()
-                val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
-                if (course != null && currentPlayer != null) {
-                    RoundOfGolf(
-                        currentPlayer = currentPlayer!!,
-                        golfCourse = course!!
-                    )
+                    startDestination = Route.GOLF_HOME
+                ) {
+                    composable(Route.GOLF_HOME) {
+                        GolfHomeScreen(
+                            navController = navController,
+                            appViewModel = appViewModel
+                        )
+                    }
+                    composable(Route.ROUND_OF_GOLF) {
+                        val course by appViewModel.course.collectAsStateWithLifecycle()
+                        val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
+                        if (course != null && currentPlayer != null) {
+                            RoundOfGolf(
+                                currentPlayer = currentPlayer!!,
+                                golfCourse = course!!,
+                                snackbarHostState = snackbarHostState
+                            )
+                        }
+                    }
                 }
             }
         }

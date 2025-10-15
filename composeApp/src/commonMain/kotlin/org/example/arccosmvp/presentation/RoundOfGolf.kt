@@ -2,42 +2,36 @@ package org.example.arccosmvp.presentation
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GolfCourse
+import androidx.compose.material3.SnackbarHostState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
@@ -46,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.core_ui.platform.MapView
 import com.example.core_ui.platform.MapCameraPosition
@@ -58,12 +53,14 @@ import com.example.core_ui.components.FlagMarkerDefaults
 import com.example.core_ui.components.TargetMarker
 import com.example.core_ui.components.TargetMarkerDefaults
 import com.example.core_ui.components.PolylineComponent
+import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.core_ui.projection.CalculateMapPositionFromScreenUseCase
 import com.example.shared.data.model.Course
-import com.example.shared.data.model.Hole
 import com.example.shared.data.model.Player
+import com.example.shared.data.model.GolfClubType
+import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
 import com.example.shared.platform.getCurrentTimeMillis
@@ -77,11 +74,13 @@ import org.koin.core.parameter.parametersOf
 fun RoundOfGolf(
     currentPlayer: Player,
     golfCourse: Course,
+    snackbarHostState: SnackbarHostState,
     viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse) }
 ) {
 
     val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
+    val coroutineScope = rememberCoroutineScope()
 
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val calculateMapPosition: CalculateMapPositionFromScreenUseCase = koinInject()
@@ -93,11 +92,10 @@ fun RoundOfGolf(
     var currentHoleNumber by remember { mutableStateOf(1) }
     var currentHole by remember {
         mutableStateOf(
-            golfCourse.holes.find { it.id == currentHoleNumber } 
+            golfCourse.holes.find { it.id == currentHoleNumber }
                 ?: golfCourse.holes.first()
         )
     }
-    var targetLocation by remember { mutableStateOf(currentHole.initialTarget) }
 
     // We'll use Google Maps projection directly instead of injected use case
     var googleMapInstance by remember { mutableStateOf<Any?>(null) }
@@ -107,46 +105,21 @@ fun RoundOfGolf(
         mutableStateOf(MapCameraPosition(teeLocation.lat, teeLocation.long, 15f))
     }
 
-    var showHoleStats by remember { mutableStateOf(false) }
-    var showFullScoreCard by remember { mutableStateOf(false) }
-    
-    // Calculate yardage display position using Google Maps projection  
-    val yardageToTargetScreenPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
-        derivedStateOf {
-            // Only calculate if camera has moved from default (0,0) position
-            if (googleMapInstance != null && mapSize != null) {
-                println("DEBUG YardageDisplay: All conditions met, proceeding with calculation")
-                try {
-                    val teeLocation = currentHole.teeLocation
-                    
-                    // Calculate midpoint between tee and target
-                    val midPoint = teeLocation.midPoint(targetLocation)
-                    
-                    // Use Google Maps SDK projection for accurate positioning
-                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance!!)
-                    
-                    screenPos?.let { pos ->
-                        // Ensure the position is within screen bounds
-                        val clampedX = pos.x.coerceIn(60, mapSize!!.width - 60) // Leave 60px margin
-                        val clampedY = pos.y.coerceIn(60, mapSize!!.height - 60) // Leave 60px margin
-                        val result = IntOffset(clampedX, clampedY)
-                        println("DEBUG YardageDisplay: Final result: x=${result.x}, y=${result.y}")
-                        result
-                    } ?: run {
-                        println("DEBUG YardageDisplay: screenPos was null, returning IntOffset.Zero")
-                        IntOffset.Zero
-                    }
-                } catch (e: Exception) {
-                    println("DEBUG YardageDisplay: Exception in yardage positioning: ${e.message}")
-                    e.printStackTrace()
-                    IntOffset.Zero
-                }
-            } else {
-                println("DEBUG YardageDisplay: Conditions not met, returning IntOffset.Zero")
-                IntOffset.Zero
-            }
-        }
-    }
+    var trackShotModeEnabled by remember { mutableStateOf(false) }
+    var selectedClub by remember { mutableStateOf<GolfClubType?>(null) }
+
+    var targetLocation by remember { mutableStateOf(currentHole.initialTarget) }
+
+    // Calculate yardage display positions using helper function
+    val yardageToTargetScreenPosition = rememberYardageScreenPosition(
+        location1 = currentHole.teeLocation,
+        location2 = targetLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 60
+    )
 
     val yardageToTargetText by remember(currentHole, targetLocation) {
         derivedStateOf {
@@ -154,40 +127,15 @@ fun RoundOfGolf(
         }
     }
 
-    val yardageTargetToFlagScreenPosition by remember(currentHole, targetLocation, mapSize, cameraPosition) {
-        derivedStateOf {
-            // Only calculate if camera has moved from default (0,0) position
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val flagLocation = currentHole.flagLocation
-
-                    // Calculate midpoint between tee and target
-                    val midPoint = flagLocation.midPoint(targetLocation)
-
-                    // Use Google Maps SDK projection for accurate positioning
-                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance!!)
-
-                    screenPos?.let { pos ->
-                        // Ensure the position is within screen bounds
-                        val clampedX = pos.x.coerceIn(60, mapSize!!.width - 60) // Leave 60px margin
-                        val clampedY = pos.y.coerceIn(60, mapSize!!.height - 60) // Leave 60px margin
-                        val result = IntOffset(clampedX, clampedY)
-                        result
-                    } ?: run {
-                        println("DEBUG YardageDisplay: screenPos was null, returning IntOffset.Zero")
-                        IntOffset.Zero
-                    }
-                } catch (e: Exception) {
-                    println("DEBUG YardageDisplay: Exception in yardage positioning: ${e.message}")
-                    e.printStackTrace()
-                    IntOffset.Zero
-                }
-            } else {
-                println("DEBUG YardageDisplay: Conditions not met, returning IntOffset.Zero")
-                IntOffset.Zero
-            }
-        }
-    }
+    val yardageTargetToFlagScreenPosition = rememberYardageScreenPosition(
+        location1 = currentHole.flagLocation,
+        location2 = targetLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 60
+    )
 
     val yardageTargetToFlagText by remember(currentHole, targetLocation) {
         derivedStateOf {
@@ -195,131 +143,96 @@ fun RoundOfGolf(
         }
     }
 
-    // Calculate screen positions for golf markers using Google Maps projection
-    val teeMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
-        derivedStateOf {
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val teeLocation = currentHole.teeLocation
-                    val screenPos = calculateScreenPosition(teeLocation, googleMapInstance!!)
-                    
-                    screenPos?.let { pos ->
-                        val clampedX = pos.x.coerceIn(12, mapSize!!.width - 12) // Leave margin for marker size
-                        val clampedY = pos.y.coerceIn(12, mapSize!!.height - 12)
-                        IntOffset(clampedX, clampedY)
-                    } ?: IntOffset.Zero
-                } catch (e: Exception) {
-                    IntOffset.Zero
-                }
-            } else {
-                IntOffset.Zero
-            }
-        }
-    }
+    // Calculate screen positions for golf markers using helper function
+    val teeMarkerScreenPosition = rememberMarkerScreenPosition(
+        location = currentHole.teeLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 12
+    )
 
-    val flagMarkerScreenPosition by remember(currentHole, mapSize, cameraPosition) {
-        derivedStateOf {
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val flagLocation = currentHole.flagLocation
-                    val screenPos = calculateScreenPosition(flagLocation, googleMapInstance!!)
-                    
-                    screenPos?.let { pos ->
-                        val clampedX = pos.x.coerceIn(16, mapSize!!.width - 16) // Leave margin for marker size
-                        val clampedY = pos.y.coerceIn(16, mapSize!!.height - 16)
-                        IntOffset(clampedX, clampedY)
-                    } ?: IntOffset.Zero
-                } catch (e: Exception) {
-                    IntOffset.Zero
-                }
-            } else {
-                IntOffset.Zero
-            }
-        }
-    }
+    val flagMarkerScreenPosition = rememberMarkerScreenPosition(
+        location = currentHole.flagLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 16
+    )
 
-    val targetMarkerScreenPosition by remember(targetLocation, mapSize, cameraPosition) {
-        derivedStateOf {
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val screenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
-                    
-                    screenPos?.let { pos ->
-                        val clampedX = pos.x.coerceIn(20, mapSize!!.width - 20) // Leave margin for marker size
-                        val clampedY = pos.y.coerceIn(20, mapSize!!.height - 20)
-                        IntOffset(clampedX, clampedY)
-                    } ?: IntOffset.Zero
-                } catch (e: Exception) {
-                    IntOffset.Zero
-                }
-            } else {
-                IntOffset.Zero
-            }
-        }
-    }
+    val targetMarkerScreenPosition = rememberMarkerScreenPosition(
+        location = targetLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 20
+    )
 
-    // Calculate polyline points using screen projection
-    val teeToTargetPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
-        derivedStateOf {
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val teeScreenPos = calculateScreenPosition(currentHole.teeLocation, googleMapInstance!!)
-                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
-                    
-                    if (teeScreenPos != null && targetScreenPos != null) {
-                        listOf(
-                            IntOffset(teeScreenPos.x, teeScreenPos.y),
-                            IntOffset(targetScreenPos.x, targetScreenPos.y)
-                        )
-                    } else {
-                        emptyList()
-                    }
-                } catch (e: Exception) {
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-        }
-    }
+    // Calculate polyline points using helper function
+    val teeToTargetPolylinePoints = rememberPolylinePoints(
+        location1 = currentHole.teeLocation,
+        location2 = targetLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition
+    )
 
-    val targetToFlagPolylinePoints by remember(currentHole, targetLocation, mapSize, cameraPosition) {
-        derivedStateOf {
-            if (googleMapInstance != null && mapSize != null) {
-                try {
-                    val targetScreenPos = calculateScreenPosition(targetLocation, googleMapInstance!!)
-                    val flagScreenPos = calculateScreenPosition(currentHole.flagLocation, googleMapInstance!!)
-                    
-                    if (targetScreenPos != null && flagScreenPos != null) {
-                        listOf(
-                            IntOffset(targetScreenPos.x, targetScreenPos.y),
-                            IntOffset(flagScreenPos.x, flagScreenPos.y)
-                        )
-                    } else {
-                        emptyList()
-                    }
-                } catch (e: Exception) {
-                    emptyList()
-                }
-            } else {
-                emptyList()
-            }
-        }
-    }
-    
+    val targetToFlagPolylinePoints = rememberPolylinePoints(
+        location1 = targetLocation,
+        location2 = currentHole.flagLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition
+    )
+
     // UI visibility state
     var isUIVisible by remember { mutableStateOf(true) }
     var lastTouchTime by remember { mutableStateOf(getCurrentTimeMillis()) }
-    var showClubSelection by remember { mutableStateOf(false) }
-    
-    // Target dragging state
-    var isDraggingTarget by remember { mutableStateOf(false) }
+
+    // Consolidated dragging state
+    var isDraggingMapComponent by remember { mutableStateOf(false) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
+
+    // Track which component is being dragged
+    var draggedComponent by remember { mutableStateOf<DraggedComponent?>(null) }
+
+    // Track shot mode locations (separate from hole data)
+    var trackShotStartLocation by remember(currentHole) { mutableStateOf(currentHole.teeLocation) }
+    var trackShotEndLocation by remember(currentHole) { mutableStateOf(currentHole.initialTarget) }
+
+
+    // Calculate screen positions for track shot markers using helper function
+    val trackShotStartScreenPosition = rememberMarkerScreenPosition(
+        location = trackShotStartLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 12
+    )
+
+    val trackShotEndScreenPosition = rememberMarkerScreenPosition(
+        location = trackShotEndLocation,
+        googleMapInstance = googleMapInstance,
+        mapSize = mapSize,
+        cameraPosition = cameraPosition,
+        calculateScreenPosition = calculateScreenPosition,
+        margin = 16
+    )
+
+
+    var showClubSelection by remember { mutableStateOf(false) }
+    var showHoleStats by remember { mutableStateOf(false) }
+    var showFullScoreCard by remember { mutableStateOf(false) }
 
     // Auto-hide UI timer
     LaunchedEffect(lastTouchTime) {
         delay(TimeMillis.FIVE_SECONDS)
-        println("DEBUG RoundOfGolf: Auto-hide timer expired, setting isUIVisible=false")
         isUIVisible = false
     }
 
@@ -329,7 +242,7 @@ fun RoundOfGolf(
         animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "topOffset"
     )
-    
+
     val bottomOffset by animateFloatAsState(
         targetValue = if (isUIVisible) 0f else 200f,
         animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
@@ -365,7 +278,7 @@ fun RoundOfGolf(
             currentHole = currentHole,
             targetLocation = targetLocation,
             hasLocationPermission = locationState.hasPermission == true,
-            gesturesEnabled = !isDraggingTarget,
+            gesturesEnabled = !isDraggingMapComponent,
             onMapClick = { mapLocation ->
                 resetUITimer()
                 // Always set/replace target shot at clicked location
@@ -385,7 +298,7 @@ fun RoundOfGolf(
         )
 
         // Polylines using screen projection
-        if (teeToTargetPolylinePoints.isNotEmpty()) {
+        if (!trackShotModeEnabled && teeToTargetPolylinePoints.isNotEmpty()) {
             PolylineComponent(
                 points = teeToTargetPolylinePoints,
                 modifier = Modifier.fillMaxSize(),
@@ -394,7 +307,7 @@ fun RoundOfGolf(
             )
         }
 
-        if (targetToFlagPolylinePoints.isNotEmpty()) {
+        if (!trackShotModeEnabled && targetToFlagPolylinePoints.isNotEmpty()) {
             PolylineComponent(
                 points = targetToFlagPolylinePoints,
                 modifier = Modifier.fillMaxSize(),
@@ -403,7 +316,7 @@ fun RoundOfGolf(
             )
         }
 
-        if (yardageToTargetScreenPosition != IntOffset.Zero) {
+        if (!trackShotModeEnabled && yardageToTargetScreenPosition != IntOffset.Zero) {
             val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageToTargetText,
@@ -415,7 +328,7 @@ fun RoundOfGolf(
             )
         }
 
-        if (yardageTargetToFlagScreenPosition != IntOffset.Zero) {
+        if (!trackShotModeEnabled && yardageTargetToFlagScreenPosition != IntOffset.Zero) {
             val yardageSize = YardageDisplayDefaults.getSize()
             YardageDisplay(
                 yardage = yardageTargetToFlagText,
@@ -450,83 +363,178 @@ fun RoundOfGolf(
             )
         }
 
-        if (targetMarkerScreenPosition != IntOffset.Zero) {
-            val targetSize = TargetMarkerDefaults.getSize()
-            
-            // Calculate final position: normal position + drag offset when dragging
-            val finalX = if (isDraggingTarget) {
-                with(density) { currentDragPosition.x.toDp() - targetSize / 2 }
-            } else {
-                with(density) { targetMarkerScreenPosition.x.toDp() - targetSize / 2 }
-            }
-            
-            val finalY = if (isDraggingTarget) {
-                with(density) { currentDragPosition.y.toDp() - targetSize / 2 }
-            } else {
-                with(density) { targetMarkerScreenPosition.y.toDp() - targetSize / 2 }
-            }
 
-            val targetMarkerSize = TargetMarkerDefaults.getSize()
-            
+        if (!trackShotModeEnabled && targetMarkerScreenPosition != IntOffset.Zero) {
+            val targetSize = TargetMarkerDefaults.getSize()
+
+            // Calculate final position using helper function
+            val (targetX, targetY) = calculateDraggableMarkerPosition(
+                markerSize = targetSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TARGET,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = targetMarkerScreenPosition,
+                density = density
+            )
+
             TargetMarker(
                 modifier = Modifier
-                    .offset(x = finalX, y = finalY)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = { pointerOffset ->
-                                // Start from the global screen position of the target marker
-                                isDraggingTarget = true
+                    .offset(x = targetX, y = targetY)
+                    .dragGestures(
+                        markerSize = targetSize,
+                        draggedComponent = DraggedComponent.TARGET,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TARGET
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { targetX.toPx() + (targetSize.toPx() / 2) }
+                            val visualCenterY = with(density) { targetY.toPx() + (targetSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            targetLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    )
+            )
+        }
 
-                                // Initialize at the *center* of the marker, in screen coordinates
-                                currentDragPosition = targetMarkerScreenPosition.asOffset()
+        // Track Shot Mode Polyline - Yellow line connecting start to end
+        if (trackShotModeEnabled && trackShotStartScreenPosition != IntOffset.Zero && trackShotEndScreenPosition != IntOffset.Zero) {
+            PolylineComponent(
+                points = listOf(trackShotStartScreenPosition, trackShotEndScreenPosition),
+                modifier = Modifier.fillMaxSize(),
+                color = Color.Yellow,
+                strokeWidth = 3f
+            )
+        }
 
-                                resetUITimer()
-                            },
-                            onDrag = { change, dragAmount ->
-                                if (isDraggingTarget) {
-                                    // Update current position in screen coordinates
-                                    currentDragPosition += dragAmount
+        // Track Shot Mode Markers - Generic markers for start and end positions
+        if (trackShotModeEnabled) {
+            val markerSize = 36.dp
 
-                                    // Clamp to map bounds
-                                    mapSize?.let { size ->
-                                        val half = with(density) { targetMarkerSize.toPx() / 2 }
-                                        currentDragPosition = Offset(
-                                            currentDragPosition.x.coerceIn(half, size.width - half),
-                                            currentDragPosition.y.coerceIn(half, size.height - half)
-                                        )
-                                    }
+            // Calculate tracking start marker position using helper function
+            val (trackingStartX, trackingStartY) = calculateDraggableMarkerPosition(
+                markerSize = markerSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TRACKING_START,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = trackShotStartScreenPosition,
+                density = density
+            )
 
-                                    // Convert back to map coordinates in real-time (optional)
-                                    if (googleMapInstance != null) {
-                                        val cx = currentDragPosition.x.toInt()
-                                        val cy = currentDragPosition.y.toInt()
-                                        calculateMapPosition(cx, cy, googleMapInstance!!)?.let { newLocation ->
-                                            targetLocation = newLocation
-                                        }
-                                    }
+            DraggableMarker(
+                modifier = Modifier
+                    .offset(x = trackingStartX, y = trackingStartY)
+                    .dragGestures(
+                        markerSize = markerSize,
+                        draggedComponent = DraggedComponent.TRACKING_START,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            println("DEBUG: TRACKING_START drag started")
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TRACKING_START
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { trackingStartX.toPx() + (markerSize.toPx() / 2) }
+                            val visualCenterY = with(density) { trackingStartY.toPx() + (markerSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            println("DEBUG: TRACKING_START initial position: $currentDragPosition")
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            trackShotStartLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    ),
+                color = Color.Blue,
+                size = markerSize
+            )
 
-                                    change.consume()
-                                }
-                            },
-                            onDragEnd = {
-                                isDraggingTarget = false
-                            }
-                        )
-                    }
+            val (trackingEndX, trackingEndY) = calculateDraggableMarkerPosition(
+                markerSize = markerSize,
+                isDraggingMapComponent = isDraggingMapComponent,
+                draggedComponent = draggedComponent,
+                targetDraggedComponent = DraggedComponent.TRACKING_END,
+                currentDragPosition = currentDragPosition,
+                defaultScreenPosition = trackShotEndScreenPosition,
+                density = density
+            )
 
+            DraggableMarker(
+                modifier = Modifier
+                    .offset(x = trackingEndX, y = trackingEndY)
+                    .dragGestures(
+                        markerSize = markerSize,
+                        draggedComponent = DraggedComponent.TRACKING_END,
+                        density = density,
+                        getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
+                        getCurrentDragPosition = { currentDragPosition },
+                        onDragStart = {
+                            isDraggingMapComponent = true
+                            draggedComponent = DraggedComponent.TRACKING_END
+                            // Set drag position to the actual visual center coordinates
+                            val visualCenterX = with(density) { trackingEndX.toPx() + (markerSize.toPx() / 2) }
+                            val visualCenterY = with(density) { trackingEndY.toPx() + (markerSize.toPx() / 2) }
+                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            resetUITimer()
+                        },
+                        onDragUpdate = { newPosition ->
+                            currentDragPosition = newPosition
+                        },
+                        onDragEnd = {
+                            isDraggingMapComponent = false
+                            draggedComponent = null
+                        },
+                        onLocationUpdate = { newLocation ->
+                            trackShotEndLocation = newLocation
+                        },
+                        googleMapInstance = googleMapInstance,
+                        calculateMapPosition = calculateMapPosition,
+                        mapSize = mapSize
+                    ),
+                color = Color.Red,
+                size = markerSize
             )
         }
 
         // Top overlay - Hole info bar
-        HoleInfoCard(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = topOffset.dp)
-                .padding(horizontal = dimensions.paddingLarge)
-                .padding(top = dimensions.paddingLarge),
-            currentHoleNumber = currentHoleNumber,
-            currentHole = currentHole
-        )
+        if (!trackShotModeEnabled) {
+            HoleInfoCard(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = topOffset.dp)
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .padding(top = dimensions.paddingLarge),
+                currentHoleNumber = currentHoleNumber,
+                currentHole = currentHole
+            )
+        }
 
         // Permission overlay (when needed)
         if (locationState.hasPermission == false) {
@@ -541,77 +549,79 @@ fun RoundOfGolf(
         }
 
         // Bottom components column
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .offset(y = bottomOffset.dp)
-                .fillMaxWidth()
-                .padding(horizontal = dimensions.paddingLarge)
-                .padding(bottom = dimensions.paddingLarge),
-            verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
-        ) {
-            // Track Shot button - same layout as bottom row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                verticalAlignment = Alignment.Bottom
+        if (!trackShotModeEnabled) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = bottomOffset.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .padding(bottom = dimensions.paddingLarge),
+                verticalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
             ) {
-                // Empty space to match MiniScorecard width
-                Spacer(modifier = Modifier.width(72.dp)) // Approximate width of MiniScorecard
-                
-                // Track Shot button - fills available space like HoleNavigationCard
-                TrackShotCard(
-                    modifier = Modifier.weight(1f),
-                    onClick = {
-                        resetUITimer()
-                        showClubSelection = true
-                    }
-                )
+                // Track Shot button - same layout as bottom row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // Empty space to match MiniScorecard width
+                    Spacer(modifier = Modifier.width(72.dp)) // Approximate width of MiniScorecard
 
-                // Empty space to match the spacer on the right
-                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
-            }
-
-            // Bottom components row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
-                verticalAlignment = Alignment.Bottom
-            ) {
-                // To Par Scorecard - Bottom Left
-                MiniScorecard(
-                    scoreToPar = viewModel.getScoreToPar(),
-                    onScoreCardClick = { 
-                        resetUITimer()
-                        showFullScoreCard = true 
-                    }
-                )
-
-                // Edit Hole component - fills available space
-                HoleNavigationCard(
-                    modifier = Modifier.weight(1f),
-                    currentHoleNumber = currentHoleNumber,
-                    maxHoles = golfCourse.holes.size,
-                    onPreviousHole = {
-                        resetUITimer()
-                        if (currentHoleNumber > 1) {
-                            currentHoleNumber = currentHoleNumber - 1
+                    // Track Shot button - fills available space like HoleNavigationCard
+                    TrackShotCard(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            trackShotModeEnabled = true
+                            showClubSelection = true
                         }
-                    },
-                    onNextHole = {
-                        resetUITimer()
-                        val maxHoles = golfCourse.holes.size
-                        if (currentHoleNumber < maxHoles) {
-                            currentHoleNumber = currentHoleNumber + 1
-                        }
-                    },
-                    onClick = { 
-                        resetUITimer()
-                        showHoleStats = true
-                    }
-                )
+                    )
 
-                Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+                    // Empty space to match the spacer on the right
+                    Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+                }
+
+                // Bottom components row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium),
+                    verticalAlignment = Alignment.Bottom
+                ) {
+                    // To Par Scorecard - Bottom Left
+                    MiniScorecard(
+                        scoreToPar = viewModel.getScoreToPar(),
+                        onScoreCardClick = {
+                            resetUITimer()
+                            showFullScoreCard = true
+                        }
+                    )
+
+                    // Edit Hole component - fills available space
+                    HoleNavigationCard(
+                        modifier = Modifier.weight(1f),
+                        currentHoleNumber = currentHoleNumber,
+                        maxHoles = golfCourse.holes.size,
+                        onPreviousHole = {
+                            resetUITimer()
+                            if (currentHoleNumber > 1) {
+                                currentHoleNumber = currentHoleNumber - 1
+                            }
+                        },
+                        onNextHole = {
+                            resetUITimer()
+                            val maxHoles = golfCourse.holes.size
+                            if (currentHoleNumber < maxHoles) {
+                                currentHoleNumber = currentHoleNumber + 1
+                            }
+                        },
+                        onClick = {
+                            resetUITimer()
+                            showHoleStats = true
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(dimensions.spacingXXLarge))
+                }
             }
         }
 
@@ -655,253 +665,267 @@ fun RoundOfGolf(
         // Club Selection Dialog
         if (showClubSelection) {
             ClubSelectionDialog(
-                onClubSelected = { selectedClub ->
-                    // TODO: Implement track shot functionality with selected club
-                    println("DEBUG: Selected club: ${selectedClub.clubName}")
+                onClubSelected = { club ->
+                    selectedClub = club
+                    println("DEBUG: Selected club: ${club.clubName}")
                 },
-                onDismiss = { showClubSelection = false }
-            )
-        }
-
-    }
-}
-
-@Composable
-private fun HoleInfoCard(
-    modifier: Modifier = Modifier,
-    currentHoleNumber: Int,
-    currentHole: Hole
-) {
-    val dimensions = LocalDimensionResources.current
-    
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = MaterialTheme.shapes.extraLarge
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = dimensions.paddingXLarge, vertical = dimensions.paddingMedium),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(dimensions.paddingXLarge)
-        ) {
-            // Hole Number
-            Text(
-                text = currentHoleNumber.toString(),
-                style = MaterialTheme.typography.displaySmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            // Vertical Divider
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(dimensions.spacingXXLarge)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-            )
-
-            // Distance to Hole
-            Column {
-                Text(
-                    text = "Mid Green",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${currentHole.teeLocation.distanceToInYards(currentHole.flagLocation)}yds",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            // Vertical Divider
-            Box(
-                modifier = Modifier
-                    .width(1.dp)
-                    .height(dimensions.spacingXXLarge)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-            )
-
-            // Par
-            Column {
-                Text(
-                    text = "Par",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = currentHole.par.toString(),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-private fun LocationPermissionCard(
-    modifier: Modifier = Modifier,
-    isRequestingPermission: Boolean,
-    onRequestPermission: () -> Unit
-) {
-    val dimensions = LocalDimensionResources.current
-    
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(dimensions.paddingLarge),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Location Permission Required",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer
-            )
-            Text(
-                text = "This app needs location permission to track your location.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.padding(vertical = dimensions.paddingSmall)
-            )
-            Button(
-                onClick = onRequestPermission,
-                enabled = !isRequestingPermission
-            ) {
-                Text(
-                    if (isRequestingPermission) "Requesting..."
-                    else "Grant Permission"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TrackShotCard(
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val dimensions = LocalDimensionResources.current
-    
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = MaterialTheme.shapes.medium,
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = dimensions.paddingLarge,
-                    vertical = dimensions.paddingMedium
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Track Shot",
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-    }
-}
-
-@Composable
-private fun HoleNavigationCard(
-    modifier: Modifier = Modifier,
-    currentHoleNumber: Int,
-    maxHoles: Int,
-    onPreviousHole: () -> Unit,
-    onNextHole: () -> Unit,
-    onClick: () -> Unit
-) {
-    val dimensions = LocalDimensionResources.current
-    
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = MaterialTheme.shapes.medium,
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = dimensions.paddingLarge,
-                    vertical = dimensions.paddingMedium
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Left Arrow
-            IconButton(
-                onClick = onPreviousHole,
-                modifier = Modifier.size(dimensions.iconButtonSize),
-                enabled = currentHoleNumber > 1
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = "Previous hole",
-                    tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
-                )
-            }
-
-            // Edit Hole text and number
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Hole $currentHoleNumber",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.Black
-                )
-
-                // Hole number box
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.Black.copy(alpha = 0.1f)
-                    ),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = currentHoleNumber.toString(),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = Color.Black,
-                        modifier = Modifier.padding(
-                            horizontal = dimensions.paddingLarge,
-                            vertical = dimensions.paddingSmall
-                        )
-                    )
+                onDismiss = {
+                    showClubSelection = false
                 }
-            }
+            )
+        }
 
-            // Right Arrow
-            IconButton(
-                onClick = onNextHole,
-                modifier = Modifier.size(dimensions.iconButtonSize),
-                enabled = currentHoleNumber < maxHoles
+        // TargetShotCard with Exit Button - shown when in track shot mode and club is selected
+        if (trackShotModeEnabled && selectedClub != null) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = topOffset.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = dimensions.paddingLarge)
+                    .padding(top = dimensions.paddingLarge)
             ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Next hole",
-                    tint = if (currentHoleNumber < maxHoles) Color.Black else Color.Gray
+                // TargetShotCard centered
+                TargetShotCard(
+                    modifier = Modifier.align(Alignment.Center),
+                    selectedClub = selectedClub!!,
+                    distanceYards = trackShotStartLocation.distanceToInYards(trackShotEndLocation)
+                )
+
+                // Exit Button positioned to the left, centered vertically with the card
+                FloatingActionButton(
+                    onClick = {
+                        trackShotModeEnabled = false
+                        selectedClub = null
+                        resetUITimer()
+                    },
+                    icon = Icons.Default.Close,
+                    contentDescription = "Exit track shot mode",
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
+            }
+        }
+
+        // Bottom action buttons layout
+        if(trackShotModeEnabled) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(y = bottomOffset.dp)
+                    .fillMaxWidth()
+                    .padding(dimensions.paddingLarge),
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+            ) {
+                // Empty space (same width as golf button)
+                Spacer(modifier = Modifier.width(dimensions.iconXXLarge))
+                
+                // Track Shot button (fills remaining space)
+                TrackShotCard(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        //TODO: Do Something
+                        // Show toast message
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar("Track Shot feature coming soon!")
+                        }
+                        resetUITimer()
+                    }
+                )
+                
+                // Club Selection Button (anchored to bottom right)
+                FloatingActionButton(
+                    onClick = {
+                        showClubSelection = true
+                        resetUITimer()
+                    },
+                    icon = Icons.Default.GolfCourse,
+                    contentDescription = "Select golf club",
+                    size = dimensions.iconXXLarge,
+                    iconSize = 28.dp
                 )
             }
         }
     }
+}
+
+enum class DraggedComponent {
+    TARGET,
+    TRACKING_START,
+    TRACKING_END
+}
+
+@Composable
+private fun rememberMarkerScreenPosition(
+    location: Location,
+    googleMapInstance: Any?,
+    mapSize: IntSize?,
+    cameraPosition: MapCameraPosition,
+    calculateScreenPosition: CalculateScreenPositionFromMapUseCase,
+    margin: Int = 12
+): IntOffset {
+    return remember(location, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val screenPos = calculateScreenPosition(location, googleMapInstance)
+
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(margin, mapSize.width - margin)
+                        val clampedY = pos.y.coerceIn(margin, mapSize.height - margin)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }.value
+}
+
+@Composable
+private fun rememberYardageScreenPosition(
+    location1: Location,
+    location2: Location,
+    googleMapInstance: Any?,
+    mapSize: IntSize?,
+    cameraPosition: MapCameraPosition,
+    calculateScreenPosition: CalculateScreenPositionFromMapUseCase,
+    margin: Int = 60
+): IntOffset {
+    return remember(location1, location2, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val midPoint = location1.midPoint(location2)
+                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance)
+
+                    screenPos?.let { pos ->
+                        val clampedX = pos.x.coerceIn(margin, mapSize.width - margin)
+                        val clampedY = pos.y.coerceIn(margin, mapSize.height - margin)
+                        IntOffset(clampedX, clampedY)
+                    } ?: IntOffset.Zero
+                } catch (e: Exception) {
+                    IntOffset.Zero
+                }
+            } else {
+                IntOffset.Zero
+            }
+        }
+    }.value
+}
+
+@Composable
+private fun rememberPolylinePoints(
+    location1: Location,
+    location2: Location,
+    googleMapInstance: Any?,
+    mapSize: IntSize?,
+    cameraPosition: MapCameraPosition,
+    calculateScreenPosition: CalculateScreenPositionFromMapUseCase
+): List<IntOffset> {
+    return remember(location1, location2, mapSize, cameraPosition) {
+        derivedStateOf {
+            if (googleMapInstance != null && mapSize != null) {
+                try {
+                    val pos1 = calculateScreenPosition(location1, googleMapInstance)
+                    val pos2 = calculateScreenPosition(location2, googleMapInstance)
+
+                    if (pos1 != null && pos2 != null) {
+                        listOf(
+                            IntOffset(pos1.x, pos1.y),
+                            IntOffset(pos2.x, pos2.y)
+                        )
+                    } else {
+                        emptyList()
+                    }
+                } catch (e: Exception) {
+                    emptyList()
+                }
+            } else {
+                emptyList()
+            }
+        }
+    }.value
 }
 
 private fun IntOffset.asOffset(): Offset = Offset(x.toFloat(), y.toFloat())
+
+@Composable
+private fun calculateDraggableMarkerPosition(
+    markerSize: Dp,
+    isDraggingMapComponent: Boolean,
+    draggedComponent: DraggedComponent?,
+    targetDraggedComponent: DraggedComponent,
+    currentDragPosition: Offset,
+    defaultScreenPosition: IntOffset,
+    density: androidx.compose.ui.unit.Density
+): Pair<Dp, Dp> {
+    val isDraggingThisComponent = isDraggingMapComponent && draggedComponent == targetDraggedComponent
+    val position = if (isDraggingThisComponent) currentDragPosition else defaultScreenPosition.asOffset()
+    
+    val finalX = with(density) { position.x.toDp() - markerSize / 2 }
+    val finalY = with(density) { position.y.toDp() - markerSize / 2 }
+    
+    return Pair(finalX, finalY)
+}
+
+private fun Modifier.dragGestures(
+    markerSize: Dp,
+    draggedComponent: DraggedComponent,
+    density: androidx.compose.ui.unit.Density,
+    getCurrentDragState: () -> Pair<Boolean, DraggedComponent?>,
+    getCurrentDragPosition: () -> Offset,
+    onDragStart: () -> Unit,
+    onDragUpdate: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onLocationUpdate: (Location) -> Unit,
+    googleMapInstance: Any?,
+    calculateMapPosition: CalculateMapPositionFromScreenUseCase,
+    mapSize: IntSize?
+): Modifier = this.pointerInput(Unit) {
+    detectDragGestures(
+        onDragStart = { _ ->
+            onDragStart()
+        },
+        onDrag = { change, dragAmount ->
+            val (isDragging, currentComponent) = getCurrentDragState()
+            val currentPos = getCurrentDragPosition()
+            
+            if (isDragging && currentComponent == draggedComponent) {
+                // Update current position in screen coordinates
+                val newPosition = currentPos + dragAmount
+
+                // Clamp to map bounds
+                val clampedPosition = mapSize?.let { size ->
+                    val half = with(density) { markerSize.toPx() / 2 }
+                    Offset(
+                        newPosition.x.coerceIn(half, size.width - half),
+                        newPosition.y.coerceIn(half, size.height - half)
+                    )
+                } ?: newPosition
+
+                onDragUpdate(clampedPosition)
+
+                // Convert back to map coordinates in real-time
+                if (googleMapInstance != null) {
+                    val cx = clampedPosition.x.toInt()
+                    val cy = clampedPosition.y.toInt()
+                    calculateMapPosition(
+                        cx,
+                        cy,
+                        googleMapInstance
+                    )?.let { newLocation ->
+                        onLocationUpdate(newLocation)
+                    }
+                }
+
+                change.consume()
+            }
+        },
+        onDragEnd = {
+            onDragEnd()
+        }
+    )
+}
