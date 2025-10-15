@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GolfCourse
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +56,7 @@ import com.example.core_ui.components.FlagMarkerDefaults
 import com.example.core_ui.components.TargetMarker
 import com.example.core_ui.components.TargetMarkerDefaults
 import com.example.core_ui.components.PolylineComponent
+import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
 import com.example.core_ui.projection.CalculateMapPositionFromScreenUseCase
@@ -458,11 +460,9 @@ fun RoundOfGolf(
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            println("DEBUG: TRACKING_START drag update: $newPosition")
                             currentDragPosition = newPosition
                         },
                         onDragEnd = {
-                            println("DEBUG: TRACKING_START drag ended")
                             isDraggingMapComponent = false
                             draggedComponent = null
                         },
@@ -497,22 +497,18 @@ fun RoundOfGolf(
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
                         getCurrentDragPosition = { currentDragPosition },
                         onDragStart = {
-                            println("DEBUG: TRACKING_END drag started")
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_END
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingEndX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingEndY.toPx() + (markerSize.toPx() / 2) }
                             currentDragPosition = Offset(visualCenterX, visualCenterY)
-                            println("DEBUG: TRACKING_END initial position: $currentDragPosition")
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            println("DEBUG: TRACKING_END drag update: $newPosition")
                             currentDragPosition = newPosition
                         },
                         onDragEnd = {
-                            println("DEBUG: TRACKING_END drag ended")
                             isDraggingMapComponent = false
                             draggedComponent = null
                         },
@@ -698,28 +694,35 @@ fun RoundOfGolf(
                 )
 
                 // Exit Button positioned to the left, centered vertically with the card
-                IconButton(
+                FloatingActionButton(
                     onClick = {
                         trackShotModeEnabled = false
                         selectedClub = null
                         resetUITimer()
                     },
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .background(
-                            color = MaterialTheme.colorScheme.surface,
-                            shape = CircleShape
-                        )
-                        .size(dimensions.iconXLarge)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Exit track shot mode",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                    icon = Icons.Default.Close,
+                    contentDescription = "Exit track shot mode",
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
             }
+        }
+
+        // Club Selection Floating Action Button - Bottom Right Corner
+        if(trackShotModeEnabled) {
+            FloatingActionButton(
+                onClick = {
+                    showClubSelection = true
+                    resetUITimer()
+                },
+                icon = Icons.Default.GolfCourse,
+                contentDescription = "Select golf club",
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(y = bottomOffset.dp)
+                    .padding(dimensions.paddingLarge),
+                size = dimensions.iconXXLarge,
+                iconSize = 28.dp
+            )
         }
     }
 }
