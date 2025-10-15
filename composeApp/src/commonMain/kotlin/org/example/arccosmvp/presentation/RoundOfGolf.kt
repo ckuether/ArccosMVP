@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GolfCourse
+import androidx.compose.material.icons.filled.GpsFixed
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -707,22 +708,41 @@ fun RoundOfGolf(
             }
         }
 
-        // Club Selection Floating Action Button - Bottom Right Corner
+        // Bottom action buttons layout
         if(trackShotModeEnabled) {
-            FloatingActionButton(
-                onClick = {
-                    showClubSelection = true
-                    resetUITimer()
-                },
-                icon = Icons.Default.GolfCourse,
-                contentDescription = "Select golf club",
+            Row(
                 modifier = Modifier
-                    .align(Alignment.BottomEnd)
+                    .align(Alignment.BottomCenter)
                     .offset(y = bottomOffset.dp)
+                    .fillMaxWidth()
                     .padding(dimensions.paddingLarge),
-                size = dimensions.iconXXLarge,
-                iconSize = 28.dp
-            )
+                horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)
+            ) {
+                // Empty space (same width as golf button)
+                Spacer(modifier = Modifier.width(dimensions.iconXXLarge))
+                
+                // Track Shot button (fills remaining space)
+                TrackShotCard(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+
+                        // Show target shot information or toggle target mode
+                        resetUITimer()
+                    }
+                )
+                
+                // Club Selection Button (anchored to bottom right)
+                FloatingActionButton(
+                    onClick = {
+                        showClubSelection = true
+                        resetUITimer()
+                    },
+                    icon = Icons.Default.GolfCourse,
+                    contentDescription = "Select golf club",
+                    size = dimensions.iconXXLarge,
+                    iconSize = 28.dp
+                )
+            }
         }
     }
 }
