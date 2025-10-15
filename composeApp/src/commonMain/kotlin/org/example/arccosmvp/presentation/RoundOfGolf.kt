@@ -202,7 +202,7 @@ fun RoundOfGolf(
 
     // Track shot mode locations (separate from hole data)
     var trackShotStartLocation by remember(currentHole) { mutableStateOf(currentHole.teeLocation) }
-    var trackShotEndLocation by remember(currentHole) { mutableStateOf(currentHole.flagLocation) }
+    var trackShotEndLocation by remember(currentHole) { mutableStateOf(currentHole.initialTarget) }
 
 
     // Calculate screen positions for track shot markers using helper function
@@ -382,7 +382,6 @@ fun RoundOfGolf(
                     .offset(x = targetX, y = targetY)
                     .dragGestures(
                         markerSize = targetSize,
-                        markerScreenPosition = targetMarkerScreenPosition,
                         draggedComponent = DraggedComponent.TARGET,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
@@ -443,7 +442,6 @@ fun RoundOfGolf(
                     .offset(x = trackingStartX, y = trackingStartY)
                     .dragGestures(
                         markerSize = markerSize,
-                        markerScreenPosition = trackShotStartScreenPosition,
                         draggedComponent = DraggedComponent.TRACKING_START,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
@@ -494,7 +492,6 @@ fun RoundOfGolf(
                     .offset(x = trackingEndX, y = trackingEndY)
                     .dragGestures(
                         markerSize = markerSize,
-                        markerScreenPosition = trackShotEndScreenPosition,
                         draggedComponent = DraggedComponent.TRACKING_END,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
@@ -852,7 +849,6 @@ private fun calculateDraggableMarkerPosition(
 
 private fun Modifier.dragGestures(
     markerSize: Dp,
-    markerScreenPosition: IntOffset,
     draggedComponent: DraggedComponent,
     density: androidx.compose.ui.unit.Density,
     getCurrentDragState: () -> Pair<Boolean, DraggedComponent?>,
