@@ -247,7 +247,7 @@ fun RoundOfGolf(
     )
 
     val bottomOffset by animateFloatAsState(
-        targetValue = if (isUIVisible) 0f else 200f,
+        targetValue = if (isUIVisible) 0f else 400f,
         animationSpec = tween(durationMillis = TimeMillis.ANIMATION_DEFAULT.toInt()),
         label = "bottomOffset"
     )
@@ -269,7 +269,6 @@ fun RoundOfGolf(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .safeContentPadding()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
@@ -282,7 +281,7 @@ fun RoundOfGolf(
             targetLocation = targetLocation,
             hasLocationPermission = locationState.hasPermission == true,
             gesturesEnabled = !isDraggingMapComponent,
-            onMapClick = { mapLocation ->
+            onMapClick = { location ->
                 resetUITimer()
                 // Always set/replace target shot at clicked location
             },
@@ -557,6 +556,8 @@ fun RoundOfGolf(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = bottomOffset.dp)
+                    // Only apply safe content padding when UI is visible to allow full off-screen animation
+                    .then(if (isUIVisible) Modifier.safeContentPadding() else Modifier)
                     .fillMaxWidth()
                     .padding(horizontal = dimensions.paddingLarge)
                     .padding(bottom = dimensions.paddingLarge),
@@ -790,6 +791,8 @@ fun RoundOfGolf(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .offset(y = bottomOffset.dp)
+                    // Only apply safe content padding when UI is visible to allow full off-screen animation
+                    .then(if (isUIVisible) Modifier.safeContentPadding() else Modifier)
                     .fillMaxWidth()
                     .padding(dimensions.paddingLarge),
                 horizontalArrangement = Arrangement.spacedBy(dimensions.paddingMedium)

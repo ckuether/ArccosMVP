@@ -14,6 +14,9 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.example.location_domain.domain.usecase.CalculateMapCameraPositionUseCase
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import org.koin.compose.koinInject
 
 @Composable
@@ -23,7 +26,7 @@ actual fun MapView(
     targetLocation: Location?,
     hasLocationPermission: Boolean,
     gesturesEnabled: Boolean,
-    onMapClick: ((MapLocation) -> Unit)?,
+    onMapClick: ((Location) -> Unit)?,
     onTargetLocationChanged: ((Location) -> Unit)?,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
     onCameraPositionChanged: ((MapCameraPosition) -> Unit)?,
@@ -64,6 +67,7 @@ actual fun MapView(
     
     GoogleMap(
         modifier = modifier
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .onSizeChanged { size -> 
                 onMapSizeChanged?.invoke(size.width, size.height)
             },
@@ -83,9 +87,9 @@ actual fun MapView(
         ),
         onMapClick = { latLng ->
             onMapClick?.invoke(
-                MapLocation(
-                    latitude = latLng.latitude,
-                    longitude = latLng.longitude
+                Location(
+                    lat = latLng.latitude,
+                    long = latLng.longitude
                 )
             )
         },

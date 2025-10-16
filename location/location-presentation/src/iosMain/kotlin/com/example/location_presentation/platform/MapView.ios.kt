@@ -18,7 +18,6 @@ import com.example.location_domain.domain.usecase.CalculateMapCameraPositionUseC
 import kotlinx.cinterop.useContents
 import platform.darwin.NSObject
 import com.example.shared.data.model.Location
-import platform.CoreGraphics.CGRect
 import platform.UIKit.UIScreen
 
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
@@ -29,7 +28,7 @@ actual fun MapView(
     targetLocation: Location?,
     hasLocationPermission: Boolean,
     gesturesEnabled: Boolean,
-    onMapClick: ((MapLocation) -> Unit)?,
+    onMapClick: ((Location) -> Unit)?,
     onTargetLocationChanged: ((Location) -> Unit)?,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
     onCameraPositionChanged: ((MapCameraPosition) -> Unit)?,
@@ -39,7 +38,7 @@ actual fun MapView(
     // Get the actual device scale factor for points-to-pixels conversion
     val deviceScale = remember { UIScreen.mainScreen.scale.toInt() }
     val calculateCameraPositionUseCase: CalculateMapCameraPositionUseCase = koinInject()
-    val clickHandlerState = remember { mutableStateOf<((MapLocation) -> Unit)?>(null) }
+    val clickHandlerState = remember { mutableStateOf<((Location) -> Unit)?>(null) }
     val mapViewRef = remember { mutableStateOf<GMSMapView?>(null) }
     val delegateRef = remember { mutableStateOf<GMSMapViewDelegateProtocol?>(null) }
     val cameraControllerRef = remember { mutableStateOf<MapCameraController?>(null) }
@@ -110,12 +109,12 @@ actual fun MapView(
 
                     clickHandlerState.value?.let { clickHandler ->
                         didTapAtCoordinate.useContents {
-                            val mapLocation = MapLocation(
-                                latitude = this.latitude,
-                                longitude = this.longitude
+                            val location = Location(
+                                lat = this.latitude,
+                                long = this.longitude
                             )
-                            NSLog("GoogleMaps: Invoking click handler for lat=${mapLocation.latitude}, lng=${mapLocation.longitude}")
-                            clickHandler(mapLocation)
+                            NSLog("GoogleMaps: Invoking click handler for lat=${location.lat}, lng=${location.long}")
+                            clickHandler(location)
                         }
                     } ?: run {
                         NSLog("GoogleMaps: No click handler available - onMapClick is null")
