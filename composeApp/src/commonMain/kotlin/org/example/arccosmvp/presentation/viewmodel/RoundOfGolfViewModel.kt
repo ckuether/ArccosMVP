@@ -2,13 +2,13 @@ package org.example.arccosmvp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.location.domain.usecase.LocationException
-import com.example.location.domain.usecase.CheckLocationPermissionUseCase
-import com.example.location.domain.usecase.RequestLocationPermissionUseCase
+import com.example.location_domain.domain.usecase.LocationException
+import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
+import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
 import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.usecase.TrackRoundEventUseCase
-import com.example.location.domain.usecase.PermissionResult
-import com.example.location.domain.service.LocationTrackingService
+import com.example.location_domain.domain.usecase.PermissionResult
+import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis

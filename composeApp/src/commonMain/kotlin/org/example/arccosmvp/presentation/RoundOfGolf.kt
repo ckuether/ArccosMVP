@@ -42,8 +42,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.core_ui.platform.MapView
-import com.example.core_ui.platform.MapCameraPosition
+import com.example.location_presentation.platform.MapView
+import com.example.location_presentation.platform.MapCameraPosition
 import com.example.core_ui.components.YardageDisplay
 import com.example.core_ui.components.YardageDisplayDefaults
 import com.example.core_ui.components.TeeMarker
@@ -55,8 +55,8 @@ import com.example.core_ui.components.TargetMarkerDefaults
 import com.example.core_ui.components.PolylineComponent
 import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.projection.CalculateScreenPositionFromMapUseCase
-import com.example.core_ui.projection.CalculateMapPositionFromScreenUseCase
+import com.example.location_presentation.projection.CalculateScreenPositionFromMapUseCase
+import com.example.location_presentation.projection.CalculateMapPositionFromScreenUseCase
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.GolfClubType

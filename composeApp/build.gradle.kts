@@ -35,7 +35,8 @@ kotlin {
         commonMain.dependencies {
             implementation(projects.shared)
             implementation(projects.coreUi)
-            implementation(projects.location)
+            implementation(project(":location:location-domain"))
+            implementation(project(":location:location-presentation"))
 
             implementation(libs.kotlin.stdlib)
             implementation(libs.kotlinx.serialization.json)

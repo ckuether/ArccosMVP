@@ -30,5 +30,6 @@ dependencyResolutionManagement {
 
 include(":composeApp")
 include(":shared")
-include(":location")
 include(":core-ui")
+include(":location:location-domain")
+include(":location:location-presentation")

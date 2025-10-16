@@ -6,7 +6,6 @@ import com.example.shared.data.entity.toEvent
 import com.example.shared.data.model.event.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import java.util.UUID
 
 class RoundOfGolfEventRepositoryImpl(
     private val eventDao: RoundOfGolfEventDao
@@ -19,7 +18,7 @@ class RoundOfGolfEventRepositoryImpl(
         holeNumber: Int?
     ) {
         val eventEntity = event.toEntity(
-            id = UUID.randomUUID().toString(),
+            id = event.timestamp, //Probably shouldn't do this but fine for Proof on Concept.
             roundId = roundId,
             playerId = playerId,
             holeNumber = holeNumber
@@ -35,7 +34,7 @@ class RoundOfGolfEventRepositoryImpl(
     ) {
         val eventEntities = events.map { event ->
             event.toEntity(
-                id = UUID.randomUUID().toString(),
+                id = event.timestamp,
                 roundId = roundId,
                 playerId = playerId,
                 holeNumber = holeNumber

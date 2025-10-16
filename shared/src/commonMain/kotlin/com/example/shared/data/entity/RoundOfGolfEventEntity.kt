@@ -25,7 +25,7 @@ object EventType {
 )
 data class RoundOfGolfEventEntity(
     @PrimaryKey 
-    val id: String,
+    val id: Long,
     val roundId: Long,
     val eventType: String, // See EventType constants
     val timestamp: Long = getCurrentTimeMillis(),
@@ -47,7 +47,7 @@ fun RoundOfGolfEventEntity.toEvent(): RoundOfGolfEvent {
 }
 
 fun RoundOfGolfEvent.toEntity(
-    id: String,
+    id: Long,
     roundId: Long,
     playerId: Long,
     holeNumber: Int? = null
