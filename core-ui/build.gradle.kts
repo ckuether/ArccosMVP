@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.androidLint)
-    id("org.jetbrains.kotlin.native.cocoapods")
 }
 
 kotlin {
@@ -32,24 +31,6 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "CoreUI"
             isStatic = true
-        }
-    }
-
-    cocoapods {
-        version = "1.0.0"
-        summary = "Core UI module with Google Maps support"
-        homepage = "https://github.com/example/arccosmvp"
-        ios.deploymentTarget = "15.4"
-        podfile = project.file("../iosApp/Podfile")
-
-        framework {
-            baseName = "CoreUI"
-            isStatic = true
-        }
-
-        pod("GoogleMaps") {
-            version = "8.4.0"
-            extraOpts += listOf("-compiler-option", "-fmodules")
         }
     }
 
@@ -82,12 +63,6 @@ kotlin {
 
         androidMain {
             dependencies {
-
-                // Google Maps
-                implementation(libs.maps.compose)
-                implementation(libs.play.services.maps)
-                implementation(libs.play.services.location)
-                
                 // Koin Compose dependencies (Android only)
                 implementation(libs.koin.compose)
                 implementation(libs.koin.compose.viewmodel)

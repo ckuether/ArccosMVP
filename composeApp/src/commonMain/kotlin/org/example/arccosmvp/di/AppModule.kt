@@ -34,7 +34,7 @@ val appModule = module {
         RoundOfGolfViewModel(
             course = course,
             locationTrackingService = get(),
-            saveLocationEventUseCase = get(),
+            trackEventUseCase = get(),
             checkLocationPermissionUseCase = get(),
             requestLocationPermissionUseCase = get(),
             saveScoreCardUseCase = get(),

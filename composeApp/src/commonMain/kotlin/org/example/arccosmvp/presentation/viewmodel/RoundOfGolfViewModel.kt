@@ -2,12 +2,13 @@ package org.example.arccosmvp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.location.domain.usecase.LocationException
-import com.example.location.domain.usecase.CheckLocationPermissionUseCase
-import com.example.location.domain.usecase.RequestLocationPermissionUseCase
-import com.example.location.domain.usecase.SaveLocationEventUseCase
-import com.example.location.domain.usecase.PermissionResult
-import com.example.location.domain.service.LocationTrackingService
+import com.example.location_domain.domain.usecase.LocationException
+import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
+import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
+import com.example.shared.data.model.event.RoundOfGolfEvent
+import com.example.shared.usecase.TrackRoundEventUseCase
+import com.example.location_domain.domain.usecase.PermissionResult
+import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
@@ -27,7 +28,7 @@ import kotlinx.coroutines.IO
 class RoundOfGolfViewModel(
     private val course: Course,
     private val locationTrackingService: LocationTrackingService,
-    private val saveLocationEventUseCase: SaveLocationEventUseCase,
+    private val trackEventUseCase: TrackRoundEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
@@ -51,7 +52,6 @@ class RoundOfGolfViewModel(
     init {
         checkPermissionStatus()
     }
-    
     
     fun startLocationTracking() {
         logger.info(TAG, "startLocationTracking() called")
@@ -81,14 +81,22 @@ class RoundOfGolfViewModel(
                     .onEach { locationEvent ->
                         // Only save to database, no UI updates to prevent recomposition
                         launch(Dispatchers.IO) {
-                            saveLocationEventUseCase(locationEvent.location, roundId).fold(
-                                onSuccess = { 
-                                    // Location saved successfully - no UI update needed
-                                },
-                                onFailure = { error ->
-                                    logger.error(TAG, "Failed to save location event", error)
-                                }
-                            )
+                            try {
+                                val golfLocationEvent = RoundOfGolfEvent.LocationUpdated(
+                                    location = locationEvent.location
+                                )
+                                
+                                trackEventUseCase.trackEvent(
+                                    event = golfLocationEvent,
+                                    roundId = roundId,
+                                    playerId = 0L, // TODO: Get actual player ID  
+                                    holeNumber = null // Location events are not hole-specific
+                                )
+                                
+                                logger.debug(TAG, "Location event saved to unified event system successfully")
+                            } catch (error: Exception) {
+                                logger.error(TAG, "Failed to save location event to unified system", error)
+                            }
                         }
                     }
                     .catch { throwable ->
