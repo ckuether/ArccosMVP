@@ -63,7 +63,9 @@ import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
+import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.platform.getCurrentTimeMillis
+import com.example.shared.usecase.TrackRoundEventUseCase
 import com.example.shared.utils.TimeMillis
 import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -84,6 +86,7 @@ fun RoundOfGolf(
 
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val calculateMapPosition: CalculateMapPositionFromScreenUseCase = koinInject()
+    val trackEventUseCase: TrackRoundEventUseCase = koinInject()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
@@ -605,6 +608,19 @@ fun RoundOfGolf(
                             resetUITimer()
                             if (currentHoleNumber > 1) {
                                 currentHoleNumber = currentHoleNumber - 1
+                                // Track hole navigation event
+                                coroutineScope.launch {
+                                    try {
+                                        trackEventUseCase.trackEvent(
+                                            event = RoundOfGolfEvent.PreviousHole(),
+                                            roundId = currentScoreCard.roundId,
+                                            playerId = currentPlayer.id,
+                                            holeNumber = currentHoleNumber
+                                        )
+                                    } catch (e: Exception) {
+                                        println("DEBUG: Failed to track previous hole event: ${e.message}")
+                                    }
+                                }
                             }
                         },
                         onNextHole = {
@@ -612,6 +628,19 @@ fun RoundOfGolf(
                             val maxHoles = golfCourse.holes.size
                             if (currentHoleNumber < maxHoles) {
                                 currentHoleNumber = currentHoleNumber + 1
+                                // Track hole navigation event
+                                coroutineScope.launch {
+                                    try {
+                                        trackEventUseCase.trackEvent(
+                                            event = RoundOfGolfEvent.NextHole(),
+                                            roundId = currentScoreCard.roundId,
+                                            playerId = currentPlayer.id,
+                                            holeNumber = currentHoleNumber
+                                        )
+                                    } catch (e: Exception) {
+                                        println("DEBUG: Failed to track next hole event: ${e.message}")
+                                    }
+                                }
                             }
                         },
                         onClick = {
@@ -643,11 +672,60 @@ fun RoundOfGolf(
                     val maxHoles = golfCourse.holes.size
                     if (currentHoleNumber < maxHoles) {
                         currentHoleNumber = currentHoleNumber + 1
+                        // Track next hole event
+                        coroutineScope.launch {
+                            try {
+                                trackEventUseCase.trackEvent(
+                                    event = RoundOfGolfEvent.NextHole(),
+                                    roundId = currentScoreCard.roundId,
+                                    playerId = currentPlayer.id,
+                                    holeNumber = currentHoleNumber
+                                )
+                            } catch (e: Exception) {
+                                println("DEBUG: Failed to track next hole event after finishing hole: ${e.message}")
+                            }
+                        }
+                    } else {
+                        // This was the last hole - finish the round
+                        coroutineScope.launch {
+                            try {
+                                trackEventUseCase.trackEvent(
+                                    event = RoundOfGolfEvent.FinishRound(),
+                                    roundId = currentScoreCard.roundId,
+                                    playerId = currentPlayer.id,
+                                    holeNumber = currentHoleNumber
+                                )
+                                snackbarHostState.showSnackbar("Round completed!")
+                            } catch (e: Exception) {
+                                println("DEBUG: Failed to track finish round event: ${e.message}")
+                            }
+                        }
                     }
                 },
                 onNavigateToHole = { holeNumber ->
+                    val previousHole = currentHoleNumber
                     currentHoleNumber = holeNumber
                     showHoleStats = false
+                    
+                    // Track navigation event based on direction
+                    coroutineScope.launch {
+                        try {
+                            val event = if (holeNumber > previousHole) {
+                                RoundOfGolfEvent.NextHole()
+                            } else {
+                                RoundOfGolfEvent.PreviousHole()
+                            }
+                            
+                            trackEventUseCase.trackEvent(
+                                event = event,
+                                roundId = currentScoreCard.roundId,
+                                playerId = currentPlayer.id,
+                                holeNumber = holeNumber
+                            )
+                        } catch (e: Exception) {
+                            println("DEBUG: Failed to track hole navigation event: ${e.message}")
+                        }
+                    }
                 }
             )
         }
@@ -723,10 +801,24 @@ fun RoundOfGolf(
                 TrackShotCard(
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        //TODO: Do Something
-                        // Show toast message
+                        // Track shot event
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar("Track Shot feature coming soon!")
+                            try {
+                                val shotEvent = RoundOfGolfEvent.ShotTracked(
+                                    holeNumber = currentHoleNumber
+                                )
+                                
+                                trackEventUseCase.trackEvent(
+                                    event = shotEvent,
+                                    roundId = currentScoreCard?.roundId ?: 0L,
+                                    playerId = currentPlayer.id,
+                                    holeNumber = currentHoleNumber
+                                )
+                                
+                                snackbarHostState.showSnackbar("Shot tracked for hole $currentHoleNumber!")
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("Failed to track shot: ${e.message}")
+                            }
                         }
                         resetUITimer()
                     }

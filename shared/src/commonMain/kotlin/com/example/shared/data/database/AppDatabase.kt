@@ -5,9 +5,9 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.example.shared.data.dao.LocationDao
+import com.example.shared.data.dao.RoundOfGolfEventDao
 import com.example.shared.data.dao.ScoreCardDao
-import com.example.shared.data.entity.LocationEntity
+import com.example.shared.data.entity.RoundOfGolfEventEntity
 import com.example.shared.data.entity.ScoreCardEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -15,7 +15,7 @@ import kotlinx.coroutines.IO
 @Database(
     entities = [
         ScoreCardEntity::class,
-        LocationEntity::class
+        RoundOfGolfEventEntity::class
     ],
     version = DatabaseConstants.DATABASE_VERSION,
     exportSchema = true
@@ -23,7 +23,14 @@ import kotlinx.coroutines.IO
 @ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun scoreCardDao(): ScoreCardDao
-    abstract fun locationDao(): LocationDao
+    
+    @Deprecated(
+        message = "Use roundOfGolfEventDao() with LocationUpdated events instead",
+        replaceWith = ReplaceWith("roundOfGolfEventDao()"),
+        level = DeprecationLevel.WARNING
+    )
+    
+    abstract fun roundOfGolfEventDao(): RoundOfGolfEventDao
 }
 
 // Database constructor for Room
@@ -44,4 +51,10 @@ fun getRoomDatabase(
 
 fun getScoreCardDao(appDatabase: AppDatabase) = appDatabase.scoreCardDao()
 
-fun getLocationDao(appDatabase: AppDatabase) = appDatabase.locationDao()
+@Deprecated(
+    message = "Use getRoundOfGolfEventDao() with LocationUpdated events instead",
+    replaceWith = ReplaceWith("getRoundOfGolfEventDao(appDatabase)"),
+    level = DeprecationLevel.WARNING
+)
+
+fun getRoundOfGolfEventDao(appDatabase: AppDatabase) = appDatabase.roundOfGolfEventDao()

@@ -1,16 +1,16 @@
 package com.example.location.domain.usecase
 
 import com.example.location.domain.model.LocationResult
-import com.example.location.domain.repository.LocationRepository
+import com.example.location.domain.repository.LocationManager
 
-class GetLocationUseCase(
-    private val locationRepository: LocationRepository,
+class GetCurrentLocationUseCase(
+    private val locationManager: LocationManager,
     private val checkLocationPermission: CheckLocationPermissionUseCase
 ) {
     suspend operator fun invoke(): LocationResult {
         return if (checkLocationPermission()) {
-            if (locationRepository.isLocationEnabled()) {
-                locationRepository.getCurrentLocation()
+            if (locationManager.isLocationEnabled()) {
+                locationManager.getCurrentLocation()
             } else {
                 LocationResult.LocationDisabled
             }

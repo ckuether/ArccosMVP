@@ -1,13 +1,13 @@
 package com.example.location.domain.usecase
 
-import com.example.location.domain.repository.LocationRepository
+import com.example.location.domain.repository.LocationManager
 import com.example.location.domain.model.LocationResult
 import com.example.shared.data.model.event.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class TrackLocationUseCase(
-    private val locationRepository: LocationRepository,
+    private val locationManager: LocationManager,
     private val checkLocationPermission: CheckLocationPermissionUseCase
 ) {
     suspend fun execute(intervalMs: Long = 5000): Flow<RoundOfGolfEvent.LocationUpdated> {
@@ -15,14 +15,14 @@ class TrackLocationUseCase(
             throw LocationPermissionException("Location permission is required")
         }
         
-        if (!locationRepository.isLocationEnabled()) {
+        if (!locationManager.isLocationEnabled()) {
             throw LocationDisabledException("Location services are disabled")
         }
         
-        return locationRepository.startLocationUpdates(intervalMs)
+        return locationManager.startLocationUpdates(intervalMs)
             .map { result ->
                 when (result) {
-                    is LocationResult.Success -> RoundOfGolfEvent.LocationUpdated(result.location)
+                    is LocationResult.Success -> RoundOfGolfEvent.LocationUpdated(location = result.location)
                     is LocationResult.Error -> throw LocationException(result.message)
                     is LocationResult.PermissionDenied -> throw LocationPermissionException("Location permission denied")
                     is LocationResult.LocationDisabled -> throw LocationDisabledException("Location services disabled")
@@ -31,7 +31,7 @@ class TrackLocationUseCase(
     }
     
     suspend fun stop() {
-        locationRepository.stopLocationUpdates()
+        locationManager.stopLocationUpdates()
     }
 }
 

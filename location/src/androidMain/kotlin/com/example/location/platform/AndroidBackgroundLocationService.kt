@@ -76,7 +76,7 @@ class AndroidBackgroundLocationService(
             val locationListener = LocationListener { location ->
                 logger.debug(TAG, "Location received: lat=${location.latitude}, long=${location.longitude}")
                 val locationEvent = RoundOfGolfEvent.LocationUpdated(
-                    Location(
+                    location = Location(
                         lat = location.latitude,
                         long = location.longitude
                     )
