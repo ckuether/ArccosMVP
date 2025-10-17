@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Player
-import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
-import com.example.shared.domain.usecase.LoadGolfCourseUseCase
-import com.example.shared.domain.usecase.LoadCurrentUserUseCase
+import com.example.shared.usecase.GetAllScoreCardsUseCase
+import com.example.shared.usecase.LoadGolfCourseUseCase
+import com.example.shared.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
