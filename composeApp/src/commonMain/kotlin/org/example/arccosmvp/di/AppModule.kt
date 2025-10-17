@@ -5,12 +5,12 @@ import com.example.shared.data.repository.GolfCourseRepository
 import com.example.shared.data.repository.ResourceReader
 import com.example.shared.data.repository.UserRepository
 import com.example.shared.data.repository.UserRepositoryImpl
-import com.example.shared.domain.usecase.LoadGolfCourseUseCase
-import com.example.shared.domain.usecase.LoadCurrentUserUseCase
-import com.example.shared.domain.usecase.SaveScoreCardUseCase
-import com.example.shared.domain.usecase.GetAllScoreCardsUseCase
+import com.example.shared.usecase.LoadGolfCourseUseCase
+import com.example.shared.usecase.LoadCurrentUserUseCase
+import com.example.round_of_golf_domain.domain.usecase.SaveScoreCardUseCase
+import com.example.shared.usecase.GetAllScoreCardsUseCase
 import com.example.core_ui.platform.DrawableProvider
-import org.example.arccosmvp.presentation.viewmodel.RoundOfGolfViewModel
+import com.example.round_of_golf_presentation.RoundOfGolfViewModel
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.ComposeResourceReader
 import org.example.arccosmvp.utils.AppDrawableProvider

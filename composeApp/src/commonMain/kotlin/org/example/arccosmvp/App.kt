@@ -19,7 +19,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.example.core_ui.theme.GolfAppTheme
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.GolfHomeScreen
-import org.example.arccosmvp.presentation.RoundOfGolf
+import com.example.round_of_golf_presentation.presentation.RoundOfGolf
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.koin.compose.viewmodel.koinViewModel
 

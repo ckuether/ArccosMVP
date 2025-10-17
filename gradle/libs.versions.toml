@@ -38,6 +38,7 @@ coil = "3.3.0"
 runner = "1.7.0"
 core = "1.7.0"
 coreVersion = "1.17.0"
+jetbrainsKotlinJvm = "2.2.20"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -94,3 +95,4 @@ androidLint = { id = "com.android.lint", version.ref = "agp" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
 cocoapods = { id = "org.jetbrains.kotlin.native.cocoapods", version.ref = "cocoapods" }
+jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
