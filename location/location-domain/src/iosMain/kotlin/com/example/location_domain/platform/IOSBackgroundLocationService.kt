@@ -1,6 +1,5 @@
 package com.example.location_domain.platform
 
-import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.data.model.Location
 import com.example.shared.platform.Logger
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -30,10 +29,10 @@ class IOSBackgroundLocationService(
         distanceFilter = 10.0 // meters
     }
     
-    private var locationCallback: ((RoundOfGolfEvent.LocationUpdated) -> Unit)? = null
+    private var locationCallback: ((Location) -> Unit)? = null
     private var updateTimer: NSTimer? = null
     
-    fun startBackgroundLocationTracking(intervalMs: Long): Flow<RoundOfGolfEvent.LocationUpdated> {
+    fun startBackgroundLocationTracking(intervalMs: Long): Flow<Location> {
         logger.info(TAG, "startBackgroundLocationTracking called with intervalMs: $intervalMs")
         return callbackFlow {
             try {
@@ -157,12 +156,11 @@ class IOSBackgroundLocationService(
                 val lng = coordinate.useContents { longitude }
                 logger.debug(TAG, "Location received: lat=$lat, long=$lng")
 
-                val locationEvent = RoundOfGolfEvent.LocationUpdated(
-                    location = Location(
-                        lat = lat,
-                        long = lng
-                    )
+                val locationEvent = Location(
+                    lat = lat,
+                    long = lng
                 )
+
                 locationCallback?.invoke(locationEvent)
             }
         } catch (e: Exception) {
@@ -209,7 +207,7 @@ class IOSBackgroundLocationServiceWrapper(
     override val isBackgroundTrackingActive: Flow<Boolean>
         get() = iosService.isBackgroundTrackingActive
 
-    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<RoundOfGolfEvent.LocationUpdated> {
+    override fun startBackgroundLocationTracking(intervalMs: Long): Flow<Location> {
         return iosService.startBackgroundLocationTracking(intervalMs)
     }
 

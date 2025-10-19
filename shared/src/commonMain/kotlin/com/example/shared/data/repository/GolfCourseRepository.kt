@@ -20,16 +20,4 @@ class GolfCourseRepository(
             null
         }
     }
-
-    suspend fun getHoleById(id: Int): Hole? {
-        return loadGolfCourse()?.holes?.find { it.id == id }
-    }
-
-    suspend fun getFirstHole(): Hole? {
-        return loadGolfCourse()?.holes?.firstOrNull()
-    }
-
-    suspend fun getAllHoles(): List<Hole> {
-        return loadGolfCourse()?.holes ?: emptyList()
-    }
 }

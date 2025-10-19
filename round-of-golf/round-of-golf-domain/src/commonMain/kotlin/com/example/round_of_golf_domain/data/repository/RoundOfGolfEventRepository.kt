@@ -1,6 +1,6 @@
 package com.example.round_of_golf_domain.data.repository
 
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 
 interface RoundOfGolfEventRepository {

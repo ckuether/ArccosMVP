@@ -61,7 +61,7 @@ import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_presentation.RoundOfGolfViewModel
 import com.example.round_of_golf_presentation.presentation.components.FlagMarker
