@@ -48,6 +48,7 @@ import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.location_presentation.projection.CalculateScreenPositionFromMapUseCase
 import com.example.location_presentation.projection.CalculateMapPositionFromScreenUseCase
+import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.round_of_golf_presentation.presentation.components.DraggableMarker
 import com.example.round_of_golf_presentation.presentation.components.HoleInfoCard
 import com.example.round_of_golf_presentation.presentation.components.HoleNavigationCard
@@ -60,9 +61,8 @@ import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
-import com.example.shared.data.model.event.RoundOfGolfEvent
+import com.example.shared.data.model.RoundOfGolfEvent
 import com.example.shared.platform.getCurrentTimeMillis
-import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.round_of_golf_presentation.RoundOfGolfViewModel
 import com.example.round_of_golf_presentation.presentation.components.FlagMarker
 import com.example.round_of_golf_presentation.presentation.components.FlagMarkerDefaults

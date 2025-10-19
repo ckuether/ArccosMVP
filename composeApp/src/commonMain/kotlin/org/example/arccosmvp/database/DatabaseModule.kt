@@ -1,11 +1,10 @@
-package com.example.shared.di
+package org.example.arccosmvp.database
 
 import androidx.room.RoomDatabase
-import com.example.shared.data.database.AppDatabase
-import com.example.shared.data.database.getRoomDatabase
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
-expect val platformSpecificModule: org.koin.core.module.Module
+expect val platformSpecificModule: Module
 
 val databaseModule = module {
     // Include platform-specific module

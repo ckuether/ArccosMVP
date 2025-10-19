@@ -1,7 +1,7 @@
 package com.example.round_of_golf_domain.domain.usecase
 
-import com.example.shared.data.model.event.RoundOfGolfEvent
-import com.example.shared.data.repository.RoundOfGolfEventRepository
+import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.repository.RoundOfGolfEventRepository
 
 /**
  * Use case for tracking a single round of golf event
@@ -18,9 +18,9 @@ class TrackSingleRoundEventUseCase(
         event: RoundOfGolfEvent,
         roundId: Long,
         playerId: Long,
-        holeNumber: Int? = null
+        holeNumber: Int?,
     ) {
-        eventRepository.storeEvent(
+        eventRepository.insertEvent(
             event = event,
             roundId = roundId,
             playerId = playerId,

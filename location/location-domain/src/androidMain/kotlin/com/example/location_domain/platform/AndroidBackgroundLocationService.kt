@@ -6,8 +6,8 @@ import android.content.Intent
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.IBinder
-import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.data.model.Location
+import com.example.shared.data.model.RoundOfGolfEvent
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow

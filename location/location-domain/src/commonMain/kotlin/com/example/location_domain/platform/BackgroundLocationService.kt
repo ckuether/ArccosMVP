@@ -1,6 +1,6 @@
 package com.example.location_domain.platform
 
-import com.example.shared.data.model.event.RoundOfGolfEvent
+import com.example.shared.data.model.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 
 interface BackgroundLocationService {

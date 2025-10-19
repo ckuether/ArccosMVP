@@ -1,11 +1,9 @@
-package com.example.shared.data.database
+package org.example.arccosmvp.database
 
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.RoomDatabaseConstructor
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import kotlinx.coroutines.Dispatchers
+import com.example.shared.data.database.DatabaseConstants
 
 fun getDatabaseBuilder(ctx: Context): RoomDatabase.Builder<AppDatabase> {
     val appContext = ctx.applicationContext

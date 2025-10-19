@@ -3,8 +3,7 @@ package org.example.arccosmvp
 import androidx.compose.ui.window.ComposeUIViewController
 import com.example.location_domain.di.locationDomainModule
 import com.example.location_domain.di.platformLocationModule
-import com.example.shared.di.databaseModule
-import com.example.shared.di.sharedModule
+import org.example.arccosmvp.database.databaseModule
 import com.example.core_ui.di.coreUIModule
 import com.example.location_presentation.di.locationPresentationModule
 import com.example.round_of_golf_domain.di.roundOfGolfDomainModule
@@ -23,7 +22,7 @@ private fun initializeKoin() {
     } catch (e: Exception) {
         // Koin not started, initialize it
         startKoin {
-            modules(locationDomainModule, platformLocationModule, locationPresentationModule, appModule, databaseModule, sharedModule, coreUIModule, roundOfGolfDomainModule)
+            modules(locationDomainModule, platformLocationModule, locationPresentationModule, appModule, databaseModule, coreUIModule, roundOfGolfDomainModule)
         }
     }
 }

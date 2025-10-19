@@ -1,6 +1,6 @@
 package com.example.round_of_golf_domain.domain.usecase
 
-import com.example.shared.data.repository.RoundOfGolfEventRepository
+import com.example.round_of_golf_domain.data.repository.RoundOfGolfEventRepository
 
 /**
  * Use case for deleting all events for a round of golf

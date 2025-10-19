@@ -5,14 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.location_domain.domain.usecase.LocationException
 import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
-import com.example.shared.data.model.event.RoundOfGolfEvent
-import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
+import com.example.shared.data.model.RoundOfGolfEvent
 import com.example.location_domain.domain.usecase.PermissionResult
 import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_domain.domain.usecase.SaveScoreCardUseCase
+import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
