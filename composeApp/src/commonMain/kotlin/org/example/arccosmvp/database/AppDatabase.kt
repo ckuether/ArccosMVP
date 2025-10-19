@@ -1,13 +1,14 @@
-package com.example.shared.data.database
+package org.example.arccosmvp.database
 
 import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import com.example.shared.data.dao.RoundOfGolfEventDao
+import com.example.round_of_golf_domain.data.dao.RoundOfGolfEventDao
+import com.example.round_of_golf_domain.data.entity.RoundOfGolfEventEntity
 import com.example.shared.data.dao.ScoreCardDao
-import com.example.shared.data.entity.RoundOfGolfEventEntity
+import com.example.shared.data.database.DatabaseConstants
 import com.example.shared.data.entity.ScoreCardEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO

@@ -7,8 +7,7 @@ import coil3.SingletonImageLoader
 import coil3.svg.SvgDecoder
 import com.example.location_domain.di.locationDomainModule
 import com.example.location_domain.di.platformLocationModule
-import com.example.shared.di.databaseModule
-import com.example.shared.di.sharedModule
+import org.example.arccosmvp.database.databaseModule
 import com.example.core_ui.di.coreUIModule
 import com.example.location_presentation.di.locationPresentationModule
 import com.example.round_of_golf_domain.di.roundOfGolfDomainModule
@@ -23,7 +22,7 @@ class GolfApp : Application(), SingletonImageLoader.Factory {
         // Initialize Koin
         startKoin {
             androidContext(this@GolfApp)
-            modules(appModule, databaseModule, sharedModule, coreUIModule, locationDomainModule, locationPresentationModule, platformLocationModule, roundOfGolfDomainModule)
+            modules(appModule, databaseModule, coreUIModule, locationDomainModule, locationPresentationModule, platformLocationModule, roundOfGolfDomainModule)
         }
     }
     

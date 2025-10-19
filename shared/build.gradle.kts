@@ -2,8 +2,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.androidLint)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.room)
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -102,18 +100,6 @@ kotlin {
             }
         }
     }
-}
-
-dependencies {
-    add("kspCommonMainMetadata", libs.room.compiler)
-    add("kspAndroid", libs.room.compiler)
-    add("kspIosX64", libs.room.compiler)
-    add("kspIosArm64", libs.room.compiler)
-    add("kspIosSimulatorArm64", libs.room.compiler)
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

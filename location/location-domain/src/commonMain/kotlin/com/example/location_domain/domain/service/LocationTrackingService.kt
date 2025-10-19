@@ -1,6 +1,6 @@
 package com.example.location_domain.domain.service
 
-import com.example.shared.data.model.event.RoundOfGolfEvent
+import com.example.shared.data.model.RoundOfGolfEvent
 import kotlinx.coroutines.flow.Flow
 
 interface LocationTrackingService {

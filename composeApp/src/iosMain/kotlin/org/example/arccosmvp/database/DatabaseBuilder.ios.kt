@@ -1,7 +1,8 @@
-package com.example.shared.data.database
+package org.example.arccosmvp.database
 
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import com.example.shared.data.database.DatabaseConstants
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager

@@ -2,7 +2,7 @@ package com.example.location_domain.data.service
 
 import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.location_domain.platform.BackgroundLocationService
-import com.example.shared.data.model.event.RoundOfGolfEvent
+import com.example.shared.data.model.RoundOfGolfEvent
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

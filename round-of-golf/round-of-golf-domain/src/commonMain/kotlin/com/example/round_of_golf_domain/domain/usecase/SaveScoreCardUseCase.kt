@@ -15,7 +15,8 @@ class SaveScoreCardUseCase(
     
     suspend operator fun invoke(scoreCard: ScoreCard): Result<Unit> {
         return try {
-            scoreCardDao.insertScoreCard(scoreCard.toEntity())
+            val scoreCardEntity = scoreCard.toEntity()
+            scoreCardDao.insertScoreCard(scoreCardEntity)
             logger.debug(TAG, "ScoreCard saved to database successfully for round ${scoreCard.roundId}")
             Result.success(Unit)
         } catch (e: Exception) {
