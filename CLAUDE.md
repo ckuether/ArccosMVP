@@ -85,43 +85,54 @@ composeApp
 - Version catalog in `gradle/libs.versions.toml` centralizes dependency management
 - Configuration cache and build cache enabled for faster builds
 
+### Dependency Injection Architecture
+
+**Koin Configuration:**
+- Modular DI setup with separate modules for each feature (e.g., `roundOfGolfDomainModule`, `locationDomainModule`)
+- Platform-specific initialization: Android (`GolfApp.kt`) vs iOS (`MainViewController.kt`)
+- All feature domain modules must be included in Koin initialization or dependency resolution will fail
+- Use Case injection pattern: Domain modules provide Use Cases, Presentation modules consume them
+
 ### Key Dependencies
 - Kotlin 2.2.20 with Compose Multiplatform 1.9.0
-- AndroidX Lifecycle and Activity Compose
-- Kotlinx Serialization, Coroutines, and DateTime
-- Material3 design system
-- Room Database with KSP for cross-platform data persistence
-- Koin for dependency injection
-- Google Maps and location services
-- Coil for image loading with SVG support
+- Room Database 2.7.0 with KSP 2.2.10-2.0.2 for cross-platform data persistence
+- Koin 4.1.1 for dependency injection across all modules
+- Material3 design system with custom theming
+- Google Maps Compose 4.4.1 with Play Services Maps 18.2.0
+- Coil 3.3.0 for image loading with SVG support
+- Jetpack Navigation Compose for routing
 
 ### Platform Targets
-- Android: Min SDK 26, Target SDK 36, Compile SDK 36, Java 17
-- iOS: iosArm64, iosSimulatorArm64, iosX64 architectures
+- Android: Min SDK 26, Target/Compile SDK 36, Java 17
+- iOS: Static frameworks generated for each feature module (iosArm64, iosSimulatorArm64)
 
 ## Development Notes
 
-- The app uses Compose Multiplatform for shared UI across platforms
-- Business logic is separated into the `shared` module for maximum code reuse
-- Platform-specific implementations use the expect/actual pattern
-- iOS framework exports as `Shared` for integration with Xcode projects
-- Configuration cache and build cache are enabled for faster builds
-- Room database schemas are stored in `shared/schemas/` directory
-- Google Maps API key is configured in `gradle.properties` and injected via manifest placeholders
+### Data Layer Architecture
+- **Room Database** with entities: `ScoreCardEntity`, `RoundOfGolfEventEntity`
+- Database version 2 with proper migration handling
+- Schemas exported to `shared/schemas/` directory
+- Repository pattern implemented in shared module
+
+### UI Architecture
+- **Clean separation**: Components in `/presentation/components/` following Single Responsibility Principle
+- **State management**: ViewModels in presentation modules, UI state with Lifecycle-aware Compose APIs
+- **Navigation**: Route constants in shared module, navigation logic in composeApp
+- **Theming**: Material3 with LocalDimensionResources for consistent spacing
 
 ### Key Architectural Patterns
-- **MapView Integration**: Platform-specific map implementations with screen projection utilities for coordinate calculations
-- **Location Services**: Cross-platform location tracking with background service support
-- **Golf Course Features**: Target markers, yardage buttons, and hole visualization using map projections
-- **Data Persistence**: Room database with KSP for schema generation across platforms
+- **Use Case Pattern**: Domain logic encapsulated in Use Cases (e.g., `TrackSingleRoundEventUseCase`, `TrackMultipleRoundEventsUseCase`, `GetRoundEventsUseCase`)
+- **Repository Pattern**: Data access abstracted through repositories in shared module
+- **MVVM Pattern**: ViewModels coordinate between Use Cases and UI components
+- **Expect/Actual Pattern**: Platform-specific implementations for location services and map integration
 
 ## Testing Commands
 
 ```shell
 # Run specific module tests
 ./gradlew :shared:testDebugUnitTest
-./gradlew :location:testDebugUnitTest
-./gradlew :core-ui:testDebugUnitTest
+./gradlew :round-of-golf:round-of-golf-domain:testDebugUnitTest
+./gradlew :location:location-domain:testDebugUnitTest
 
 # Run Android device tests
 ./gradlew :shared:connectedAndroidTest

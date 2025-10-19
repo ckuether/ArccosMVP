@@ -62,7 +62,7 @@ import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
 import com.example.shared.data.model.event.RoundOfGolfEvent
 import com.example.shared.platform.getCurrentTimeMillis
-import com.example.round_of_golf_domain.domain.usecase.TrackRoundEventUseCase
+import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.round_of_golf_presentation.RoundOfGolfViewModel
 import com.example.round_of_golf_presentation.presentation.components.FlagMarker
 import com.example.round_of_golf_presentation.presentation.components.FlagMarkerDefaults
@@ -93,7 +93,7 @@ fun RoundOfGolf(
 
     val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
     val calculateMapPosition: CalculateMapPositionFromScreenUseCase = koinInject()
-    val trackEventUseCase: TrackRoundEventUseCase = koinInject()
+    val trackEventUseCase: TrackSingleRoundEventUseCase = koinInject()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
     val currentScoreCard by viewModel.currentScoreCard.collectAsStateWithLifecycle()
@@ -621,7 +621,7 @@ fun RoundOfGolf(
                                 // Track hole navigation event
                                 coroutineScope.launch {
                                     try {
-                                        trackEventUseCase.trackEvent(
+                                        trackEventUseCase.execute(
                                             event = RoundOfGolfEvent.PreviousHole(),
                                             roundId = currentScoreCard.roundId,
                                             playerId = currentPlayer.id,
@@ -641,7 +641,7 @@ fun RoundOfGolf(
                                 // Track hole navigation event
                                 coroutineScope.launch {
                                     try {
-                                        trackEventUseCase.trackEvent(
+                                        trackEventUseCase.execute(
                                             event = RoundOfGolfEvent.NextHole(),
                                             roundId = currentScoreCard.roundId,
                                             playerId = currentPlayer.id,
@@ -685,7 +685,7 @@ fun RoundOfGolf(
                         // Track next hole event
                         coroutineScope.launch {
                             try {
-                                trackEventUseCase.trackEvent(
+                                trackEventUseCase.execute(
                                     event = RoundOfGolfEvent.NextHole(),
                                     roundId = currentScoreCard.roundId,
                                     playerId = currentPlayer.id,
@@ -699,7 +699,7 @@ fun RoundOfGolf(
                         // This was the last hole - finish the round
                         coroutineScope.launch {
                             try {
-                                trackEventUseCase.trackEvent(
+                                trackEventUseCase.execute(
                                     event = RoundOfGolfEvent.FinishRound(),
                                     roundId = currentScoreCard.roundId,
                                     playerId = currentPlayer.id,
@@ -726,7 +726,7 @@ fun RoundOfGolf(
                                 RoundOfGolfEvent.PreviousHole()
                             }
                             
-                            trackEventUseCase.trackEvent(
+                            trackEventUseCase.execute(
                                 event = event,
                                 roundId = currentScoreCard.roundId,
                                 playerId = currentPlayer.id,
@@ -820,7 +820,7 @@ fun RoundOfGolf(
                                     holeNumber = currentHoleNumber
                                 )
                                 
-                                trackEventUseCase.trackEvent(
+                                trackEventUseCase.execute(
                                     event = shotEvent,
                                     roundId = currentScoreCard?.roundId ?: 0L,
                                     playerId = currentPlayer.id,

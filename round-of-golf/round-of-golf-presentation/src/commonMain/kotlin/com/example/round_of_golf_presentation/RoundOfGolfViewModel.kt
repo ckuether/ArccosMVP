@@ -6,7 +6,7 @@ import com.example.location_domain.domain.usecase.LocationException
 import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
 import com.example.shared.data.model.event.RoundOfGolfEvent
-import com.example.round_of_golf_domain.domain.usecase.TrackRoundEventUseCase
+import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.location_domain.domain.usecase.PermissionResult
 import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
@@ -28,7 +28,7 @@ import kotlinx.coroutines.IO
 class RoundOfGolfViewModel(
     private val course: Course,
     private val locationTrackingService: LocationTrackingService,
-    private val trackEventUseCase: TrackRoundEventUseCase,
+    private val trackEventUseCase: TrackSingleRoundEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
     private val requestLocationPermissionUseCase: RequestLocationPermissionUseCase,
     private val saveScoreCardUseCase: SaveScoreCardUseCase,
@@ -86,7 +86,7 @@ class RoundOfGolfViewModel(
                                     location = locationEvent.location
                                 )
                                 
-                                trackEventUseCase.trackEvent(
+                                trackEventUseCase.execute(
                                     event = golfLocationEvent,
                                     roundId = roundId,
                                     playerId = 0L, // TODO: Get actual player ID  
