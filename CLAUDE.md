@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Kotlin Multiplatform project targeting Android and iOS using Compose Multiplatform. The project follows a standard KMP structure with shared business logic and platform-specific implementations.
+This is a Kotlin Multiplatform project targeting Android and iOS using Compose Multiplatform. The project follows a **feature-based modular clean architecture** with domain and presentation layers separated into distinct modules.
 
 ## Build Commands
 
@@ -39,38 +39,51 @@ This is a Kotlin Multiplatform project targeting Android and iOS using Compose M
 
 # Run all tests
 ./gradlew test
+
+# Build specific feature modules
+./gradlew :round-of-golf:round-of-golf-domain:build
+./gradlew :location:location-presentation:build
 ```
 
 ### Development Workflow
 - Main branch: `main`
 - Feature branches should be created from `main`
-- Current active branch: `target-shot` (feature development)
+- Current active branch: `round-of-golf-module` (feature development)
 
 ## Project Architecture
 
-### Module Structure
+### Modular Clean Architecture
 
-**composeApp**: Main application module containing:
-- `commonMain`: Shared UI code using Compose Multiplatform
-- `androidMain`: Android-specific platform code and entry points
-- `iosMain`: iOS-specific platform code and bindings
-- Namespace: `org.example.arccosmvp`
+The project uses a **feature-based modular architecture** where each feature has separate domain and presentation modules:
 
-**shared**: Shared business logic module containing:
-- `commonMain`: Platform-agnostic business logic, data models, and utilities
-- `androidMain`: Android-specific implementations
-- `iosMain`: iOS-specific implementations (exports as `Shared` framework)
-- Namespace: `com.example.shared`
+**Core Modules:**
+- `composeApp` - Main application with navigation, app-level DI, and platform initialization
+- `shared` - Core business logic, database entities, repositories, and foundational services
+- `core-ui` - Design system, shared UI components, theme definitions, and resources
 
-**location**: Location services module containing:
-- Cross-platform location tracking and permission handling
-- Platform-specific implementations for Android and iOS location services
-- Background location service implementations
+**Feature Modules (Domain + Presentation):**
+- `location:location-domain` - Location services business logic, use cases, and domain models
+- `location:location-presentation` - Location UI components, ViewModels, and platform-specific implementations
+- `round-of-golf:round-of-golf-domain` - Golf round tracking business logic and use cases  
+- `round-of-golf:round-of-golf-presentation` - Golf round UI components and ViewModels
 
-**core-ui**: Core UI components module containing:
-- Shared UI components and theme definitions
-- Platform-specific implementations for MapView and other UI components
-- Design system resources (colors, dimensions, fonts)
+**Module Dependency Graph:**
+```
+composeApp
+├── shared (database, repositories, core domain)
+├── core-ui (design system)  
+├── location:location-domain
+├── location:location-presentation (depends on location-domain)
+├── round-of-golf:round-of-golf-domain
+└── round-of-golf:round-of-golf-presentation (depends on round-of-golf-domain)
+```
+
+### Build System Architecture
+
+**BuildSrc Module:**
+- `Modules.kt` provides type-safe module references (use `Modules.locationDomain` instead of hardcoded strings)
+- Version catalog in `gradle/libs.versions.toml` centralizes dependency management
+- Configuration cache and build cache enabled for faster builds
 
 ### Key Dependencies
 - Kotlin 2.2.20 with Compose Multiplatform 1.9.0
