@@ -2,7 +2,8 @@ package com.example.location_domain.data.service
 
 import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.location_domain.platform.BackgroundLocationService
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.shared.data.model.Location
+import com.example.shared.utils.TimeMillis
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,13 +23,13 @@ class LocationTrackingServiceImpl(
     
     private var trackingJob: Job? = null
     
-    override suspend fun startLocationTracking(): Flow<RoundOfGolfEvent.LocationUpdated> {
+    override suspend fun startLocationTracking(): Flow<Location> {
         if (_isTracking.value) {
             return emptyFlow()
         }
         
         return try {
-            backgroundLocationService.startBackgroundLocationTracking(intervalMs = 15000L)
+            backgroundLocationService.startBackgroundLocationTracking(intervalMs = TimeMillis.FIFTEEN_SECONDS)
                 .onStart { 
                     _isTracking.value = true 
                 }

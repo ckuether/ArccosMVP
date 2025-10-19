@@ -1,8 +1,8 @@
 package com.example.round_of_golf_domain.data.repository
 
 import com.example.round_of_golf_domain.data.dao.RoundOfGolfEventDao
-import com.example.round_of_golf_domain.utils.toEntity
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.toEntity
 import kotlinx.coroutines.flow.Flow
 
 class RoundOfGolfEventRepositoryImpl(

@@ -2,10 +2,9 @@ package com.example.round_of_golf_presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.location_domain.domain.usecase.LocationException
 import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
 import com.example.location_domain.domain.usecase.PermissionResult
 import com.example.location_domain.domain.service.LocationTrackingService
 import com.example.shared.data.model.Course
@@ -78,16 +77,16 @@ class RoundOfGolfViewModel(
                 
                 logger.info(TAG, "Calling locationTrackingService.startLocationTracking()")
                 trackingJob = locationTrackingService.startLocationTracking()
-                    .onEach { locationEvent ->
+                    .onEach { location ->
                         // Only save to database, no UI updates to prevent recomposition
                         launch(Dispatchers.IO) {
                             try {
-                                val golfLocationEvent = RoundOfGolfEvent.LocationUpdated(
-                                    location = locationEvent.location
+                                val locationEvent = RoundOfGolfEvent.LocationUpdated(
+                                    location = location
                                 )
                                 
                                 trackEventUseCase.execute(
-                                    event = golfLocationEvent,
+                                    event = locationEvent,
                                     roundId = roundId,
                                     playerId = 0L, // TODO: Get actual player ID  
                                     holeNumber = null // Location events are not hole-specific
@@ -101,7 +100,6 @@ class RoundOfGolfViewModel(
                     }
                     .catch { throwable ->
                         val errorMessage = when (throwable) {
-                            is LocationException -> throwable.message
                             else -> "Location tracking error: ${throwable.message}"
                         }
                         _locationState.value = _locationState.value.copy(

@@ -1,6 +1,6 @@
 package com.example.round_of_golf_domain.domain.usecase
 
-import com.example.shared.data.model.RoundOfGolfEvent
+import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
 import com.example.round_of_golf_domain.data.repository.RoundOfGolfEventRepository
 
 /**
