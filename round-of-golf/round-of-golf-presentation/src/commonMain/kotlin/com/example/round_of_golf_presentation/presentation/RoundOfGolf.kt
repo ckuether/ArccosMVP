@@ -84,7 +84,7 @@ fun RoundOfGolf(
     currentPlayer: Player,
     golfCourse: Course,
     snackbarHostState: SnackbarHostState,
-    viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse) }
+    viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse, currentPlayer) }
 ) {
 
     val density = LocalDensity.current
