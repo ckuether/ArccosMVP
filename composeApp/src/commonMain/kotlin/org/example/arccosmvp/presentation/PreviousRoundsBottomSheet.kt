@@ -12,9 +12,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.utils.formatDate
-import org.example.arccosmvp.strings.AppStringResourcesManager
 import org.koin.compose.koinInject
 
 @Composable
@@ -37,7 +37,7 @@ private fun PreviousRoundsContent(
     scoreCards: List<ScoreCard>
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: AppStringResourcesManager = koinInject()
+    val stringManager: StringResourcesManager = koinInject()
     
     Column(
         modifier = Modifier
@@ -99,7 +99,7 @@ private fun ScoreCardItem(
     scoreCard: ScoreCard
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: AppStringResourcesManager = koinInject()
+    val stringManager: StringResourcesManager = koinInject()
     
     Card(
         modifier = Modifier.fillMaxWidth(),

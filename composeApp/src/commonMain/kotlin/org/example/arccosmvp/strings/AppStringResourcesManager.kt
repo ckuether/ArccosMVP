@@ -167,53 +167,41 @@ class AppStringResourcesManager : StringResourcesManager {
         UiText.StringResourceId(Res.string.scorecard).asString()
     
     // Golf Home Screen strings
-    @Composable
-    fun getLoadingCourse(): String = 
+    @Composable override fun getLoadingCourse(): String =
         UiText.StringResourceId(Res.string.loading_course).asString()
     
-    @Composable
-    fun getStartRound(): String = 
+    @Composable override fun getStartRound(): String =
         UiText.StringResourceId(Res.string.start_round).asString()
     
-    @Composable
-    fun getPastRounds(): String = 
+    @Composable override fun getPastRounds(): String =
         UiText.StringResourceId(Res.string.past_rounds).asString()
     
     // Previous Rounds Bottom Sheet strings
-    @Composable
-    fun getPreviousRounds(): String = 
+    @Composable override fun getPreviousRounds(): String =
         UiText.StringResourceId(Res.string.previous_rounds).asString()
     
-    @Composable
-    fun getNoPreviousRounds(): String = 
+    @Composable override fun getNoPreviousRounds(): String =
         UiText.StringResourceId(Res.string.no_previous_rounds).asString()
     
-    @Composable
-    fun getRoundsAppearHere(): String = 
+    @Composable override fun getRoundsAppearHere(): String =
         UiText.StringResourceId(Res.string.rounds_appear_here).asString()
     
-    @Composable
-    fun getFinalThruHoles(holes: Int): String = 
+    @Composable override fun getFinalThruHoles(holes: Int): String =
         UiText.StringResourceId(Res.string.final_thru_holes, arrayOf(holes)).asString()
     
-    @Composable
-    fun getToPar(): String = 
+    @Composable override fun getToPar(): String =
         UiText.StringResourceId(Res.string.to_par).asString()
     
-    @Composable
-    fun getGrossScore(score: Int): String = 
+    @Composable override fun getGrossScore(score: Int): String =
         UiText.StringResourceId(Res.string.gross_score, arrayOf(score)).asString()
     
-    @Composable
-    fun getBirdies(): String = 
+    @Composable override fun getBirdies(): String =
         UiText.StringResourceId(Res.string.birdies).asString()
     
-    @Composable
-    fun getBogeys(): String = 
+    @Composable override fun getBogeys(): String =
         UiText.StringResourceId(Res.string.bogeys).asString()
     
     // Player string
-    @Composable
-    fun getDefaultPlayer(): String = 
+    @Composable override fun getDefaultPlayer(): String =
         UiText.StringResourceId(Res.string.default_player).asString()
 }

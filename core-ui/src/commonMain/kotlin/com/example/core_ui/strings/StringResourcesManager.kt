@@ -1,6 +1,7 @@
 package com.example.core_ui.strings
 
 import androidx.compose.runtime.Composable
+import com.example.core_ui.utils.UiText
 
 /**
  * Interface for providing string resources to modules that cannot directly access 
@@ -81,4 +82,32 @@ interface StringResourcesManager {
     
     // MiniScorecard
     @Composable fun getScorecard(): String
+    @Composable
+    fun getLoadingCourse(): String
+    @Composable
+    fun getStartRound(): String
+    @Composable
+    fun getPastRounds(): String
+
+    // Previous Rounds Bottom Sheet strings
+    @Composable
+    fun getPreviousRounds(): String
+    @Composable
+    fun getNoPreviousRounds(): String
+    @Composable
+    fun getRoundsAppearHere(): String
+    @Composable
+    fun getFinalThruHoles(holes: Int): String
+    @Composable
+    fun getToPar(): String
+    @Composable
+    fun getGrossScore(score: Int): String
+    @Composable
+    fun getBirdies(): String
+    @Composable
+    fun getBogeys(): String
+
+    // Player string
+    @Composable
+    fun getDefaultPlayer(): String
 }

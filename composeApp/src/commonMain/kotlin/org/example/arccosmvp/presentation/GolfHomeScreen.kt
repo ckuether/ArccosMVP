@@ -26,10 +26,10 @@ import arccosmvp.composeapp.generated.resources.golf_course_background
 import arccosmvp.composeapp.generated.resources.welcome_to_broken_tee
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
 import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
-import org.example.arccosmvp.strings.AppStringResourcesManager
 import org.example.arccosmvp.utils.DrawableHelper
 import org.koin.compose.koinInject
 
@@ -39,7 +39,7 @@ fun GolfHomeScreen(
     appViewModel: AppViewModel
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: AppStringResourcesManager = koinInject()
+    val stringManager: StringResourcesManager = koinInject()
     val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
     val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
