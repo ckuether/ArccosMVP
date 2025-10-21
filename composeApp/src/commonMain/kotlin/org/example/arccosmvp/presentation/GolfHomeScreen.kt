@@ -20,13 +20,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.navigation.NavController
 import arccosmvp.composeapp.generated.resources.Res
 import arccosmvp.composeapp.generated.resources.golf_course_background
 import arccosmvp.composeapp.generated.resources.welcome_to_broken_tee
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.strings.StringResourcesManager
+import com.example.core_ui.utils.UiEvent
 import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
@@ -35,8 +35,8 @@ import org.koin.compose.koinInject
 
 @Composable
 fun GolfHomeScreen(
-    navController: NavController,
-    appViewModel: AppViewModel
+    appViewModel: AppViewModel,
+    updateUiEvent: (UiEvent) -> Unit,
 ) {
     val dimensions = LocalDimensionResources.current
     val stringManager: StringResourcesManager = koinInject()
@@ -74,7 +74,7 @@ fun GolfHomeScreen(
                 text = if (course == null) stringManager.getLoadingCourse() else stringManager.getStartRound(),
                 enabled = course != null,
                 onClick = {
-                    navController.navigate(Route.ROUND_OF_GOLF)
+                    updateUiEvent(UiEvent.Navigate(Route.ROUND_OF_GOLF))
                 }
             )
 
