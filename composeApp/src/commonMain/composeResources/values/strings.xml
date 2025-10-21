@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="app_name">ArccosMVP</string>
+    <string name="welcome_to_broken_tee">Welcome to Broken Tee</string>
+    <string name="golf_course_background">Golf course background</string>
+    <string name="loading_course">Loading Course...</string>
+    <string name="start_round">Start Round</string>
+    <string name="past_rounds">Past Rounds</string>
+    
+    <!-- Previous Rounds Bottom Sheet -->
+    <string name="previous_rounds">Previous Rounds</string>
+    <string name="no_previous_rounds">No previous rounds found</string>
+    <string name="rounds_appear_here">Your completed rounds will appear here</string>
+    <string name="final_thru_holes">Final (Thru %1$d Holes)</string>
+    <string name="to_par">To Par</string>
+    <string name="gross_score">Gross: %1$d</string>
+    <string name="birdies">Birdies</string>
+    <string name="par">Par</string>
+    <string name="bogeys">Bogeys</string>
+    
+    <!-- Player -->
+    <string name="default_player">Player</string>
+    
+    <!-- Round of Golf Module -->
+    <!-- Location permission and tracking -->
+    <string name="location_permission_required_please_grant">Location permission required. Please grant permission first.</string>
+    <string name="location_tracking_error_template">Location tracking error: %1$s</string>
+    <string name="failed_to_start_location_tracking">Failed to start location tracking</string>
+    <string name="location_permission_denied_try_again">Location permission denied. Please try again.</string>
+    <string name="location_permission_permanently_denied_settings">Location permission permanently denied. Please enable it in settings.</string>
+    <string name="error_requesting_permission">Error requesting permission</string>
+    <string name="failed_to_stop_location_tracking">Failed to stop location tracking</string>
+    <string name="error_checking_permission">Error checking permission</string>
+    <string name="grant_permission">Grant Permission</string>
+    
+    <!-- Golf scoring -->
+    <string name="hole_in_one">Hole In One</string>
+    <string name="eagle">Eagle</string>
+    <string name="birdie">Birdie</string>
+    <string name="bogey">Bogey</string>
+    <string name="even_par">E</string>
+    
+    <!-- Hole Stats Bottom Sheet -->
+    <string name="hole_score_template">Hole %1$d Score</string>
+    <string name="others">Others</string>
+    <string name="putts">Putts</string>
+    <string name="putts_four_or_more">≥4</string>
+    <string name="previous_hole">Previous hole</string>
+    <string name="next_hole">Next hole</string>
+    <string name="finish_round">Finish Round</string>
+    <string name="finish_hole_template">Finish Hole %1$d</string>
+    
+    <!-- Club Selection Dialog -->
+    <string name="select_club">Select Club</string>
+    <string name="select">Select</string>
+    <string name="cancel">Cancel</string>
+    
+    <!-- Navigation -->
+    <string name="hole_template">Hole %1$d</string>
+    
+    <!-- Score Card Bottom Sheet -->
+    <string name="golf_course_fallback">Golf Course</string>
+    <string name="blue_tee">Blue Tee</string>
+    <string name="hole">Hole</string>
+    <string name="total">Total</string>
+    <string name="dash">-</string>
+    
+    <!-- Target Shot Card -->
+    <string name="club">Club</string>
+    <string name="distance">Distance</string>
+    <string name="yards_template">%1$dyds</string>
+    
+    <!-- Track Shot Card -->
+    <string name="track_shot">Track Shot</string>
+    
+    <!-- Hole Info Card -->
+    <string name="mid_green">Mid Green</string>
+    
+    <!-- Location Permission Card -->
+    <string name="location_permission_required_title">Location Permission Required</string>
+    <string name="location_permission_description">This app needs location permission to track your location.</string>
+    <string name="requesting">Requesting...</string>
+    
+    <!-- Golf Markers -->
+    <string name="golf_ball_tee">Golf Ball Tee</string>
+    
+    <!-- MiniScorecard -->
+    <string name="scorecard">Scorecard</string>
+    
+    <!-- Round of Golf Main -->
+    <string name="exit_track_shot_mode">Exit track shot mode</string>
+    <string name="shot_tracked_template">Shot tracked for hole %1$d!</string>
+    <string name="failed_to_track_shot_template">Failed to track shot: %1$s</string>
+    <string name="select_golf_club">Select golf club</string>
+    <string name="round_completed">Round completed!</string>
+</resources>

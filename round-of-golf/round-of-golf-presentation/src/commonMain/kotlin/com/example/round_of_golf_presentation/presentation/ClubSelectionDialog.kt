@@ -37,7 +37,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.GolfClubType
+import org.koin.compose.koinInject
 
 @Suppress("FrequentlyChangingValue")
 @Composable
@@ -47,6 +49,7 @@ fun ClubSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
     val clubTypes = GolfClubType.entries
     val listState = rememberLazyListState()
     var selectedIndex by remember { mutableStateOf(clubTypes.size / 2) }
@@ -100,7 +103,7 @@ fun ClubSelectionDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Select Club",
+                    text = stringManager.getSelectClub(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.Black,
                     modifier = Modifier.padding(bottom = dimensions.paddingLarge)
@@ -171,7 +174,7 @@ fun ClubSelectionDialog(
                         onClick = handleDismissWithSelection,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel")
+                        Text(stringManager.getCancel())
                     }
                     
                     Button(
@@ -181,7 +184,7 @@ fun ClubSelectionDialog(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text("Select")
+                        Text(stringManager.getSelect())
                     }
                 }
             }

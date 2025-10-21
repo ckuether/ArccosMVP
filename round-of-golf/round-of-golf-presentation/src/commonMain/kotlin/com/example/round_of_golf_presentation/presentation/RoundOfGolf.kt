@@ -46,8 +46,9 @@ import com.example.location_presentation.platform.MapView
 import com.example.location_presentation.platform.MapCameraPosition
 import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.location_presentation.projection.CalculateScreenPositionFromMapUseCase
-import com.example.location_presentation.projection.CalculateMapPositionFromScreenUseCase
+import com.example.core_ui.strings.StringResourcesManager
+import com.example.location_domain.domain.model.ScreenPoint
+import com.example.location_domain.domain.service.MapProjectionService
 import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.round_of_golf_presentation.presentation.components.DraggableMarker
 import com.example.round_of_golf_presentation.presentation.components.HoleInfoCard
@@ -89,10 +90,10 @@ fun RoundOfGolf(
 
     val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
     val coroutineScope = rememberCoroutineScope()
 
-    val calculateScreenPosition: CalculateScreenPositionFromMapUseCase = koinInject()
-    val calculateMapPosition: CalculateMapPositionFromScreenUseCase = koinInject()
+    val mapProjectionService: MapProjectionService = koinInject()
     val trackEventUseCase: TrackSingleRoundEventUseCase = koinInject()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
 
@@ -127,7 +128,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 60
     )
 
@@ -143,7 +144,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 60
     )
 
@@ -159,7 +160,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 12
     )
 
@@ -168,7 +169,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 16
     )
 
@@ -177,7 +178,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 20
     )
 
@@ -188,7 +189,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition
+        mapProjectionService = mapProjectionService
     )
 
     val targetToFlagPolylinePoints = rememberPolylinePoints(
@@ -197,7 +198,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition
+        mapProjectionService = mapProjectionService
     )
 
     // UI visibility state
@@ -222,7 +223,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 12
     )
 
@@ -231,7 +232,7 @@ fun RoundOfGolf(
         googleMapInstance = googleMapInstance,
         mapSize = mapSize,
         cameraPosition = cameraPosition,
-        calculateScreenPosition = calculateScreenPosition,
+        mapProjectionService = mapProjectionService,
         margin = 16
     )
 
@@ -418,7 +419,7 @@ fun RoundOfGolf(
                             targetLocation = newLocation
                         },
                         googleMapInstance = googleMapInstance,
-                        calculateMapPosition = calculateMapPosition,
+                        mapProjectionService = mapProjectionService,
                         mapSize = mapSize
                     )
             )
@@ -459,14 +460,12 @@ fun RoundOfGolf(
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
                         getCurrentDragPosition = { currentDragPosition },
                         onDragStart = {
-                            println("DEBUG: TRACKING_START drag started")
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_START
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingStartX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingStartY.toPx() + (markerSize.toPx() / 2) }
                             currentDragPosition = Offset(visualCenterX, visualCenterY)
-                            println("DEBUG: TRACKING_START initial position: $currentDragPosition")
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
@@ -480,7 +479,7 @@ fun RoundOfGolf(
                             trackShotStartLocation = newLocation
                         },
                         googleMapInstance = googleMapInstance,
-                        calculateMapPosition = calculateMapPosition,
+                        mapProjectionService = mapProjectionService,
                         mapSize = mapSize
                     ),
                 color = Color.Blue,
@@ -526,7 +525,7 @@ fun RoundOfGolf(
                             trackShotEndLocation = newLocation
                         },
                         googleMapInstance = googleMapInstance,
-                        calculateMapPosition = calculateMapPosition,
+                        mapProjectionService = mapProjectionService,
                         mapSize = mapSize
                     ),
                 color = Color.Red,
@@ -705,7 +704,8 @@ fun RoundOfGolf(
                                     playerId = currentPlayer.id,
                                     holeNumber = currentHoleNumber
                                 )
-                                snackbarHostState.showSnackbar("Round completed!")
+                                //TODO: Handle UiEvent
+//                                snackbarHostState.showSnackbar(stringManager.getRoundCompleted())
                             } catch (e: Exception) {
                                 println("DEBUG: Failed to track finish round event: ${e.message}")
                             }
@@ -788,7 +788,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.Close,
-                    contentDescription = "Exit track shot mode",
+                    contentDescription = stringManager.getExitTrackShotMode(),
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
@@ -822,14 +822,16 @@ fun RoundOfGolf(
                                 
                                 trackEventUseCase.execute(
                                     event = shotEvent,
-                                    roundId = currentScoreCard?.roundId ?: 0L,
+                                    roundId = currentScoreCard.roundId,
                                     playerId = currentPlayer.id,
                                     holeNumber = currentHoleNumber
                                 )
-                                
-                                snackbarHostState.showSnackbar("Shot tracked for hole $currentHoleNumber!")
+
+                                //TODO: Handle UiEvent
+//                                snackbarHostState.showSnackbar(stringManager.getShotTracked(currentHoleNumber))
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("Failed to track shot: ${e.message}")
+                                //TODO: Handle UiEvent
+//                                snackbarHostState.showSnackbar(stringManager.getFailedToTrackShot(e.message ?: ""))
                             }
                         }
                         resetUITimer()
@@ -843,7 +845,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.GolfCourse,
-                    contentDescription = "Select golf club",
+                    contentDescription = stringManager.getSelectGolfClub(),
                     size = dimensions.iconXXLarge,
                     iconSize = 28.dp
                 )
@@ -864,18 +866,19 @@ private fun rememberMarkerScreenPosition(
     googleMapInstance: Any?,
     mapSize: IntSize?,
     cameraPosition: MapCameraPosition,
-    calculateScreenPosition: CalculateScreenPositionFromMapUseCase,
+    mapProjectionService: MapProjectionService,
     margin: Int = 12
 ): IntOffset {
     return remember(location, mapSize, cameraPosition) {
         derivedStateOf {
             if (googleMapInstance != null && mapSize != null) {
                 try {
-                    val screenPos = calculateScreenPosition(location, googleMapInstance)
+                    val screenCoordinates = mapProjectionService.mapToScreenCoordinates(location, googleMapInstance)
+                    val screenPoint = screenCoordinates?.let { ScreenPoint(it.x, it.y) }
 
-                    screenPos?.let { pos ->
-                        val clampedX = pos.x.coerceIn(margin, mapSize.width - margin)
-                        val clampedY = pos.y.coerceIn(margin, mapSize.height - margin)
+                    screenPoint?.let { point ->
+                        val clampedX = point.x.coerceIn(margin, mapSize.width - margin)
+                        val clampedY = point.y.coerceIn(margin, mapSize.height - margin)
                         IntOffset(clampedX, clampedY)
                     } ?: IntOffset.Zero
                 } catch (e: Exception) {
@@ -895,7 +898,7 @@ private fun rememberYardageScreenPosition(
     googleMapInstance: Any?,
     mapSize: IntSize?,
     cameraPosition: MapCameraPosition,
-    calculateScreenPosition: CalculateScreenPositionFromMapUseCase,
+    mapProjectionService: MapProjectionService,
     margin: Int = 60
 ): IntOffset {
     return remember(location1, location2, mapSize, cameraPosition) {
@@ -903,11 +906,12 @@ private fun rememberYardageScreenPosition(
             if (googleMapInstance != null && mapSize != null) {
                 try {
                     val midPoint = location1.midPoint(location2)
-                    val screenPos = calculateScreenPosition(midPoint, googleMapInstance)
+                    val screenCoordinates = mapProjectionService.mapToScreenCoordinates(midPoint, googleMapInstance)
+                    val screenPoint = screenCoordinates?.let { ScreenPoint(it.x, it.y) }
 
-                    screenPos?.let { pos ->
-                        val clampedX = pos.x.coerceIn(margin, mapSize.width - margin)
-                        val clampedY = pos.y.coerceIn(margin, mapSize.height - margin)
+                    screenPoint?.let { point ->
+                        val clampedX = point.x.coerceIn(margin, mapSize.width - margin)
+                        val clampedY = point.y.coerceIn(margin, mapSize.height - margin)
                         IntOffset(clampedX, clampedY)
                     } ?: IntOffset.Zero
                 } catch (e: Exception) {
@@ -927,19 +931,19 @@ private fun rememberPolylinePoints(
     googleMapInstance: Any?,
     mapSize: IntSize?,
     cameraPosition: MapCameraPosition,
-    calculateScreenPosition: CalculateScreenPositionFromMapUseCase
+    mapProjectionService: MapProjectionService
 ): List<IntOffset> {
     return remember(location1, location2, mapSize, cameraPosition) {
         derivedStateOf {
             if (googleMapInstance != null && mapSize != null) {
                 try {
-                    val pos1 = calculateScreenPosition(location1, googleMapInstance)
-                    val pos2 = calculateScreenPosition(location2, googleMapInstance)
+                    val screenCoordinates1 = mapProjectionService.mapToScreenCoordinates(location1, googleMapInstance)
+                    val screenCoordinates2 = mapProjectionService.mapToScreenCoordinates(location2, googleMapInstance)
 
-                    if (pos1 != null && pos2 != null) {
+                    if (screenCoordinates1 != null && screenCoordinates2 != null) {
                         listOf(
-                            IntOffset(pos1.x, pos1.y),
-                            IntOffset(pos2.x, pos2.y)
+                            IntOffset(screenCoordinates1.x, screenCoordinates1.y),
+                            IntOffset(screenCoordinates2.x, screenCoordinates2.y)
                         )
                     } else {
                         emptyList()
@@ -986,7 +990,7 @@ private fun Modifier.dragGestures(
     onDragEnd: () -> Unit,
     onLocationUpdate: (Location) -> Unit,
     googleMapInstance: Any?,
-    calculateMapPosition: CalculateMapPositionFromScreenUseCase,
+    mapProjectionService: MapProjectionService,
     mapSize: IntSize?
 ): Modifier = this.pointerInput(Unit) {
     detectDragGestures(
@@ -1016,7 +1020,7 @@ private fun Modifier.dragGestures(
                 if (googleMapInstance != null) {
                     val cx = clampedPosition.x.toInt()
                     val cy = clampedPosition.y.toInt()
-                    calculateMapPosition(
+                    mapProjectionService.screenToMapCoordinates(
                         cx,
                         cy,
                         googleMapInstance

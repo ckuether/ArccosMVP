@@ -21,8 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.navigation.NavController
+import arccosmvp.composeapp.generated.resources.Res
+import arccosmvp.composeapp.generated.resources.golf_course_background
+import arccosmvp.composeapp.generated.resources.welcome_to_broken_tee
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
 import org.example.arccosmvp.utils.DrawableHelper
@@ -36,15 +40,15 @@ fun GolfHomeScreen(
     val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
     val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
-    
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = DrawableHelper.golfBackground(),
-            contentDescription = "Golf course background",
+            contentDescription = UiText.StringResourceId(Res.string.golf_course_background).asString(),
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-        
+
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -54,7 +58,7 @@ fun GolfHomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Welcome to Broken Tee",
+                text = UiText.StringResourceId(Res.string.welcome_to_broken_tee).asString(),
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onPrimary
             )

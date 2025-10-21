@@ -8,9 +8,13 @@ import com.example.shared.usecase.GetAllScoreCardsUseCase
 import com.example.shared.usecase.LoadGolfCourseUseCase
 import com.example.shared.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
+import com.example.core_ui.utils.UiEvent
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class AppViewModel(
@@ -22,6 +26,16 @@ class AppViewModel(
     
     companion object {
         private const val TAG = "AppViewModel"
+    }
+
+    private var _uiEvent = Channel<UiEvent>()
+    val uiEvent: Flow<UiEvent>
+        get() = _uiEvent.receiveAsFlow()
+
+    fun updateUiEvent(event: UiEvent){
+        viewModelScope.launch {
+            _uiEvent.send(event)
+        }
     }
     
     private val _course = MutableStateFlow<Course?>(null)

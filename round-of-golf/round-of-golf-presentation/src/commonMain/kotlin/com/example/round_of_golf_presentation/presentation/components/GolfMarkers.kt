@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.platform.DrawableProvider
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
 import org.koin.compose.koinInject
 
 object TeeMarkerDefaults {
@@ -47,11 +48,12 @@ fun TeeMarker(
     modifier: Modifier = Modifier
 ) {
     val drawableProvider: DrawableProvider = koinInject()
+    val stringManager: StringResourcesManager = koinInject()
     val teeSize = TeeMarkerDefaults.getSize()
 
     Image(
         painter = drawableProvider.getGolfBallPainter(),
-        contentDescription = "Golf Ball Tee",
+        contentDescription = stringManager.getGolfBallTee(),
         modifier = modifier
             .size(teeSize)
     )
