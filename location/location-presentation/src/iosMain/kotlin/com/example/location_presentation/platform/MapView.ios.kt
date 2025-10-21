@@ -56,7 +56,6 @@ actual fun MapView(
     LaunchedEffect(currentHole) {
         mapViewRef.value?.let { mapView ->
             cameraControllerRef.value?.let { cameraController ->
-                NSLog("GoogleMaps: LaunchedEffect updating camera position")
                 when {
                     currentHole != null -> {
                         // Calculate camera position using shared use case
@@ -73,7 +72,6 @@ actual fun MapView(
 
     // Debug LaunchedEffect to track click handler changes
     LaunchedEffect(onMapClick) {
-        NSLog("GoogleMaps: onMapClick parameter changed - is ${if (onMapClick != null) "not null" else "null"}")
         clickHandlerState.value = onMapClick
     }
 
@@ -95,8 +93,6 @@ actual fun MapView(
             // Configure gestures - enable/disable based on dragging state
             mapView.settings.setAllGesturesEnabled(gesturesEnabled)
 
-            NSLog("GoogleMaps: Map view configured with individual gestures")
-
             // Create and set delegate for map interactions
             val mapDelegate = object : NSObject(), GMSMapViewDelegateProtocol {
 
@@ -105,7 +101,6 @@ actual fun MapView(
                     @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
                     didTapAtCoordinate: CValue<CLLocationCoordinate2D>
                 ) {
-                    NSLog("GoogleMaps: didTapAtCoordinate called - map was tapped! Delegate is still active.")
 
                     clickHandlerState.value?.let { clickHandler ->
                         didTapAtCoordinate.useContents {
@@ -136,7 +131,6 @@ actual fun MapView(
                             zoom = didChangeCameraPosition.zoom
                         )
                         currentCameraPosition.value = position
-                        NSLog("GoogleMaps: Camera position updated - lat=${this.latitude}, lng=${this.longitude}, zoom=${didChangeCameraPosition.zoom}")
                     }
                     
                     // Report map size once when camera moves (indicating map is ready)
@@ -147,7 +141,6 @@ actual fun MapView(
                         if (width > 0 && height > 0) {
                             onMapSizeChanged?.invoke(width, height)
                             mapSizeReported.value = true
-                            NSLog("GoogleMaps: Map size reported from camera delegate: ${width}x${height}")
                         }
                     }
                 }
@@ -172,13 +165,11 @@ actual fun MapView(
                     zoom = mapView.camera.zoom
                 )
                 currentCameraPosition.value = initialPosition
-                NSLog("GoogleMaps: Initial camera position set - lat=${this.latitude}, lng=${this.longitude}, zoom=${mapView.camera.zoom}")
             }
 
             // Trigger onMapReady callback with the map instance
             onMapReady?.invoke(mapView)
 
-            NSLog("GoogleMaps: Map view delegate set and configured, initial click handler set")
             mapView
         },
         update = { mapView ->
@@ -187,11 +178,6 @@ actual fun MapView(
             
             // Update gesture settings dynamically
             mapView.settings.setAllGesturesEnabled(gesturesEnabled)
-            
-            NSLog("GoogleMaps: UIKitView update called, onMapClick is ${if (onMapClick != null) "not null" else "null"}")
-            NSLog("GoogleMaps: Gestures enabled: $gesturesEnabled")
-            NSLog("GoogleMaps: Delegate is ${if (delegateRef.value != null) "still retained" else "null"}")
-            NSLog("GoogleMaps: MapView delegate is ${if (mapView.delegate != null) "set" else "null"}")
         }
     )
 }

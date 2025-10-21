@@ -54,14 +54,11 @@ actual fun MapView(
     // Handle currentHole updates with highest priority
     LaunchedEffect(currentHole) {
         currentHole?.let { hole ->
-            println("DEBUG MapView: Setting camera for hole: ${hole.id}")
             // Calculate camera position using shared use case
             val cameraPosition = calculateCameraPositionUseCase(hole)
-            println("DEBUG MapView: Calculated camera position: $cameraPosition")
             
             // Apply camera positioning using platform-specific controller
             cameraController.applyHoleCameraPosition(hole, cameraPosition)
-            println("DEBUG MapView: Camera position applied")
         }
     }
     
@@ -106,7 +103,6 @@ actual fun MapView(
     ) {
         // Use MapEffect to access the GoogleMap instance
         MapEffect { googleMap ->
-            println("DEBUG MapView: GoogleMap instance available: $googleMap")
             onMapReady?.invoke(googleMap)
         }
         // Markers and polylines are now rendered using Compose components with screen projection in RoundOfGolf

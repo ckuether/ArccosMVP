@@ -12,6 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
+import org.koin.compose.koinInject
 
 @Composable
 fun TrackShotCard(
@@ -19,6 +21,7 @@ fun TrackShotCard(
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -39,7 +42,7 @@ fun TrackShotCard(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Track Shot",
+                text = stringManager.getTrackShot(),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface
             )

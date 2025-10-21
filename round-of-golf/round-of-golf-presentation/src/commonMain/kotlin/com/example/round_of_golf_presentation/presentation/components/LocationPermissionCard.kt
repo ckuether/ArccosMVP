@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
+import org.koin.compose.koinInject
 
 @Composable
 fun LocationPermissionCard(
@@ -19,6 +21,7 @@ fun LocationPermissionCard(
     onRequestPermission: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -31,12 +34,12 @@ fun LocationPermissionCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Location Permission Required",
+                text = stringManager.getLocationPermissionRequiredTitle(),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                text = "This app needs location permission to track your location.",
+                text = stringManager.getLocationPermissionDescription(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.padding(vertical = dimensions.paddingSmall)
@@ -46,8 +49,8 @@ fun LocationPermissionCard(
                 enabled = !isRequestingPermission
             ) {
                 Text(
-                    if (isRequestingPermission) "Requesting..."
-                    else "Grant Permission"
+                    if (isRequestingPermission) stringManager.getRequesting()
+                    else stringManager.getGrantPermission()
                 )
             }
         }

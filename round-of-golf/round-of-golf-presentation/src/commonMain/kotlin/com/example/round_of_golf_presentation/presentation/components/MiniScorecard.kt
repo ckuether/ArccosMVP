@@ -8,6 +8,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
+import org.koin.compose.koinInject
 
 @Composable
 fun MiniScorecard(
@@ -15,6 +17,7 @@ fun MiniScorecard(
     onScoreCardClick: () -> Unit = {}
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
     
     Card(
         colors = CardDefaults.cardColors(
@@ -31,7 +34,7 @@ fun MiniScorecard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Scorecard",
+                text = stringManager.getScorecard(),
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Black,
                 fontWeight = FontWeight.Medium

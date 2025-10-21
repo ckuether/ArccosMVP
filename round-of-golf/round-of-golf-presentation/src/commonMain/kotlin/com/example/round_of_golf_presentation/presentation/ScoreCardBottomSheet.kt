@@ -22,9 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.Course
 import com.example.shared.data.model.Player
 import com.example.shared.data.model.ScoreCard
+import org.koin.compose.koinInject
 
 @Composable
 fun ScoreCardBottomSheet(
@@ -52,6 +54,7 @@ private fun ScoreCardContent(
     currentScoreCard: ScoreCard?
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
     
     LazyColumn(
         modifier = Modifier
@@ -68,7 +71,7 @@ private fun ScoreCardContent(
                         .padding(top = dimensions.paddingMedium)
                 ) {
                     Text(
-                        text = course?.name ?: "Golf Course",
+                        text = course?.name ?: stringManager.getGolfCourseFallback(),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black,
@@ -77,7 +80,7 @@ private fun ScoreCardContent(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Text(
-                        text = "Blue Tee",
+                        text = stringManager.getBlueTee(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.Gray,
                         modifier = Modifier.fillMaxWidth()
@@ -119,7 +122,7 @@ private fun ScoreCardContent(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             // Fixed column header
                             Text(
-                                text = "Hole",
+                                text = stringManager.getHole(),
                                 modifier = Modifier.width(60.dp),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Bold,
@@ -148,7 +151,7 @@ private fun ScoreCardContent(
                                 
                                 // Total header
                                 Text(
-                                    text = "Total",
+                                    text = stringManager.getTotal(),
                                     modifier = Modifier.width(60.dp),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold,
@@ -164,7 +167,7 @@ private fun ScoreCardContent(
                         Row(modifier = Modifier.fillMaxWidth()) {
                             // Fixed column
                             Text(
-                                text = "Par",
+                                text = stringManager.getPar(),
                                 modifier = Modifier.width(60.dp),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Medium,
@@ -328,6 +331,8 @@ fun ParButton(
     par: Int = 4
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
+
     if (isSelected) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -350,7 +355,7 @@ fun ParButton(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Par",
+                        text = stringManager.getPar(),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White,
                         fontSize = 10.sp
@@ -379,7 +384,7 @@ fun ParButton(
             }
             Spacer(modifier = Modifier.height(dimensions.paddingXSmall))
             Text(
-                text = "Par",
+                text = stringManager.getPar(),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -418,13 +423,15 @@ fun PuttsButton(
     }
 }
 
+@Composable
 fun getScoreName(score: Int, par: Int): String {
-    if (score == 1) return "Hole In One"
+    val stringManager: StringResourcesManager = koinInject()
+    if (score == 1) return stringManager.getHoleInOne()
     return when (score - par) {
-        -2 -> "Eagle"
-        -1 -> "Birdie"
-        0 -> "Par"
-        1 -> "Bogey"
+        -2 -> stringManager.getEagle()
+        -1 -> stringManager.getBirdie()
+        0 -> stringManager.getPar()
+        1 -> stringManager.getBogey()
         else -> {
             if (score - par > 1) "+${score - par}"
             else ""

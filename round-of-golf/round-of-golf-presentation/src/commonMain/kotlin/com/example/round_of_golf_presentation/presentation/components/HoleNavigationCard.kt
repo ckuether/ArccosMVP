@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import com.example.core_ui.resources.LocalDimensionResources
+import com.example.core_ui.strings.StringResourcesManager
+import org.koin.compose.koinInject
 
 @Composable
 fun HoleNavigationCard(
@@ -31,6 +33,7 @@ fun HoleNavigationCard(
     onClick: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -58,7 +61,7 @@ fun HoleNavigationCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = "Previous hole",
+                    contentDescription = stringManager.getPreviousHole(),
                     tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
                 )
             }
@@ -68,7 +71,7 @@ fun HoleNavigationCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Hole $currentHoleNumber",
+                    text = stringManager.getHole(currentHoleNumber),
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Black
                 )
@@ -100,7 +103,7 @@ fun HoleNavigationCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = "Next hole",
+                    contentDescription = stringManager.getNextHole(),
                     tint = if (currentHoleNumber < maxHoles) Color.Black else Color.Gray
                 )
             }

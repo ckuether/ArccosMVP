@@ -2,6 +2,7 @@ package com.example.round_of_golf_presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.location_domain.data.model.LocationTrackingUiState
 import com.example.location_domain.domain.usecase.CheckLocationPermissionUseCase
 import com.example.location_domain.domain.usecase.RequestLocationPermissionUseCase
 import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
@@ -12,6 +13,7 @@ import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_domain.domain.usecase.SaveScoreCardUseCase
 import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
+import com.example.shared.data.model.Player
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +28,7 @@ import kotlinx.coroutines.IO
 
 class RoundOfGolfViewModel(
     private val course: Course,
+    private val currentPlayer: Player,
     private val locationTrackingService: LocationTrackingService,
     private val trackEventUseCase: TrackSingleRoundEventUseCase,
     private val checkLocationPermissionUseCase: CheckLocationPermissionUseCase,
@@ -88,7 +91,7 @@ class RoundOfGolfViewModel(
                                 trackEventUseCase.execute(
                                     event = locationEvent,
                                     roundId = roundId,
-                                    playerId = 0L, // TODO: Get actual player ID  
+                                    playerId = currentPlayer.id,
                                     holeNumber = null // Location events are not hole-specific
                                 )
                                 
@@ -265,11 +268,3 @@ class RoundOfGolfViewModel(
         stopLocationTracking()
     }
 }
-
-data class LocationTrackingUiState(
-    val isLoading: Boolean = false,
-    val isTracking: Boolean = false,
-    val hasPermission: Boolean? = null, // null = unknown, true = granted, false = denied
-    val isRequestingPermission: Boolean = false,
-    val error: String? = null
-)

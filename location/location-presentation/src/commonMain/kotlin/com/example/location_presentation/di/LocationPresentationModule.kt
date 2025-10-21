@@ -1,13 +1,11 @@
 package com.example.location_presentation.di
 
-import com.example.location_presentation.projection.CalculateMapPositionFromScreenUseCase
-import com.example.location_presentation.projection.CalculateScreenPositionFromMapUseCase
-import org.koin.core.module.dsl.factoryOf
+import com.example.location_domain.domain.service.MapProjectionService
+import com.example.location_presentation.service.PlatformMapProjectionService
 import org.koin.dsl.module
 
 val locationPresentationModule = module {
-
-    factoryOf(::CalculateScreenPositionFromMapUseCase)
-    factoryOf(::CalculateMapPositionFromScreenUseCase)
-
+    
+    // Platform Services
+    single<MapProjectionService> { PlatformMapProjectionService() }
 }
