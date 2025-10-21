@@ -9,8 +9,6 @@ import com.example.shared.platform.Logger
 import com.example.shared.platform.createLogger
 import com.example.location_domain.domain.usecase.CalculateMapCameraPositionUseCase
 import com.example.location_domain.domain.usecase.CalculateBearingUseCase
-import com.example.location_domain.domain.usecase.ConvertScreenToLocationUseCase
-import com.example.location_domain.domain.usecase.ConvertLocationToScreenUseCase
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -26,8 +24,6 @@ val locationDomainModule = module {
     factoryOf(::GetCurrentLocationUseCase)
     factoryOf(::CalculateBearingUseCase)
     factoryOf(::CalculateMapCameraPositionUseCase)
-    factoryOf(::ConvertScreenToLocationUseCase)
-    factoryOf(::ConvertLocationToScreenUseCase)
     
     // Services
     single<LocationTrackingService> {
