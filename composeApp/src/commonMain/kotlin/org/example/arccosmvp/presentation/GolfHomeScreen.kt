@@ -29,7 +29,9 @@ import com.example.core_ui.resources.LocalDimensionResources
 import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
+import org.example.arccosmvp.strings.AppStringResourcesManager
 import org.example.arccosmvp.utils.DrawableHelper
+import org.koin.compose.koinInject
 
 @Composable
 fun GolfHomeScreen(
@@ -37,6 +39,7 @@ fun GolfHomeScreen(
     appViewModel: AppViewModel
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: AppStringResourcesManager = koinInject()
     val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
     val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
@@ -68,7 +71,7 @@ fun GolfHomeScreen(
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = if (course == null) "Loading Course..." else "Start Round",
+                text = if (course == null) stringManager.getLoadingCourse() else stringManager.getStartRound(),
                 enabled = course != null,
                 onClick = {
                     navController.navigate(Route.ROUND_OF_GOLF)
@@ -79,7 +82,7 @@ fun GolfHomeScreen(
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = "Past Rounds",
+                text = stringManager.getPastRounds(),
                 onClick = {
                     showPreviousRounds = true
                 }

@@ -165,4 +165,55 @@ class AppStringResourcesManager : StringResourcesManager {
     // MiniScorecard
     @Composable override fun getScorecard(): String = 
         UiText.StringResourceId(Res.string.scorecard).asString()
+    
+    // Golf Home Screen strings
+    @Composable
+    fun getLoadingCourse(): String = 
+        UiText.StringResourceId(Res.string.loading_course).asString()
+    
+    @Composable
+    fun getStartRound(): String = 
+        UiText.StringResourceId(Res.string.start_round).asString()
+    
+    @Composable
+    fun getPastRounds(): String = 
+        UiText.StringResourceId(Res.string.past_rounds).asString()
+    
+    // Previous Rounds Bottom Sheet strings
+    @Composable
+    fun getPreviousRounds(): String = 
+        UiText.StringResourceId(Res.string.previous_rounds).asString()
+    
+    @Composable
+    fun getNoPreviousRounds(): String = 
+        UiText.StringResourceId(Res.string.no_previous_rounds).asString()
+    
+    @Composable
+    fun getRoundsAppearHere(): String = 
+        UiText.StringResourceId(Res.string.rounds_appear_here).asString()
+    
+    @Composable
+    fun getFinalThruHoles(holes: Int): String = 
+        UiText.StringResourceId(Res.string.final_thru_holes, arrayOf(holes)).asString()
+    
+    @Composable
+    fun getToPar(): String = 
+        UiText.StringResourceId(Res.string.to_par).asString()
+    
+    @Composable
+    fun getGrossScore(score: Int): String = 
+        UiText.StringResourceId(Res.string.gross_score, arrayOf(score)).asString()
+    
+    @Composable
+    fun getBirdies(): String = 
+        UiText.StringResourceId(Res.string.birdies).asString()
+    
+    @Composable
+    fun getBogeys(): String = 
+        UiText.StringResourceId(Res.string.bogeys).asString()
+    
+    // Player string
+    @Composable
+    fun getDefaultPlayer(): String = 
+        UiText.StringResourceId(Res.string.default_player).asString()
 }

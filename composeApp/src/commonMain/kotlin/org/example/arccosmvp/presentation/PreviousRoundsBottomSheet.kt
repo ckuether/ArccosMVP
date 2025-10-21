@@ -14,6 +14,8 @@ import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.utils.formatDate
+import org.example.arccosmvp.strings.AppStringResourcesManager
+import org.koin.compose.koinInject
 
 @Composable
 fun PreviousRoundsBottomSheet(
@@ -35,6 +37,7 @@ private fun PreviousRoundsContent(
     scoreCards: List<ScoreCard>
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: AppStringResourcesManager = koinInject()
     
     Column(
         modifier = Modifier
@@ -43,7 +46,7 @@ private fun PreviousRoundsContent(
     ) {
         // Title
         Text(
-            text = "Previous Rounds",
+            text = stringManager.getPreviousRounds(),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = dimensions.spacingLarge)
@@ -61,14 +64,14 @@ private fun PreviousRoundsContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "No previous rounds found",
+                        text = stringManager.getNoPreviousRounds(),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(dimensions.spacingSmall))
                     Text(
-                        text = "Your completed rounds will appear here",
+                        text = stringManager.getRoundsAppearHere(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -82,7 +85,9 @@ private fun PreviousRoundsContent(
                 verticalArrangement = Arrangement.spacedBy(dimensions.spacingMedium)
             ) {
                 items(scoreCards) { scoreCard ->
-                    ScoreCardItem(scoreCard = scoreCard)
+                    ScoreCardItem(
+                        scoreCard = scoreCard
+                    )
                 }
             }
         }
@@ -94,6 +99,7 @@ private fun ScoreCardItem(
     scoreCard: ScoreCard
 ) {
     val dimensions = LocalDimensionResources.current
+    val stringManager: AppStringResourcesManager = koinInject()
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -130,7 +136,7 @@ private fun ScoreCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Final (Thru ${scoreCard.holesPlayed} Holes)",
+                    text = stringManager.getFinalThruHoles(scoreCard.holesPlayed),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -143,7 +149,7 @@ private fun ScoreCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "To Par",
+                    text = stringManager.getToPar(),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -175,7 +181,7 @@ private fun ScoreCardItem(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Gross: ${scoreCard.totalScore}",
+                        text = stringManager.getGrossScore(scoreCard.totalScore),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -189,9 +195,9 @@ private fun ScoreCardItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatisticItem(label = "Birdies", count = scoreCard.birdies)
-                StatisticItem(label = "Par", count = scoreCard.pars)
-                StatisticItem(label = "Bogeys", count = scoreCard.bogeys)
+                StatisticItem(label = stringManager.getBirdies(), count = scoreCard.birdies)
+                StatisticItem(label = stringManager.getPar(), count = scoreCard.pars)
+                StatisticItem(label = stringManager.getBogeys(), count = scoreCard.bogeys)
             }
             
             Spacer(modifier = Modifier.height(dimensions.spacingMedium))
