@@ -1,22 +1,3 @@
 <resources>
     <string name="app_name">ArccosMVP</string>
-    
-    <!-- Golf Home Screen -->
-    <string name="loading_course">Loading Course...</string>
-    <string name="start_round">Start Round</string>
-    <string name="past_rounds">Past Rounds</string>
-    
-    <!-- Previous Rounds Bottom Sheet -->
-    <string name="previous_rounds">Previous Rounds</string>
-    <string name="no_previous_rounds">No previous rounds found</string>
-    <string name="rounds_appear_here">Your completed rounds will appear here</string>
-    <string name="final_thru_holes">Final (Thru %1$d Holes)</string>
-    <string name="to_par">To Par</string>
-    <string name="gross_score">Gross: %1$d</string>
-    <string name="birdies">Birdies</string>
-    <string name="par">Par</string>
-    <string name="bogeys">Bogeys</string>
-    
-    <!-- Player -->
-    <string name="default_player">Player</string>
 </resources>
