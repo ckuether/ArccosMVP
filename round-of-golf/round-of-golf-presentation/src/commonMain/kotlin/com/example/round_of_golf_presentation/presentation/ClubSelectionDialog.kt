@@ -37,9 +37,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.GolfClubType
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Suppress("FrequentlyChangingValue")
 @Composable
@@ -49,7 +49,6 @@ fun ClubSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     val clubTypes = GolfClubType.entries
     val listState = rememberLazyListState()
     var selectedIndex by remember { mutableStateOf(clubTypes.size / 2) }
@@ -103,7 +102,7 @@ fun ClubSelectionDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = stringManager.getSelectClub(),
+                    text = UiText.StringResourceId(StringResources.selectClub).asString(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.Black,
                     modifier = Modifier.padding(bottom = dimensions.paddingLarge)
@@ -174,7 +173,7 @@ fun ClubSelectionDialog(
                         onClick = handleDismissWithSelection,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text(stringManager.getCancel())
+                        Text(UiText.StringResourceId(StringResources.cancel).asString())
                     }
                     
                     Button(
@@ -184,7 +183,7 @@ fun ClubSelectionDialog(
                             containerColor = MaterialTheme.colorScheme.primary
                         )
                     ) {
-                        Text(stringManager.getSelect())
+                        Text(UiText.StringResourceId(StringResources.select).asString())
                     }
                 }
             }

@@ -11,6 +11,7 @@ import org.example.arccosmvp.database.databaseModule
 import com.example.core_ui.di.coreUIModule
 import com.example.location_presentation.di.locationPresentationModule
 import com.example.round_of_golf_domain.di.roundOfGolfDomainModule
+import com.example.shared.di.sharedModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.example.arccosmvp.di.appModule
@@ -22,7 +23,7 @@ class GolfApp : Application(), SingletonImageLoader.Factory {
         // Initialize Koin
         startKoin {
             androidContext(this@GolfApp)
-            modules(appModule, databaseModule, coreUIModule, locationDomainModule, locationPresentationModule, platformLocationModule, roundOfGolfDomainModule)
+            modules(appModule, databaseModule, sharedModule, coreUIModule, locationDomainModule, locationPresentationModule, platformLocationModule, roundOfGolfDomainModule)
         }
     }
     

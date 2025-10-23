@@ -12,10 +12,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.ScoreCard
 import com.example.shared.utils.formatDate
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Composable
 fun PreviousRoundsBottomSheet(
@@ -37,7 +37,6 @@ private fun PreviousRoundsContent(
     scoreCards: List<ScoreCard>
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     
     Column(
         modifier = Modifier
@@ -46,7 +45,7 @@ private fun PreviousRoundsContent(
     ) {
         // Title
         Text(
-            text = stringManager.getPreviousRounds(),
+            text = UiText.StringResourceId(StringResources.previousRounds).asString(),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = dimensions.spacingLarge)
@@ -64,14 +63,14 @@ private fun PreviousRoundsContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = stringManager.getNoPreviousRounds(),
+                        text = UiText.StringResourceId(StringResources.noPreviousRounds).asString(),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(dimensions.spacingSmall))
                     Text(
-                        text = stringManager.getRoundsAppearHere(),
+                        text = UiText.StringResourceId(StringResources.roundsAppearHere).asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -99,7 +98,6 @@ private fun ScoreCardItem(
     scoreCard: ScoreCard
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -136,7 +134,7 @@ private fun ScoreCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringManager.getFinalThruHoles(scoreCard.holesPlayed),
+                    text = UiText.StringResourceId(StringResources.finalThruHoles, arrayOf(scoreCard.holesPlayed)).asString(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -149,7 +147,7 @@ private fun ScoreCardItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringManager.getToPar(),
+                    text = UiText.StringResourceId(StringResources.toPar).asString(),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -181,7 +179,7 @@ private fun ScoreCardItem(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = stringManager.getGrossScore(scoreCard.totalScore),
+                        text = UiText.StringResourceId(StringResources.grossScore, arrayOf(scoreCard.totalScore)).asString(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -195,9 +193,9 @@ private fun ScoreCardItem(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatisticItem(label = stringManager.getBirdies(), count = scoreCard.birdies)
-                StatisticItem(label = stringManager.getPar(), count = scoreCard.pars)
-                StatisticItem(label = stringManager.getBogeys(), count = scoreCard.bogeys)
+                StatisticItem(label = UiText.StringResourceId(StringResources.birdies).asString(), count = scoreCard.birdies)
+                StatisticItem(label = UiText.StringResourceId(StringResources.par).asString(), count = scoreCard.pars)
+                StatisticItem(label = UiText.StringResourceId(StringResources.bogeys).asString(), count = scoreCard.bogeys)
             }
             
             Spacer(modifier = Modifier.height(dimensions.spacingMedium))

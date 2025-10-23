@@ -128,3 +128,18 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
     }
 }
 
+// Copy shared module's compose resources with proper namespace
+val copySharedResources by tasks.registering(Copy::class) {
+    from("../shared/build/generated/compose/resourceGenerator/preparedResources/commonMain/composeResources")
+    into("$buildDir/generated/assets/copyDebugComposeResourcesToAndroidAssets/composeResources/arccosmvp.shared.generated.resources")
+    dependsOn(
+        ":shared:prepareComposeResourcesTaskForCommonMain",
+        ":shared:copyNonXmlValueResourcesForCommonMain",
+        ":shared:convertXmlValueResourcesForCommonMain"
+    )
+}
+
+// Ensure shared resources are copied before merging assets
+afterEvaluate {
+    tasks.findByName("mergeDebugAssets")?.dependsOn(copySharedResources)
+}

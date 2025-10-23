@@ -17,10 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.Hole
 import com.example.shared.data.model.distanceToInYards
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Composable
 fun HoleInfoCard(
@@ -29,7 +29,6 @@ fun HoleInfoCard(
     currentHole: Hole
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -61,7 +60,7 @@ fun HoleInfoCard(
             // Distance to Hole
             Column {
                 Text(
-                    text = stringManager.getMidGreen(),
+                    text = UiText.StringResourceId(StringResources.midGreen).asString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -83,7 +82,7 @@ fun HoleInfoCard(
             // Par
             Column {
                 Text(
-                    text = stringManager.getPar(),
+                    text = UiText.StringResourceId(StringResources.par).asString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GolfCourse
-import androidx.compose.material3.SnackbarHostState
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,7 +45,9 @@ import com.example.location_presentation.platform.MapView
 import com.example.location_presentation.platform.MapCameraPosition
 import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiEvent
+import com.example.core_ui.utils.UiText
 import com.example.location_domain.domain.model.ScreenPoint
 import com.example.location_domain.domain.service.MapProjectionService
 import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
@@ -84,13 +85,12 @@ import org.koin.core.parameter.parametersOf
 fun RoundOfGolf(
     currentPlayer: Player,
     golfCourse: Course,
-    snackbarHostState: SnackbarHostState,
+    updateUiEvent: (UiEvent) -> Unit,
     viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse, currentPlayer) }
 ) {
 
     val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     val coroutineScope = rememberCoroutineScope()
 
     val mapProjectionService: MapProjectionService = koinInject()
@@ -663,6 +663,9 @@ fun RoundOfGolf(
             }
         }
 
+        // This was the last hole - finish the round
+        val roundCompletedMessage = UiText.StringResourceId(StringResources.roundCompleted).asString()
+
         // Score Card Bottom Sheet
         if (showHoleStats) {
             HoleStatsBottomSheet(
@@ -695,7 +698,6 @@ fun RoundOfGolf(
                             }
                         }
                     } else {
-                        // This was the last hole - finish the round
                         coroutineScope.launch {
                             try {
                                 trackEventUseCase.execute(
@@ -704,8 +706,8 @@ fun RoundOfGolf(
                                     playerId = currentPlayer.id,
                                     holeNumber = currentHoleNumber
                                 )
-                                //TODO: Handle UiEvent
-//                                snackbarHostState.showSnackbar(stringManager.getRoundCompleted())
+
+                                updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString(roundCompletedMessage)))
                             } catch (e: Exception) {
                                 println("DEBUG: Failed to track finish round event: ${e.message}")
                             }
@@ -788,7 +790,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.Close,
-                    contentDescription = stringManager.getExitTrackShotMode(),
+                    contentDescription = UiText.StringResourceId(StringResources.exitTrackShotMode).asString(),
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
@@ -808,6 +810,8 @@ fun RoundOfGolf(
             ) {
                 // Empty space (same width as golf button)
                 Spacer(modifier = Modifier.width(dimensions.iconXXLarge))
+
+                val shotTrackedStr = UiText.StringResourceId(StringResources.shotTrackedTemplate, arrayOf(currentHoleNumber)).asString()
                 
                 // Track Shot button (fills remaining space)
                 TrackShotCard(
@@ -827,11 +831,10 @@ fun RoundOfGolf(
                                     holeNumber = currentHoleNumber
                                 )
 
-                                //TODO: Handle UiEvent
-//                                snackbarHostState.showSnackbar(stringManager.getShotTracked(currentHoleNumber))
+                                updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString(shotTrackedStr)))
                             } catch (e: Exception) {
-                                //TODO: Handle UiEvent
-//                                snackbarHostState.showSnackbar(stringManager.getFailedToTrackShot(e.message ?: ""))
+                                val errorMessage = "Failed to track shot: ${e.message ?: "Unknown error"}"
+                                updateUiEvent(UiEvent.ShowErrorSnackbar(UiText.DynamicString(errorMessage)))
                             }
                         }
                         resetUITimer()
@@ -845,7 +848,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.GolfCourse,
-                    contentDescription = stringManager.getSelectGolfClub(),
+                    contentDescription = UiText.StringResourceId(StringResources.selectGolfClub).asString(),
                     size = dimensions.iconXXLarge,
                     iconSize = 28.dp
                 )

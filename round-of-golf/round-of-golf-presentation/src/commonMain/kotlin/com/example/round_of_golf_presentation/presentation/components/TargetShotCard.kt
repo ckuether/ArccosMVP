@@ -17,9 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.GolfClubType
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Composable
 fun TargetShotCard(
@@ -28,7 +28,6 @@ fun TargetShotCard(
     distanceYards: Int
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -45,7 +44,7 @@ fun TargetShotCard(
             // Selected Club
             Column {
                 Text(
-                    text = stringManager.getClub(),
+                    text = UiText.StringResourceId(StringResources.club).asString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -67,12 +66,12 @@ fun TargetShotCard(
             // Distance to Hole
             Column {
                 Text(
-                    text = stringManager.getDistance(),
+                    text = UiText.StringResourceId(StringResources.distance).asString(),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = stringManager.getYards(distanceYards),
+                    text = UiText.StringResourceId(StringResources.yardsTemplate, arrayOf(distanceYards)).asString(),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.onSurface
                 )

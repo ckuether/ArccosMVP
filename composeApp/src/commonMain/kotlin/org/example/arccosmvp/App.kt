@@ -17,6 +17,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import com.example.core_ui.theme.GolfAppTheme
+import com.example.core_ui.utils.UiEvent
+import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.GolfHomeScreen
 import com.example.round_of_golf_presentation.presentation.RoundOfGolf
@@ -27,38 +29,84 @@ import org.koin.compose.viewmodel.koinViewModel
 @Preview
 fun App() {
     GolfAppTheme {
-        val navController = rememberNavController()
-        val appViewModel: AppViewModel = koinViewModel()
-        val snackbarHostState = remember { SnackbarHostState() }
-        
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) }
-        ) { paddingValues ->
-            Box(
-                modifier = androidx.compose.ui.Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
-            ) {
-                NavHost(
-                    navController = navController,
-                    startDestination = Route.GOLF_HOME
-                ) {
-                    composable(Route.GOLF_HOME) {
-                        GolfHomeScreen(
-                            navController = navController,
-                            appViewModel = appViewModel
-                        )
-                    }
-                    composable(Route.ROUND_OF_GOLF) {
-                        val course by appViewModel.course.collectAsStateWithLifecycle()
-                        val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
-                        if (course != null && currentPlayer != null) {
-                            RoundOfGolf(
-                                currentPlayer = currentPlayer!!,
-                                golfCourse = course!!,
-                                snackbarHostState = snackbarHostState
-                            )
+        ArccosMVPApp()
+    }
+}
+
+@Composable
+fun ArccosMVPApp(){
+    val navController = rememberNavController()
+    val appViewModel: AppViewModel = koinViewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Handle UI events globally for all screens
+    LaunchedEffect(appViewModel.uiEvent) {
+        appViewModel.uiEvent.collect { uiEvent ->
+            when (uiEvent) {
+                is UiEvent.Navigate -> {
+                    navController.navigate(uiEvent.route)
+                }
+
+                is UiEvent.NavigateUp -> {
+                    navController.navigateUp()
+                }
+
+                is UiEvent.ShowSnackbar -> {
+                    val message = when (val uiText = uiEvent.uiText) {
+                        is UiText.DynamicString -> uiText.value
+                        is UiText.StringResourceId -> {
+                            "Error StringResourceId Toast Failure"
                         }
+                    }
+                    snackbarHostState.showSnackbar(message)
+                }
+                is UiEvent.ShowErrorSnackbar -> {
+                    val message = when (val uiText = uiEvent.uiText) {
+                        is UiText.DynamicString -> uiText.value
+                        is UiText.StringResourceId -> {
+                            "Error StringResourceId Toast Failure"
+                        }
+                    }
+                    snackbarHostState.showSnackbar(message)
+                }
+                is UiEvent.IsLoading -> {
+                    //TODO: Handle Loading
+                }
+            }
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+        Box(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+        ) {
+            NavHost(
+                navController = navController,
+                startDestination = Route.GOLF_HOME
+            ) {
+                composable(Route.GOLF_HOME) {
+                    GolfHomeScreen(
+                        appViewModel = appViewModel,
+                        updateUiEvent = { uiEvent ->
+                            appViewModel.updateUiEvent(uiEvent)
+                        }
+                    )
+                }
+                composable(Route.ROUND_OF_GOLF) {
+                    val course by appViewModel.course.collectAsStateWithLifecycle()
+                    val currentPlayer by appViewModel.currentPlayer.collectAsStateWithLifecycle()
+                    if (course != null && currentPlayer != null) {
+                        RoundOfGolf(
+                            currentPlayer = currentPlayer!!,
+                            golfCourse = course!!,
+                            updateUiEvent = { uiEvent ->
+                                appViewModel.updateUiEvent(uiEvent)
+                            }
+                        )
                     }
                 }
             }
