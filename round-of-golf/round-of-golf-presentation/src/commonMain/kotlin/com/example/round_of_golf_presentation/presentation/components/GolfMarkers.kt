@@ -14,10 +14,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.core_ui.platform.DrawableProvider
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
+import com.example.shared.utils.DrawableResources
+import org.jetbrains.compose.resources.painterResource
 
 object TeeMarkerDefaults {
     @Composable
@@ -47,13 +48,11 @@ object TargetMarkerDefaults {
 fun TeeMarker(
     modifier: Modifier = Modifier
 ) {
-    val drawableProvider: DrawableProvider = koinInject()
-    val stringManager: StringResourcesManager = koinInject()
     val teeSize = TeeMarkerDefaults.getSize()
 
     Image(
-        painter = drawableProvider.getGolfBallPainter(),
-        contentDescription = stringManager.getGolfBallTee(),
+        painter = painterResource(DrawableResources.GolfBall),
+        contentDescription = UiText.StringResourceId(StringResources.golfBallTee).asString(),
         modifier = modifier
             .size(teeSize)
     )

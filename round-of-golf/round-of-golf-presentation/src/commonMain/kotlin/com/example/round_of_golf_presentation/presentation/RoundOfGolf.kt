@@ -45,7 +45,7 @@ import com.example.location_presentation.platform.MapView
 import com.example.location_presentation.platform.MapCameraPosition
 import com.example.core_ui.components.FloatingActionButton
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
+import com.example.shared.utils.StringResources
 import com.example.core_ui.utils.UiEvent
 import com.example.core_ui.utils.UiText
 import com.example.location_domain.domain.model.ScreenPoint
@@ -91,7 +91,6 @@ fun RoundOfGolf(
 
     val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     val coroutineScope = rememberCoroutineScope()
 
     val mapProjectionService: MapProjectionService = koinInject()
@@ -665,7 +664,7 @@ fun RoundOfGolf(
         }
 
         // This was the last hole - finish the round
-        val roundCompletedMessage = stringManager.getRoundCompleted()
+        val roundCompletedMessage = UiText.StringResourceId(StringResources.roundCompleted).asString()
 
         // Score Card Bottom Sheet
         if (showHoleStats) {
@@ -791,7 +790,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.Close,
-                    contentDescription = stringManager.getExitTrackShotMode(),
+                    contentDescription = UiText.StringResourceId(StringResources.exitTrackShotMode).asString(),
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
             }
@@ -812,7 +811,7 @@ fun RoundOfGolf(
                 // Empty space (same width as golf button)
                 Spacer(modifier = Modifier.width(dimensions.iconXXLarge))
 
-                val shotTrackedStr = stringManager.getShotTracked(currentHoleNumber)
+                val shotTrackedStr = UiText.StringResourceId(StringResources.shotTrackedTemplate, arrayOf(currentHoleNumber)).asString()
                 
                 // Track Shot button (fills remaining space)
                 TrackShotCard(
@@ -849,7 +848,7 @@ fun RoundOfGolf(
                         resetUITimer()
                     },
                     icon = Icons.Default.GolfCourse,
-                    contentDescription = stringManager.getSelectGolfClub(),
+                    contentDescription = UiText.StringResourceId(StringResources.selectGolfClub).asString(),
                     size = dimensions.iconXXLarge,
                     iconSize = 28.dp
                 )

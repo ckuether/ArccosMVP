@@ -29,9 +29,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import com.example.core_ui.components.DraggableBottomSheetWrapper
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.shared.data.model.Hole
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Composable
 fun HoleStatsBottomSheet(
@@ -71,7 +71,6 @@ fun HoleStats(
     onNavigateToHole: (holeNumber: Int) -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     var selectedScore by remember(currentHoleNumber) { mutableStateOf(existingScore) }
     var selectedPutts by remember(currentHoleNumber) { mutableStateOf(0) }
 
@@ -87,13 +86,13 @@ fun HoleStats(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringManager.getHoleScore(currentHoleNumber),
+                text = UiText.StringResourceId(StringResources.holeScoreTemplate, arrayOf(currentHoleNumber)).asString(),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
             )
             Text(
-                text = stringManager.getOthers(),
+                text = UiText.StringResourceId(StringResources.others).asString(),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -165,7 +164,7 @@ fun HoleStats(
 
         // Putts section
         Text(
-            text = stringManager.getPutts(),
+            text = UiText.StringResourceId(StringResources.putts).asString(),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             color = Color.Black
@@ -205,7 +204,7 @@ fun HoleStats(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowLeft,
-                    contentDescription = stringManager.getPreviousHole(),
+                    contentDescription = UiText.StringResourceId(StringResources.previousHole).asString(),
                     tint = if (currentHoleNumber > 1) Color.Black else Color.Gray
                 )
             }
@@ -228,7 +227,7 @@ fun HoleStats(
                 shape = RoundedCornerShape(dimensions.buttonCornerRadius)
             ) {
                 Text(
-                    text = if (currentHoleNumber == totalHoles) stringManager.getFinishRound() else stringManager.getFinishHole(currentHoleNumber),
+                    text = if (currentHoleNumber == totalHoles) UiText.StringResourceId(StringResources.finishRound).asString() else UiText.StringResourceId(StringResources.finishHoleTemplate, arrayOf(currentHoleNumber)).asString(),
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
@@ -246,7 +245,7 @@ fun HoleStats(
             ) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowRight,
-                    contentDescription = stringManager.getNextHole(),
+                    contentDescription = UiText.StringResourceId(StringResources.nextHole).asString(),
                     tint = if (currentHoleNumber < totalHoles) Color.Black else Color.Gray
                 )
             }

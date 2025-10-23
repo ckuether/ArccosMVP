@@ -11,8 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
-import org.koin.compose.koinInject
+import com.example.shared.utils.StringResources
+import com.example.core_ui.utils.UiText
 
 @Composable
 fun LocationPermissionCard(
@@ -21,7 +21,6 @@ fun LocationPermissionCard(
     onRequestPermission: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
 
     Card(
         modifier = modifier,
@@ -34,12 +33,12 @@ fun LocationPermissionCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringManager.getLocationPermissionRequiredTitle(),
+                text = UiText.StringResourceId(StringResources.locationPermissionRequiredTitle).asString(),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                text = stringManager.getLocationPermissionDescription(),
+                text = UiText.StringResourceId(StringResources.locationPermissionDescription).asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.padding(vertical = dimensions.paddingSmall)
@@ -49,8 +48,8 @@ fun LocationPermissionCard(
                 enabled = !isRequestingPermission
             ) {
                 Text(
-                    if (isRequestingPermission) stringManager.getRequesting()
-                    else stringManager.getGrantPermission()
+                    if (isRequestingPermission) UiText.StringResourceId(StringResources.requesting).asString()
+                    else UiText.StringResourceId(StringResources.grantPermission).asString()
                 )
             }
         }

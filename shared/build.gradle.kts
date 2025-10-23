@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.androidLint)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
@@ -57,6 +59,12 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
 
                 implementation(libs.koin.core)
+
+                // Compose Resources
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.components.resources)
 
                 // Room Database
                 implementation(libs.room.runtime)

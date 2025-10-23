@@ -20,18 +20,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import arccosmvp.composeapp.generated.resources.Res
-import arccosmvp.composeapp.generated.resources.golf_course_background
-import arccosmvp.composeapp.generated.resources.welcome_to_broken_tee
+import com.example.shared.utils.StringResources
 import com.example.core_ui.components.RoundedButton
 import com.example.core_ui.resources.LocalDimensionResources
-import com.example.core_ui.strings.StringResourcesManager
 import com.example.core_ui.utils.UiEvent
 import com.example.core_ui.utils.UiText
 import com.example.shared.navigation.Route
 import org.example.arccosmvp.presentation.viewmodel.AppViewModel
-import org.example.arccosmvp.utils.DrawableHelper
-import org.koin.compose.koinInject
+import com.example.shared.utils.DrawableResources
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun GolfHomeScreen(
@@ -39,15 +36,14 @@ fun GolfHomeScreen(
     updateUiEvent: (UiEvent) -> Unit,
 ) {
     val dimensions = LocalDimensionResources.current
-    val stringManager: StringResourcesManager = koinInject()
     val allScoreCards by appViewModel.allScoreCards.collectAsStateWithLifecycle(emptyList())
     val course by appViewModel.course.collectAsStateWithLifecycle()
     var showPreviousRounds by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = DrawableHelper.golfBackground(),
-            contentDescription = UiText.StringResourceId(Res.string.golf_course_background).asString(),
+            painter = painterResource(DrawableResources.GolfBg),
+            contentDescription = UiText.StringResourceId(StringResources.golfCourseBackground).asString(),
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
@@ -61,7 +57,7 @@ fun GolfHomeScreen(
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = UiText.StringResourceId(Res.string.welcome_to_broken_tee).asString(),
+                text = UiText.StringResourceId(StringResources.welcomeToBrokenTee).asString(),
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onPrimary
             )
@@ -71,7 +67,7 @@ fun GolfHomeScreen(
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = if (course == null) stringManager.getLoadingCourse() else stringManager.getStartRound(),
+                text = if (course == null) UiText.StringResourceId(StringResources.loadingCourse).asString() else UiText.StringResourceId(StringResources.startRound).asString(),
                 enabled = course != null,
                 onClick = {
                     updateUiEvent(UiEvent.Navigate(Route.ROUND_OF_GOLF))
@@ -82,7 +78,7 @@ fun GolfHomeScreen(
             RoundedButton(
                 modifier = Modifier
                     .padding(vertical = dimensions.paddingMedium),
-                text = stringManager.getPastRounds(),
+                text = UiText.StringResourceId(StringResources.pastRounds).asString(),
                 onClick = {
                     showPreviousRounds = true
                 }
