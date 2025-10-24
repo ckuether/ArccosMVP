@@ -23,11 +23,9 @@ import org.koin.compose.koinInject
 actual fun MapView(
     modifier: Modifier,
     currentHole: Hole?,
-    targetLocation: Location?,
     hasLocationPermission: Boolean,
     gesturesEnabled: Boolean,
     onMapClick: ((Location) -> Unit)?,
-    onTargetLocationChanged: ((Location) -> Unit)?,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)?,
     onCameraPositionChanged: ((MapCameraPosition) -> Unit)?,
     onMapReady: ((Any) -> Unit)?

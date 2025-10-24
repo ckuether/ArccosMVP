@@ -40,11 +40,13 @@ fun ArccosMVPApp(){
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Handle UI events globally for all screens
-    LaunchedEffect(appViewModel.uiEvent) {
-        appViewModel.uiEvent.collect { uiEvent ->
-            when (uiEvent) {
+    val uiEvent by appViewModel.uiEvent.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(uiEvent) {
+        uiEvent?.let { event ->
+            when (event) {
                 is UiEvent.Navigate -> {
-                    navController.navigate(uiEvent.route)
+                    navController.navigate(event.route)
                 }
 
                 is UiEvent.NavigateUp -> {
@@ -52,7 +54,7 @@ fun ArccosMVPApp(){
                 }
 
                 is UiEvent.ShowSnackbar -> {
-                    val message = when (val uiText = uiEvent.uiText) {
+                    val message = when (val uiText = event.uiText) {
                         is UiText.DynamicString -> uiText.value
                         is UiText.StringResourceId -> {
                             "Error StringResourceId Toast Failure"
@@ -61,7 +63,7 @@ fun ArccosMVPApp(){
                     snackbarHostState.showSnackbar(message)
                 }
                 is UiEvent.ShowErrorSnackbar -> {
-                    val message = when (val uiText = uiEvent.uiText) {
+                    val message = when (val uiText = event.uiText) {
                         is UiText.DynamicString -> uiText.value
                         is UiText.StringResourceId -> {
                             "Error StringResourceId Toast Failure"
@@ -73,6 +75,8 @@ fun ArccosMVPApp(){
                     //TODO: Handle Loading
                 }
             }
+            // Clear the event after handling to prevent re-delivery
+            appViewModel.clearUiEvent()
         }
     }
 

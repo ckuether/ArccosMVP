@@ -41,7 +41,8 @@ fun HoleStatsBottomSheet(
     existingScore: Int? = null,
     onDismiss: () -> Unit,
     onFinishHole: (score: Int, putts: Int) -> Unit,
-    onNavigateToHole: (holeNumber: Int) -> Unit
+    prevHoleClicked: () -> Unit,
+    nextHoleClicked: () -> Unit
 ) {
     DraggableBottomSheetWrapper(
         onDismiss = onDismiss,
@@ -54,7 +55,8 @@ fun HoleStatsBottomSheet(
             existingScore = existingScore,
             onDismiss = onDismiss,
             onFinishHole = onFinishHole,
-            onNavigateToHole = onNavigateToHole
+            prevHoleClicked = prevHoleClicked,
+            nextHoleClicked = nextHoleClicked
         )
     }
 }
@@ -68,7 +70,8 @@ fun HoleStats(
     existingScore: Int? = null,
     onDismiss: () -> Unit,
     onFinishHole: (score: Int, putts: Int) -> Unit,
-    onNavigateToHole: (holeNumber: Int) -> Unit
+    prevHoleClicked: () -> Unit,
+    nextHoleClicked: () -> Unit
 ) {
     val dimensions = LocalDimensionResources.current
     var selectedScore by remember(currentHoleNumber) { mutableStateOf(existingScore) }
@@ -196,9 +199,7 @@ fun HoleStats(
             // Left arrow
             IconButton(
                 onClick = {
-                    if (currentHoleNumber > 1) {
-                        onNavigateToHole(currentHoleNumber - 1)
-                    }
+                    prevHoleClicked()
                 },
                 enabled = currentHoleNumber > 1
             ) {
@@ -237,9 +238,7 @@ fun HoleStats(
             // Right arrow
             IconButton(
                 onClick = {
-                    if (currentHoleNumber < totalHoles) {
-                        onNavigateToHole(currentHoleNumber + 1)
-                    }
+                    nextHoleClicked()
                 },
                 enabled = currentHoleNumber < totalHoles
             ) {

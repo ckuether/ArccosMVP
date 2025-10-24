@@ -13,6 +13,8 @@ import com.example.shared.data.model.ScoreCard
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_domain.domain.usecase.SaveScoreCardUseCase
 import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
+import com.example.round_of_golf_presentation.utils.RoundOfGolfUiEvent
+import com.example.round_of_golf_presentation.utils.TrackShotUiEvent
 import com.example.shared.data.model.Player
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +52,28 @@ class RoundOfGolfViewModel(
     private val roundId: Long get() = _currentScoreCard.value.roundId
 
     private var trackingJob: Job? = null
+
+    private var _roundOfGolfUiEvent = MutableStateFlow<RoundOfGolfUiEvent?>(null)
+    val roundOfGolfUiEvent: StateFlow<RoundOfGolfUiEvent?> = _roundOfGolfUiEvent.asStateFlow()
+
+    fun updateRoundOfGolfUiEvent(uiEvent: RoundOfGolfUiEvent?){
+        _roundOfGolfUiEvent.value = uiEvent
+    }
+
+    fun clearRoundOfGolfUiEvent(){
+        _roundOfGolfUiEvent.value = null
+    }
+
+    private var _trackShotUiEvent = MutableStateFlow<TrackShotUiEvent?>(null)
+    val trackShotUiEvent: StateFlow<TrackShotUiEvent?> = _trackShotUiEvent.asStateFlow()
+
+    fun updateTrackShotUiEvent(uiEvent: TrackShotUiEvent?){
+        _trackShotUiEvent.value = uiEvent
+    }
+
+    fun clearTrackShotUiEvent(){
+        _trackShotUiEvent.value = null
+    }
 
     init {
         checkPermissionStatus()
@@ -186,18 +210,18 @@ class RoundOfGolfViewModel(
             }
         }
     }
-    
-    fun updateHoleScore(holeNumber: Int, score: Int) {
+
+    fun saveHoleScore(holeNumber: Int, score: Int){
         val currentCard = _currentScoreCard.value
         val updatedScorecard = currentCard.scorecard.toMutableMap()
         updatedScorecard[holeNumber] = score
-        
+
         val updatedCard = currentCard.copy(
             scorecard = updatedScorecard,
             lastUpdatedTimestamp = getCurrentTimeMillis()
         )
         _currentScoreCard.value = updatedCard
-        
+
         // Save to database using UseCase
         viewModelScope.launch(Dispatchers.IO) {
             saveScoreCardUseCase(updatedCard).fold(
