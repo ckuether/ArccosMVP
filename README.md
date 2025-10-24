@@ -1,4 +1,4 @@
-# ArccosMVP - Golf Tracking App
+# GolfTrackingAppMVP - Golf Tracking App
 
 A modern Kotlin Multiplatform golf tracking application built with Compose Multiplatform, showcasing Clean Architecture, SOLID principles, and advanced Android development patterns. This project demonstrates professional-level multiplatform development skills with a focus on scalable architecture and best practices.
 
