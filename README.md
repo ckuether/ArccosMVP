@@ -190,7 +190,12 @@ https://github.com/user-attachments/assets/3b4bc43e-88ba-4228-92d0-e512d50cd87e
 
 
 ### iOS Demo  
-*[iOS screen recording will be added here]*
+
+
+
+https://github.com/user-attachments/assets/9a267f57-736e-4029-bf78-5a348e94decc
+
+
 
 ---
 
