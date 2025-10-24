@@ -4,7 +4,7 @@ A modern Kotlin Multiplatform golf tracking application built with Compose Multi
 
 ## 🏌️ Project Overview
 
-ArccosMVP is a comprehensive golf tracking application that allows golfers to:
+GolfTrackingAppMVP is a comprehensive golf tracking application that allows golfers to:
 - **Track rounds of golf** with real-time location services
 - **Record scores** hole by hole with detailed statistics
 - **Visualize shot tracking** on interactive Google Maps integration
