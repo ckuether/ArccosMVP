@@ -13,7 +13,7 @@ ArccosMVP is a comprehensive golf tracking application that allows golfers to:
 
 The app provides a seamless experience across Android and iOS platforms while maintaining a shared business logic layer and consistent UI/UX.
 
-> **Demo Note**: This MVP currently uses mock data for demonstration purposes. The app is configured for **Broken Tee Golf Course in Englewood, CO** with simulated user authentication and course data. Future phases will include dynamic course selection and proper authentication integration.
+> **Demo Note**: This MVP currently uses mock data for demonstration purposes. The app is configured for **Broken Tee Golf Course in Englewood, CO** with simulated user authentication and course data. All data is stored locally using Room Database with no backend integration.
 
 ## 🏗️ Architecture Overview
 
