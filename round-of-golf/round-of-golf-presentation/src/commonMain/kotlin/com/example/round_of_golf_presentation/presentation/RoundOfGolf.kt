@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.GolfCourse
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,7 +62,6 @@ import com.example.shared.data.model.GolfClubType
 import com.example.shared.data.model.Location
 import com.example.shared.data.model.distanceToInYards
 import com.example.shared.data.model.midPoint
-import com.example.round_of_golf_domain.data.model.RoundOfGolfEvent
 import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_presentation.RoundOfGolfViewModel
 import com.example.round_of_golf_presentation.presentation.components.FlagMarker
@@ -77,6 +75,7 @@ import com.example.round_of_golf_presentation.presentation.components.TeeMarkerD
 import com.example.round_of_golf_presentation.presentation.components.YardageDisplay
 import com.example.round_of_golf_presentation.presentation.components.YardageDisplayDefaults
 import com.example.round_of_golf_presentation.utils.RoundOfGolfUiEvent
+import com.example.round_of_golf_presentation.utils.TrackShotUiEvent
 import com.example.shared.utils.TimeMillis
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -89,7 +88,6 @@ fun RoundOfGolf(
     updateUiEvent: (UiEvent) -> Unit,
     viewModel: RoundOfGolfViewModel = koinViewModel { parametersOf(golfCourse, currentPlayer) }
 ) {
-
     val density = LocalDensity.current
     val dimensions = LocalDimensionResources.current
     val coroutineScope = rememberCoroutineScope()
@@ -208,7 +206,7 @@ fun RoundOfGolf(
 
     // Consolidated dragging state
     var isDraggingMapComponent by remember { mutableStateOf(false) }
-    var targetShotPosition by remember { mutableStateOf(Offset.Zero) }
+    var currentDraggedComponentPosition by remember { mutableStateOf(Offset.Zero) }
 
     // Track which component is being dragged
     var draggedComponent by remember { mutableStateOf<DraggedComponent?>(null) }
@@ -352,7 +350,39 @@ fun RoundOfGolf(
         }
     }
 
-    //TODO: Handle TrackShotUiEvent
+    val trackShotUiEvent by viewModel.trackShotUiEvent.collectAsStateWithLifecycle()
+
+    LaunchedEffect(trackShotUiEvent){
+        trackShotUiEvent?.let { event ->
+            when(event){
+                is TrackShotUiEvent.ClubSelected -> {
+                    selectedClub = event.selectedClub
+                }
+                TrackShotUiEvent.TrackShotCardClicked -> {
+                    //TODO: Store Tracked Shot in DB
+                    updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString("Do something")))
+                    resetUITimer()
+                }
+                TrackShotUiEvent.ClubSelectionButtonClicked -> {
+                    showClubSelection = true
+                    resetUITimer()
+                }
+                TrackShotUiEvent.ExitButtonClicked -> {
+                    trackShotModeEnabled = false
+                    selectedClub = null
+                    resetUITimer()
+                }
+                is TrackShotUiEvent.LocationStartDragUpdate -> {
+                    trackShotStartLocation = event.location
+                }
+                is TrackShotUiEvent.LocationEndDragUpdate -> {
+                    trackShotEndLocation = event.location
+                }
+            }
+            // Clear the event after handling
+            viewModel.clearTrackShotUiEvent()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -460,7 +490,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TARGET,
-                currentDragPosition = targetShotPosition,
+                currentDragPosition = currentDraggedComponentPosition,
                 defaultScreenPosition = targetMarkerScreenPosition,
                 density = density
             )
@@ -473,7 +503,7 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TARGET,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { targetShotPosition },
+                        getCurrentDragPosition = { currentDraggedComponentPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TARGET
@@ -482,18 +512,18 @@ fun RoundOfGolf(
                                 with(density) { targetX.toPx() + (targetSize.toPx() / 2) }
                             val visualCenterY =
                                 with(density) { targetY.toPx() + (targetSize.toPx() / 2) }
-                            targetShotPosition = Offset(visualCenterX, visualCenterY)
+                            currentDraggedComponentPosition = Offset(visualCenterX, visualCenterY)
                             viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.ResetUiTimer)
                         },
                         onDragUpdate = { newPosition ->
-                            targetShotPosition = newPosition
+                            currentDraggedComponentPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
                             draggedComponent = null
                         },
                         onLocationUpdate = { newLocation ->
-                            targetLocation = newLocation
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.TargetLocationUpdated(newLocation))
                         },
                         googleMapInstance = googleMapInstance,
                         mapProjectionService = mapProjectionService,
@@ -522,7 +552,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TRACKING_START,
-                currentDragPosition = targetShotPosition,
+                currentDragPosition = currentDraggedComponentPosition,
                 defaultScreenPosition = trackShotStartScreenPosition,
                 density = density
             )
@@ -535,25 +565,25 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TRACKING_START,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { targetShotPosition },
+                        getCurrentDragPosition = { currentDraggedComponentPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_START
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingStartX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingStartY.toPx() + (markerSize.toPx() / 2) }
-                            targetShotPosition = Offset(visualCenterX, visualCenterY)
+                            currentDraggedComponentPosition = Offset(visualCenterX, visualCenterY)
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            targetShotPosition = newPosition
+                            currentDraggedComponentPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
                             draggedComponent = null
                         },
                         onLocationUpdate = { newLocation ->
-                            trackShotStartLocation = newLocation
+                            viewModel.updateTrackShotUiEvent(TrackShotUiEvent.LocationStartDragUpdate(newLocation))
                         },
                         googleMapInstance = googleMapInstance,
                         mapProjectionService = mapProjectionService,
@@ -568,7 +598,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TRACKING_END,
-                currentDragPosition = targetShotPosition,
+                currentDragPosition = currentDraggedComponentPosition,
                 defaultScreenPosition = trackShotEndScreenPosition,
                 density = density
             )
@@ -581,25 +611,25 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TRACKING_END,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { targetShotPosition },
+                        getCurrentDragPosition = { currentDraggedComponentPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_END
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingEndX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingEndY.toPx() + (markerSize.toPx() / 2) }
-                            targetShotPosition = Offset(visualCenterX, visualCenterY)
+                            currentDraggedComponentPosition = Offset(visualCenterX, visualCenterY)
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            targetShotPosition = newPosition
+                            currentDraggedComponentPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
                             draggedComponent = null
                         },
                         onLocationUpdate = { newLocation ->
-                            trackShotEndLocation = newLocation
+                            viewModel.updateTrackShotUiEvent(TrackShotUiEvent.LocationEndDragUpdate(newLocation))
                         },
                         googleMapInstance = googleMapInstance,
                         mapProjectionService = mapProjectionService,
@@ -741,8 +771,7 @@ fun RoundOfGolf(
         if (showClubSelection) {
             ClubSelectionDialog(
                 onClubSelected = { club ->
-                    selectedClub = club
-                    println("DEBUG: Selected club: ${club.clubName}")
+                    viewModel.updateTrackShotUiEvent(TrackShotUiEvent.ClubSelected(club))
                 },
                 onDismiss = {
                     showClubSelection = false
@@ -770,9 +799,7 @@ fun RoundOfGolf(
                 // Exit Button positioned to the left, centered vertically with the card
                 FloatingActionButton(
                     onClick = {
-                        trackShotModeEnabled = false
-                        selectedClub = null
-                        resetUITimer()
+                        viewModel.updateTrackShotUiEvent(TrackShotUiEvent.ExitButtonClicked)
                     },
                     icon = Icons.Default.Close,
                     contentDescription = UiText.StringResourceId(StringResources.exitTrackShotMode).asString(),
@@ -795,42 +822,19 @@ fun RoundOfGolf(
             ) {
                 // Empty space (same width as golf button)
                 Spacer(modifier = Modifier.width(dimensions.iconXXLarge))
-
-                val shotTrackedStr = UiText.StringResourceId(StringResources.shotTrackedTemplate, arrayOf(currentHoleNumber)).asString()
                 
                 // Track Shot button (fills remaining space)
                 TrackShotCard(
                     modifier = Modifier.weight(1f),
                     onClick = {
-                        // Track shot event
-                        coroutineScope.launch {
-                            try {
-                                val shotEvent = RoundOfGolfEvent.ShotTracked(
-                                    holeNumber = currentHoleNumber
-                                )
-                                
-                                trackEventUseCase.execute(
-                                    event = shotEvent,
-                                    roundId = currentScoreCard.roundId,
-                                    playerId = currentPlayer.id,
-                                    holeNumber = currentHoleNumber
-                                )
-
-                                updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString(shotTrackedStr)))
-                            } catch (e: Exception) {
-                                val errorMessage = "Failed to track shot: ${e.message ?: "Unknown error"}"
-                                updateUiEvent(UiEvent.ShowErrorSnackbar(UiText.DynamicString(errorMessage)))
-                            }
-                        }
-                        resetUITimer()
+                        viewModel.updateTrackShotUiEvent(TrackShotUiEvent.TrackShotCardClicked)
                     }
                 )
                 
                 // Club Selection Button (anchored to bottom right)
                 FloatingActionButton(
                     onClick = {
-                        showClubSelection = true
-                        resetUITimer()
+                        viewModel.updateTrackShotUiEvent(TrackShotUiEvent.ClubSelectionButtonClicked)
                     },
                     icon = Icons.Default.GolfCourse,
                     contentDescription = UiText.StringResourceId(StringResources.selectGolfClub).asString(),

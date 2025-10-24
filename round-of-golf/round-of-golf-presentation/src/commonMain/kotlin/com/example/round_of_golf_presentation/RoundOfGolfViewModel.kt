@@ -14,6 +14,7 @@ import com.example.shared.platform.getCurrentTimeMillis
 import com.example.round_of_golf_domain.domain.usecase.SaveScoreCardUseCase
 import com.example.round_of_golf_domain.domain.usecase.TrackSingleRoundEventUseCase
 import com.example.round_of_golf_presentation.utils.RoundOfGolfUiEvent
+import com.example.round_of_golf_presentation.utils.TrackShotUiEvent
 import com.example.shared.data.model.Player
 import com.example.shared.platform.Logger
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,6 +62,17 @@ class RoundOfGolfViewModel(
 
     fun clearRoundOfGolfUiEvent(){
         _roundOfGolfUiEvent.value = null
+    }
+
+    private var _trackShotUiEvent = MutableStateFlow<TrackShotUiEvent?>(null)
+    val trackShotUiEvent: StateFlow<TrackShotUiEvent?> = _trackShotUiEvent.asStateFlow()
+
+    fun updateTrackShotUiEvent(uiEvent: TrackShotUiEvent?){
+        _trackShotUiEvent.value = uiEvent
+    }
+
+    fun clearTrackShotUiEvent(){
+        _trackShotUiEvent.value = null
     }
 
     init {
