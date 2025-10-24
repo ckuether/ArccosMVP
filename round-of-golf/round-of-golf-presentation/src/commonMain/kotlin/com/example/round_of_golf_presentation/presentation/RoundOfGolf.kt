@@ -76,6 +76,7 @@ import com.example.round_of_golf_presentation.presentation.components.TeeMarker
 import com.example.round_of_golf_presentation.presentation.components.TeeMarkerDefaults
 import com.example.round_of_golf_presentation.presentation.components.YardageDisplay
 import com.example.round_of_golf_presentation.presentation.components.YardageDisplayDefaults
+import com.example.round_of_golf_presentation.utils.RoundOfGolfUiEvent
 import com.example.shared.utils.TimeMillis
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -207,7 +208,7 @@ fun RoundOfGolf(
 
     // Consolidated dragging state
     var isDraggingMapComponent by remember { mutableStateOf(false) }
-    var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
+    var targetShotPosition by remember { mutableStateOf(Offset.Zero) }
 
     // Track which component is being dragged
     var draggedComponent by remember { mutableStateOf<DraggedComponent?>(null) }
@@ -215,7 +216,6 @@ fun RoundOfGolf(
     // Track shot mode locations (separate from hole data)
     var trackShotStartLocation by remember(currentHole) { mutableStateOf(currentHole.teeLocation) }
     var trackShotEndLocation by remember(currentHole) { mutableStateOf(currentHole.initialTarget) }
-
 
     // Calculate screen positions for track shot markers using helper function
     val trackShotStartScreenPosition = rememberMarkerScreenPosition(
@@ -274,27 +274,104 @@ fun RoundOfGolf(
         }
     }
 
+    // This was the last hole - finish the round
+    val roundCompletedMessage = UiText.StringResourceId(StringResources.roundCompleted).asString()
+
+    fun navigateToNextHole(){
+        // Navigate to next hole (equivalent to hitting next button)
+        val maxHoles = golfCourse.holes.size
+        if (currentHoleNumber < maxHoles) {
+            currentHoleNumber = currentHoleNumber + 1
+        } else {
+            //TODO: Display Finish Round Dialog
+            updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString(roundCompletedMessage)))
+        }
+    }
+
+    val roundOfGolfUiEvent by viewModel.roundOfGolfUiEvent.collectAsStateWithLifecycle()
+
+    //Handle RoundOfGolfUiEvents
+    LaunchedEffect(roundOfGolfUiEvent){
+        roundOfGolfUiEvent?.let { event ->
+            when(event){
+                RoundOfGolfUiEvent.ResetUiTimer -> {
+                    resetUITimer()
+                }
+                RoundOfGolfUiEvent.MiniScorecardClicked -> {
+                    showFullScoreCard = true
+                }
+                RoundOfGolfUiEvent.NextHoleClicked -> {
+                    navigateToNextHole()
+                    resetUITimer()
+                }
+                RoundOfGolfUiEvent.PreviousHoleClicked -> {
+                    if (currentHoleNumber > 1) {
+                        currentHoleNumber--
+                    }
+                    resetUITimer()
+                }
+                RoundOfGolfUiEvent.HoleNavigationCardClicked -> {
+                    showHoleStats = true
+                    resetUITimer()
+                }
+                RoundOfGolfUiEvent.TrackShotClicked -> {
+                    trackShotModeEnabled = true
+                    showClubSelection = true
+                    resetUITimer()
+                }
+                is RoundOfGolfUiEvent.OnMapClick -> {
+                    if(isUIVisible){
+                        targetLocation = event.location
+                    }
+                    resetUITimer()
+                }
+                is RoundOfGolfUiEvent.UserLocationUpdated -> {
+                    val location = event.location
+                    //TODO: Do Something
+                }
+                is RoundOfGolfUiEvent.TargetLocationUpdated -> {
+                    targetLocation = event.location
+                }
+                is RoundOfGolfUiEvent.OnFinishHole -> {
+                    val score = event.score
+                    //TODO: Do something with putts
+                    val putts = event.putts
+
+
+                    //TODO: Add to Event To Database
+                    // Handle score submission
+                    viewModel.saveHoleScore(currentHoleNumber, score)
+                    navigateToNextHole()
+
+                }
+                RoundOfGolfUiEvent.OnFinishRound -> {
+                    //TODO: Do something
+                }
+            }
+            viewModel.clearRoundOfGolfUiEvent()
+        }
+    }
+
+    //TODO: Handle TrackShotUiEvent
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null
-            ) { resetUITimer() }
+            ) {
+                viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.ResetUiTimer)
+            }
     ) {
         // Full-screen Map
         MapView(
             modifier = Modifier.fillMaxSize(),
             currentHole = currentHole,
-            targetLocation = targetLocation,
             hasLocationPermission = locationState.hasPermission == true,
             gesturesEnabled = !isDraggingMapComponent,
             onMapClick = { location ->
-                resetUITimer()
-                // Always set/replace target shot at clicked location
-            },
-            onTargetLocationChanged = { newLocation ->
-                targetLocation = newLocation
+                viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.OnMapClick(location))
             },
             onMapSizeChanged = { width, height ->
                 mapSize = IntSize(width, height)
@@ -383,7 +460,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TARGET,
-                currentDragPosition = currentDragPosition,
+                currentDragPosition = targetShotPosition,
                 defaultScreenPosition = targetMarkerScreenPosition,
                 density = density
             )
@@ -396,7 +473,7 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TARGET,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { currentDragPosition },
+                        getCurrentDragPosition = { targetShotPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TARGET
@@ -405,11 +482,11 @@ fun RoundOfGolf(
                                 with(density) { targetX.toPx() + (targetSize.toPx() / 2) }
                             val visualCenterY =
                                 with(density) { targetY.toPx() + (targetSize.toPx() / 2) }
-                            currentDragPosition = Offset(visualCenterX, visualCenterY)
-                            resetUITimer()
+                            targetShotPosition = Offset(visualCenterX, visualCenterY)
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.ResetUiTimer)
                         },
                         onDragUpdate = { newPosition ->
-                            currentDragPosition = newPosition
+                            targetShotPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
@@ -445,7 +522,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TRACKING_START,
-                currentDragPosition = currentDragPosition,
+                currentDragPosition = targetShotPosition,
                 defaultScreenPosition = trackShotStartScreenPosition,
                 density = density
             )
@@ -458,18 +535,18 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TRACKING_START,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { currentDragPosition },
+                        getCurrentDragPosition = { targetShotPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_START
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingStartX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingStartY.toPx() + (markerSize.toPx() / 2) }
-                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            targetShotPosition = Offset(visualCenterX, visualCenterY)
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            currentDragPosition = newPosition
+                            targetShotPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
@@ -491,7 +568,7 @@ fun RoundOfGolf(
                 isDraggingMapComponent = isDraggingMapComponent,
                 draggedComponent = draggedComponent,
                 targetDraggedComponent = DraggedComponent.TRACKING_END,
-                currentDragPosition = currentDragPosition,
+                currentDragPosition = targetShotPosition,
                 defaultScreenPosition = trackShotEndScreenPosition,
                 density = density
             )
@@ -504,18 +581,18 @@ fun RoundOfGolf(
                         draggedComponent = DraggedComponent.TRACKING_END,
                         density = density,
                         getCurrentDragState = { Pair(isDraggingMapComponent, draggedComponent) },
-                        getCurrentDragPosition = { currentDragPosition },
+                        getCurrentDragPosition = { targetShotPosition },
                         onDragStart = {
                             isDraggingMapComponent = true
                             draggedComponent = DraggedComponent.TRACKING_END
                             // Set drag position to the actual visual center coordinates
                             val visualCenterX = with(density) { trackingEndX.toPx() + (markerSize.toPx() / 2) }
                             val visualCenterY = with(density) { trackingEndY.toPx() + (markerSize.toPx() / 2) }
-                            currentDragPosition = Offset(visualCenterX, visualCenterY)
+                            targetShotPosition = Offset(visualCenterX, visualCenterY)
                             resetUITimer()
                         },
                         onDragUpdate = { newPosition ->
-                            currentDragPosition = newPosition
+                            targetShotPosition = newPosition
                         },
                         onDragEnd = {
                             isDraggingMapComponent = false
@@ -584,8 +661,7 @@ fun RoundOfGolf(
                     TrackShotCard(
                         modifier = Modifier.weight(1f),
                         onClick = {
-                            trackShotModeEnabled = true
-                            showClubSelection = true
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.TrackShotClicked)
                         }
                     )
 
@@ -603,8 +679,7 @@ fun RoundOfGolf(
                     MiniScorecard(
                         scoreToPar = viewModel.getScoreToPar(),
                         onScoreCardClick = {
-                            resetUITimer()
-                            showFullScoreCard = true
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.MiniScorecardClicked)
                         }
                     )
 
@@ -614,47 +689,13 @@ fun RoundOfGolf(
                         currentHoleNumber = currentHoleNumber,
                         maxHoles = golfCourse.holes.size,
                         onPreviousHole = {
-                            resetUITimer()
-                            if (currentHoleNumber > 1) {
-                                currentHoleNumber = currentHoleNumber - 1
-                                // Track hole navigation event
-                                coroutineScope.launch {
-                                    try {
-                                        trackEventUseCase.execute(
-                                            event = RoundOfGolfEvent.PreviousHole(),
-                                            roundId = currentScoreCard.roundId,
-                                            playerId = currentPlayer.id,
-                                            holeNumber = currentHoleNumber
-                                        )
-                                    } catch (e: Exception) {
-                                        println("DEBUG: Failed to track previous hole event: ${e.message}")
-                                    }
-                                }
-                            }
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.PreviousHoleClicked)
                         },
                         onNextHole = {
-                            resetUITimer()
-                            val maxHoles = golfCourse.holes.size
-                            if (currentHoleNumber < maxHoles) {
-                                currentHoleNumber = currentHoleNumber + 1
-                                // Track hole navigation event
-                                coroutineScope.launch {
-                                    try {
-                                        trackEventUseCase.execute(
-                                            event = RoundOfGolfEvent.NextHole(),
-                                            roundId = currentScoreCard.roundId,
-                                            playerId = currentPlayer.id,
-                                            holeNumber = currentHoleNumber
-                                        )
-                                    } catch (e: Exception) {
-                                        println("DEBUG: Failed to track next hole event: ${e.message}")
-                                    }
-                                }
-                            }
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.NextHoleClicked)
                         },
                         onClick = {
-                            resetUITimer()
-                            showHoleStats = true
+                            viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.HoleNavigationCardClicked)
                         }
                     )
 
@@ -662,9 +703,6 @@ fun RoundOfGolf(
                 }
             }
         }
-
-        // This was the last hole - finish the round
-        val roundCompletedMessage = UiText.StringResourceId(StringResources.roundCompleted).asString()
 
         // Score Card Bottom Sheet
         if (showHoleStats) {
@@ -675,69 +713,16 @@ fun RoundOfGolf(
                 existingScore = viewModel.getHoleScore(currentHoleNumber),
                 onDismiss = { showHoleStats = false },
                 onFinishHole = { score, putts ->
-                    // Handle score submission
-                    viewModel.updateHoleScore(currentHoleNumber, score)
-                    println("DEBUG: Hole $currentHoleNumber finished with score: $score, putts: $putts")
                     showHoleStats = false
-
-                    // Navigate to next hole (equivalent to hitting next button)
-                    val maxHoles = golfCourse.holes.size
-                    if (currentHoleNumber < maxHoles) {
-                        currentHoleNumber = currentHoleNumber + 1
-                        // Track next hole event
-                        coroutineScope.launch {
-                            try {
-                                trackEventUseCase.execute(
-                                    event = RoundOfGolfEvent.NextHole(),
-                                    roundId = currentScoreCard.roundId,
-                                    playerId = currentPlayer.id,
-                                    holeNumber = currentHoleNumber
-                                )
-                            } catch (e: Exception) {
-                                println("DEBUG: Failed to track next hole event after finishing hole: ${e.message}")
-                            }
-                        }
-                    } else {
-                        coroutineScope.launch {
-                            try {
-                                trackEventUseCase.execute(
-                                    event = RoundOfGolfEvent.FinishRound(),
-                                    roundId = currentScoreCard.roundId,
-                                    playerId = currentPlayer.id,
-                                    holeNumber = currentHoleNumber
-                                )
-
-                                updateUiEvent(UiEvent.ShowSnackbar(UiText.DynamicString(roundCompletedMessage)))
-                            } catch (e: Exception) {
-                                println("DEBUG: Failed to track finish round event: ${e.message}")
-                            }
-                        }
-                    }
+                    viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.OnFinishHole(score, putts))
                 },
-                onNavigateToHole = { holeNumber ->
-                    val previousHole = currentHoleNumber
-                    currentHoleNumber = holeNumber
+                prevHoleClicked = {
                     showHoleStats = false
-                    
-                    // Track navigation event based on direction
-                    coroutineScope.launch {
-                        try {
-                            val event = if (holeNumber > previousHole) {
-                                RoundOfGolfEvent.NextHole()
-                            } else {
-                                RoundOfGolfEvent.PreviousHole()
-                            }
-                            
-                            trackEventUseCase.execute(
-                                event = event,
-                                roundId = currentScoreCard.roundId,
-                                playerId = currentPlayer.id,
-                                holeNumber = holeNumber
-                            )
-                        } catch (e: Exception) {
-                            println("DEBUG: Failed to track hole navigation event: ${e.message}")
-                        }
-                    }
+                    viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.PreviousHoleClicked)
+                },
+                nextHoleClicked = {
+                    showHoleStats = false
+                    viewModel.updateRoundOfGolfUiEvent(RoundOfGolfUiEvent.NextHoleClicked)
                 }
             )
         }

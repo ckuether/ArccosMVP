@@ -9,11 +9,9 @@ import com.example.shared.data.model.Hole
 expect fun MapView(
     modifier: Modifier = Modifier,
     currentHole: Hole?,
-    targetLocation: Location?,
     hasLocationPermission: Boolean,
     gesturesEnabled: Boolean = true,
     onMapClick: ((Location) -> Unit)? = null,
-    onTargetLocationChanged: ((Location) -> Unit)? = null,
     onMapSizeChanged: ((width: Int, height: Int) -> Unit)? = null,
     onCameraPositionChanged: ((MapCameraPosition) -> Unit)? = null,
     onMapReady: ((Any) -> Unit)? = null // Any to be platform-agnostic

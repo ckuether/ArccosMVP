@@ -9,12 +9,9 @@ import com.example.shared.usecase.LoadGolfCourseUseCase
 import com.example.shared.usecase.LoadCurrentUserUseCase
 import com.example.shared.platform.Logger
 import com.example.core_ui.utils.UiEvent
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 class AppViewModel(
@@ -28,14 +25,15 @@ class AppViewModel(
         private const val TAG = "AppViewModel"
     }
 
-    private var _uiEvent = Channel<UiEvent>()
-    val uiEvent: Flow<UiEvent>
-        get() = _uiEvent.receiveAsFlow()
+    private var _uiEvent = MutableStateFlow<UiEvent?>(null)
+    val uiEvent: StateFlow<UiEvent?> = _uiEvent.asStateFlow()
 
     fun updateUiEvent(event: UiEvent){
-        viewModelScope.launch {
-            _uiEvent.send(event)
-        }
+        _uiEvent.value = event
+    }
+    
+    fun clearUiEvent() {
+        _uiEvent.value = null
     }
     
     private val _course = MutableStateFlow<Course?>(null)
